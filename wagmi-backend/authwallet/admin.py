@@ -1,3 +1,5 @@
 from django.contrib import admin
+from .models import WalletUserManager, WalletNonce, WalletUser  # whatever models you have
 
-# Register your models here.
+admin.site.register(WalletNonce)
+admin.site.register(WalletUser)

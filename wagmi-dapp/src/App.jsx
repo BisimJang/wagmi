@@ -179,7 +179,6 @@ function App() {
     }
   };
 
-
   const enrollInCourse = async (course) => {
     if (!jwt) { showMessage('Please connect your wallet first', 'warning'); return; }
     try {

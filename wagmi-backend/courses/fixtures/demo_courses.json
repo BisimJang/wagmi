@@ -1,0 +1,113 @@
+[
+  {
+    "model": "courses.course",
+    "pk": 3,
+    "fields": {
+      "title": "Introduction to Web3",
+      "description": "Learn the basics of blockchain, smart contracts, and decentralized apps.",
+      "created_at": "2025-01-01T10:00:00Z",
+      "instructor": 1
+    }
+  },
+  {
+    "model": "courses.course",
+    "pk": 4,
+    "fields": {
+      "title": "Python for Beginners",
+      "description": "A beginner-friendly guide to Python programming.",
+      "created_at": "2025-01-02T10:00:00Z",
+      "instructor": 1
+    }
+  },
+  {
+    "model": "courses.course",
+    "pk": 5,
+    "fields": {
+      "title": "UI/UX Design Fundamentals",
+      "description": "Learn how to design beautiful and user-friendly interfaces.",
+      "created_at": "2025-01-03T10:00:00Z",
+      "instructor": 1
+    }
+  },
+
+  {
+    "model": "courses.section",
+    "pk": 3,
+    "fields": {
+      "course": 3,
+      "title": "Getting Started with Web3",
+      "order": 1
+    }
+  },
+  {
+    "model": "courses.section",
+    "pk": 4,
+    "fields": {
+      "course": 4,
+      "title": "Python Basics",
+      "order": 1
+    }
+  },
+  {
+    "model": "courses.section",
+    "pk": 5,
+    "fields": {
+      "course": 5,
+      "title": "Design Principles",
+      "order": 1
+    }
+  },
+
+  {
+    "model": "courses.lesson",
+    "pk": 3,
+    "fields": {
+      "section": 3,
+      "title": "What is Blockchain?",
+      "content": "Blockchain is a decentralized ledger...",
+      "order": 1
+    }
+  },
+  {
+    "model": "courses.lesson",
+    "pk": 4,
+    "fields": {
+      "section": 3,
+      "title": "Smart Contracts",
+      "content": "Smart contracts are self-executing programs...",
+      "order": 2
+    }
+  },
+  {
+    "model": "courses.lesson",
+    "pk": 5,
+    "fields": {
+      "section": 4,
+      "title": "Python Syntax",
+      "content": "Learn about variables, loops, and functions...",
+      "order": 1
+    }
+  },
+  {
+    "model": "courses.lesson",
+    "pk": 6,
+    "fields": {
+      "section": 5,
+      "title": "Color Theory",
+      "content": "Colors influence user emotions...",
+      "order": 1
+    }
+  },
+
+  {
+    "model": "courses.enrollment",
+    "pk": 3,
+    "fields": {
+      "user": 1,
+      "course": 3,
+      "wallet_address": "0xb54147444ac655E2A2E68B325CaA9b1CBEE34D30",
+      "tx_hash": "0xabc123demo001",
+      "enrolled_at": "2025-01-05T12:00:00Z"
+    }
+  }
+]
