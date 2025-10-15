@@ -51,7 +51,8 @@ class LessonProgress(models.Model):
         unique_together = ('user', 'lesson')
 
     def __str__(self):
-        return f"{self.user.username} - {self.lesson.title} ({self.progress}%)"
+        return f"{self.user.address} - {self.lesson.title} ({self.progress}%)"
+
 
 
 

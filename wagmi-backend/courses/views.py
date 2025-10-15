@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import viewsets, permissions
 from .models import Course, Section, Lesson, Enrollment, Certificate, LessonProgress
+from django.core.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import (
     CourseSerializer,
@@ -12,6 +13,7 @@ from .serializers import (
     EnrollmentSerializer,
     CertificateSerializer,
     LessonProgressSerializer,
+    UserProfileSerializer,
 )
 
 
@@ -22,6 +24,8 @@ class CourseListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Only instructors can create courses.")
         serializer.save(instructor=self.request.user)
 
 
@@ -46,7 +50,11 @@ def enroll_in_course(request, course_id):
     # Check if already enrolled
     enrollment, created = Enrollment.objects.get_or_create(
         course=course,
-        user=request.user
+        user=request.user,
+        defaults={
+            "wallet_address": request.user.address,
+            "tx_hash": f"0xmocktx{course_id}{request.user.id}"
+        }
     )
 
     if not created:
@@ -79,7 +87,12 @@ def issue_certificate(request, course_id):
     # Check if the user already has a certificate for this course
     certificate, created = Certificate.objects.get_or_create(
         course=course,
-        user=request.user
+        user=request.user,
+        defaults={
+            "wallet_address": request.user.address,
+            "token_id": f"NFT{course_id}{request.user.id}",
+            "tx_hash": "0xmockcerttx123456789"
+        }
     )
 
     if not created:
@@ -109,3 +122,18 @@ class LessonProgressViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Automatically set the user to the logged-in wallet
         serializer.save(user=self.request.user)
+
+@api_view(["GET", "PATCH"])
+@permission_classes([IsAuthenticated])
+def me(request):
+    if request.method == "GET":
+        serializer = UserProfileSerializer(request.user, context={"request": request})
+        return Response(serializer.data)
+
+    elif request.method == "PATCH":
+        serializer = UserProfileSerializer(
+            request.user, data=request.data, partial=True, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)

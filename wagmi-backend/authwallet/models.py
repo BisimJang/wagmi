@@ -33,7 +33,14 @@ class WalletNonce(models.Model):
 
 
 class WalletUser(AbstractBaseUser, PermissionsMixin):
+    first_name = models.CharField(max_length=30, blank=True, null=True)
+    last_name = models.CharField(max_length=30, blank=True, null=True)
+    display_name = models.CharField(max_length=255, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    profile_image = models.URLField(blank=True, null=True)
+
     address = models.CharField(max_length=255, unique=True)
+
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
@@ -44,3 +51,8 @@ class WalletUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.address
+
+    @property
+    def full_name(self):
+        return f"{self.first_name or ''} {self.last_name or ''}".strip()
+
