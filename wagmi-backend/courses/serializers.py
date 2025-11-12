@@ -30,11 +30,19 @@ class SectionSerializer(serializers.ModelSerializer):
 class CourseSerializer(serializers.ModelSerializer):
     sections = SectionSerializer(many=True, read_only=True)
     instructor = serializers.StringRelatedField(read_only=True)
+    name = serializers.CharField(source='title', read_only=True)
+    imageUrl = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
-        fields = ["id", "title", "description", "instructor", "price", "created_at", "sections"]
+        fields = ["id", "name", "description", "instructor", "price", "created_at", "sections", "imageUrl"]
 
+    def get_imageUrl(self, obj):
+        """
+        Placeholder method to provide the course image URL.
+        Replace this logic with your actual image field access.
+        """
+        return f"https://picsum.photos/seed/{obj.id}/300/200"
 
 class EnrollmentSerializer(serializers.ModelSerializer):
     course_title = serializers.ReadOnlyField(source="course.title")

@@ -1,9 +1,9 @@
 // Course Card Component
 const CourseCard = ({ course, onEnroll, onViewDetails, enrollmentStatus }) => (
   <div className="course-card" onClick={() => onViewDetails(course.id)}>
-    // <div className="course-image" style={{ backgroundImage: `url('${course.imageUrl}')` }}></div>
+    <div className="course-image" style={{ backgroundImage: `url('${course.imageUrl}')` }}></div>
     <div className="course-content">
-      <h3 className="course-title">{course.title}</h3>
+      <h3 className="course-title">{course.name}</h3>
       <p className="course-description">{course.description}</p>
       <div className="course-price">{course.price} ETH</div>
       <div className="course-stats"><span>Active Course</span></div>
