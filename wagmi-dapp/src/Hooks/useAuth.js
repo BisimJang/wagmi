@@ -1,6 +1,6 @@
 // src/hooks/useAuth.js
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { apiCall } from '../api/api'; // Assuming api.js exists
 
@@ -9,13 +9,14 @@ export const useAuth = (loadUserData, showMessage) => {
   const { signMessageAsync } = useSignMessage();
   const [jwt, setJwt] = useState(null);
   const [authLoading, setAuthLoading] = useState(false);
+  const hasAttemptedAutoLogin = useRef(false);
 
   const verifyJWT = useCallback(async (token) => {
     if (!token) return false;
     try {
       await apiCall('/auth/verify/', { method: 'POST', body: JSON.stringify({ token }) });
       return true;
-    } catch(error) {
+    } catch (error) {
       // Token is invalid or expired
       return false;
     }
@@ -42,10 +43,10 @@ export const useAuth = (loadUserData, showMessage) => {
         method: 'POST',
         body: JSON.stringify({ address, signature }),
       });
-      
+
       setJwt(data.access);
       localStorage.setItem('jwt', data.access);
-      
+
       // 4. Load user data 
       await loadUserData(data.access);
       showMessage('Successfully logged in!', 'success');
@@ -63,26 +64,31 @@ export const useAuth = (loadUserData, showMessage) => {
     const initAuth = async () => {
       if (!isConnected || !address) {
         setJwt(null);
+        hasAttemptedAutoLogin.current = false;
         return;
       }
-      
+
       const storedToken = localStorage.getItem('jwt');
-      
+
       if (storedToken) {
         const valid = await verifyJWT(storedToken);
         if (valid) {
           setJwt(storedToken);
           await loadUserData(storedToken);
           return;
+        } else {
+          localStorage.removeItem('jwt'); // Token is invalid/expired, remove it.
         }
       }
-      
-      // If no valid stored token, prompt for fresh login (via button click/manual trigger)
-      // NOTE: We don't automatically call loginWithWallet here to respect the user's explicit action.
+      // If no valid stored token, and we haven't already tried to auto-login during this session, prompt for fresh login
+      if (!hasAttemptedAutoLogin.current && !authLoading) {
+        hasAttemptedAutoLogin.current = true;
+        loginWithWallet();
+      }
     };
 
     initAuth();
-  }, [isConnected, address, verifyJWT, loadUserData]);
+  }, [isConnected, address, verifyJWT, loadUserData, loginWithWallet, authLoading]);
 
   return { jwt, authLoading, loginWithWallet };
 };

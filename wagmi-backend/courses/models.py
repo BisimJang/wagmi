@@ -14,6 +14,7 @@ class Course(models.Model):
         related_name="instructed_courses"
     )
     price = models.DecimalField(max_digits=20, decimal_places=8, default=0.00)
+    image_url = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -34,6 +35,7 @@ class Lesson(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField(blank=True, null=True)
     video_url = models.URLField(blank=True, null=True)
+    image_url = models.URLField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
 
     def __str__(self):
@@ -55,23 +57,26 @@ class LessonProgress(models.Model):
 
 
 
-
 class Enrollment(models.Model):
+    STATUS_CHOICES = [
+        ('enrolled', 'Enrolled'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="enrollments")
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="enrollments")
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="enrollments"
-    )
-    wallet_address = models.CharField(max_length=255)
-    tx_hash = models.CharField(max_length=200, unique=True)
+    wallet_address = models.CharField(max_length=42)
+    tx_hash = models.CharField(max_length=66, unique=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='enrolled')
     enrolled_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        unique_together = ('course', 'user')
+        unique_together = ('user', 'course')
 
     def __str__(self):
-        return f"{self.user} -> {self.course.title}"
+        return f"{self.user} - {self.course.title} ({self.status})"
 
 
 class Certificate(models.Model):

@@ -8,16 +8,18 @@ from .views import (
     LessonProgressViewSet,
     enroll_in_course, 
     issue_certificate,
-    me
+    me,
+    LessonsAndProgressView, 
+    complete_lesson
 )
 
 # Router for viewsets (only lesson progress for now)
 router = DefaultRouter()
-router.register(r'lesson-progress', LessonProgressViewSet, basename='lesson-progress')
+# router.register(r'lesson-progress', LessonProgressViewSet, basename='lesson-progress')
 
 urlpatterns = [
     path('', include(router.urls)),
-
+    path("courses/<int:course_id>/lessons_and_progress/", LessonsAndProgressView.as_view(), name="course-lessons-progress"),
     # Courses
     path("courses/", CourseListCreateView.as_view(), name="course-list"),
     path("courses/<int:pk>/", CourseDetailView.as_view(), name="course-detail"),
@@ -28,6 +30,8 @@ urlpatterns = [
     path("enrollments/", EnrollmentListCreateView.as_view(), name="enrollment-list"),
     path("certificates/", CertificateListCreateView.as_view(), name="certificate-list"),
 
+    path("lessons/<int:lesson_id>/complete/", complete_lesson, name="lesson-complete"), # Needed for markLessonCompleted in frontend hook
+    
     #user profile
     path("me/", me, name="user-profile"),
 ]

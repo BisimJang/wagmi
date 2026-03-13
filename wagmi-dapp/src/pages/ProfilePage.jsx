@@ -39,11 +39,11 @@ const ProfilePage = ({ isConnected, address, user, certificates, loading }) => {
                     </div>
                     <div className="info-item">
                         <div className="info-label">Enrolled Courses</div>
-                        <div className="info-value">{user.enrolledCourses?.length || 0}</div>
+                        <div className="info-value">{user.enrollments?.length || 0}</div>
                     </div>
                     <div className="info-item">
                         <div className="info-label">Completed Courses</div>
-                        <div className="info-value">{user.completedCourses?.length || 0}</div>
+                        <div className="info-value">{certificates.length}</div>
                     </div>
                     <div className="info-item">
                         <div className="info-label">Certificates</div>

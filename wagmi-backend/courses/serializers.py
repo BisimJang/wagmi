@@ -7,7 +7,7 @@ User = get_user_model()
 class LessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
-        fields = ["id", "title", "content", "video_url", "order"]
+        fields = ["id", "title", "content", "video_url", "image_url", "order"]
 
 
 class LessonProgressSerializer(serializers.ModelSerializer):
@@ -32,17 +32,24 @@ class CourseSerializer(serializers.ModelSerializer):
     instructor = serializers.StringRelatedField(read_only=True)
     name = serializers.CharField(source='title', read_only=True)
     imageUrl = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
         fields = ["id", "name", "description", "instructor", "price", "created_at", "sections", "imageUrl"]
 
+    def get_price(self, obj):
+        """
+        ensures price is formatted as a string with 18 decimal places
+        to match the ethereum standard (1 eth = 10^18 wei), prventing precision errors.
+        """
+        return "{:.8f}".format(obj.price)
+
     def get_imageUrl(self, obj):
         """
-        Placeholder method to provide the course image URL.
-        Replace this logic with your actual image field access.
+        Returns the course image_url if present, else falls back to a placeholder.
         """
-        return f"https://picsum.photos/seed/{obj.id}/300/200"
+        return obj.image_url if obj.image_url else f"https://picsum.photos/seed/{obj.id}/300/200"
 
 class EnrollmentSerializer(serializers.ModelSerializer):
     course_title = serializers.ReadOnlyField(source="course.title")
@@ -104,3 +111,27 @@ class UserProfileSerializer(serializers.ModelSerializer):
             }
             for c in Certificate.objects.filter(user=obj)
         ]
+    
+class CurriculumLessonSerializer(serializers.ModelSerializer):
+    """
+    Serializes Lesson data, including necessary Section fields for frontend grouping.
+    These fields are critical for the React frontend's 'groupLessonsBySection' logic.
+    """
+    # Flattens Section ForeignKey fields onto the Lesson object
+    section_id = serializers.ReadOnlyField(source='section.id')
+    section_title = serializers.ReadOnlyField(source='section.title')
+    section_order = serializers.ReadOnlyField(source='section.order')
+    
+    class Meta:
+        model = Lesson
+        fields = [
+            'id', 'title', 'content', 'video_url', 'image_url', 'order',
+            'section_id', 'section_title', 'section_order'
+        ]
+
+class LessonProgressSerializer(serializers.ModelSerializer):
+    """Serializes a user's progress for a single lesson."""
+    class Meta:
+        model = LessonProgress
+        fields = ['lesson', 'progress', 'completed']
+        read_only_fields = ['lesson', 'user']
