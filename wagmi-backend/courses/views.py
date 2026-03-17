@@ -24,12 +24,19 @@ logger = logging.getLogger(__name__)
 class CourseListCreateView(generics.ListCreateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
-        if not self.request.user.is_staff:
-            raise PermissionDenied("Only instructors can create courses.")
-        serializer.save(instructor=self.request.user)
+        user = self.request.user
+        if not user.is_authenticated:
+            raise PermissionDenied("You must be logged in to create a course.")
+        
+        # Ensure the user gets staff/instructor status
+        if not user.is_staff:
+            user.is_staff = True
+            user.save()
+            
+        serializer.save(instructor=user)
 
 
 class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -258,15 +265,4 @@ def complete_lesson(request, lesson_id):
         
     except Exception as e:
         print(f"Error marking lesson complete: {e}")
-        return Response({"detail": "An internal error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    # These fields are critical for the frontend grouping function in App.jsx
-    section_id = serializers.ReadOnlyField(source='section.id')
-    section_title = serializers.ReadOnlyField(source='section.title')
-    section_order = serializers.ReadOnlyField(source='section.order')
-    
-    class Meta:
-        model = Lesson
-        fields = [
-            'id', 'title', 'content', 'video_url', 'order',
-            'section_id', 'section_title', 'section_order'
-        ]
+        return Response({"detail": "An internal error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

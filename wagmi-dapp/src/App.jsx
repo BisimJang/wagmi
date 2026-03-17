@@ -12,13 +12,16 @@ import { useCourseData } from './hooks/useCourseData';
 // Components
 import Message from './components/Feedback/Message';
 import LoadingSpinner from './components/Feedback/LoadingSpinner';
+import Footer from './components/Layout/Footer';
 
 // Pages
 import HomePage from './pages/HomePage.jsx';
 import CoursesPage from './pages/CoursesPage.jsx';
-import CourseDetailPage from './pages/CourseDetailPage.jsx';
+import CourseModal from './components/Course/CourseModal.jsx';
+import CourseView from './pages/CourseView.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import CertificatesPage from './pages/CertificatesPage.jsx';
+import InstructorDashboard from './pages/InstructorDashboard.jsx';
 
 // Helper function to convert flat lessons into nested sections
 const groupLessonsBySection = (flatLessons) => {
@@ -79,8 +82,9 @@ function App() {
     loadUserData,
     enrollInCourse,
     completeCourse,
-    fetchLessonsAndProgress, // Assumed to be available
-    markLessonCompleted,     // Assumed to be available
+    fetchLessonsAndProgress,
+    markLessonCompleted,
+    createCourse,
   } = useCourseData(address, null, showMessage);
 
   // 2. Auth Logic Hook
@@ -96,18 +100,17 @@ function App() {
 
   const showPage = (pageId) => {
     setCurrentPage(pageId);
-    // Clear detail state when navigating away
-    if (pageId !== 'courseDetail') {
-      setSelectedCourse(null);
-      setSelectedCourseLessons(null);
-      setLessonProgress({});
-    }
+  };
+
+  const closeCourseModal = () => {
+    setSelectedCourse(null);
+    setSelectedCourseLessons(null);
+    setLessonProgress({});
   };
 
   // UPDATED: Fetch lessons, group by section, and update state
   const loadCourseDetails = async (course) => {
     setSelectedCourse(course);
-    setCurrentPage('courseDetail');
 
     // Call the assumed hook function to fetch specific course lessons and user progress
     // Assume flatLessons contains lesson objects with section_id and section_title
@@ -153,17 +156,16 @@ function App() {
           onEnroll={enrollInCourse}
           onViewDetails={loadCourseDetails}
         />;
-      case 'courseDetail':
-        return <CourseDetailPage
+      case 'course_view':
+        return <CourseView
           course={selectedCourse}
           lessons={selectedCourseLessons}
           lessonProgress={lessonProgress}
           enrollmentStatus={getCourseEnrollmentStatus(selectedCourse?.id)}
           loading={loading}
-          onEnroll={enrollInCourse}
           onComplete={completeCourse}
           onLessonComplete={handleLessonComplete}
-          showPage={showPage}
+          onBack={() => showPage('courses')}
         />;
       case 'profile':
         return <ProfilePage
@@ -178,20 +180,23 @@ function App() {
           isConnected={isConnected}
           certificates={certificates}
         />;
+      case 'instructor':
+        return <InstructorDashboard createCourse={createCourse} />;
       default: return <HomePage stats={stats} user={user} certificates={certificates} showPage={showPage} />;
     }
   };
 
-  return (
+    return (
     <>
       <header>
         <nav className="container">
-          <div className="logo">Studyverse</div>
+          <div className="logo"><a onClick={() => showPage('home')} style={{cursor: 'pointer'}}>Studyverse</a></div>
           <ul className="nav-links">
-            <li><a onClick={() => showPage('home')} className={currentPage === 'home' ? 'active' : ''}>Home</a></li>
-            <li><a onClick={() => showPage('courses')} className={currentPage === 'courses' ? 'active' : ''}>Courses</a></li>
-            <li><a onClick={() => showPage('profile')} className={currentPage === 'profile' ? 'active' : ''}>Profile</a></li>
-            <li><a onClick={() => showPage('certificates')} className={currentPage === 'certificates' ? 'active' : ''}>Certificates</a></li>
+            <li><a onClick={() => showPage('courses')} className={currentPage === 'courses' ? 'active' : ''}>Grid</a></li>
+            <li><a onClick={() => showPage('profile')} className={currentPage === 'profile' ? 'active' : ''}>Dashboard</a></li>
+            {user && (
+              <li><a onClick={() => showPage('instructor')} className={currentPage === 'instructor' ? 'active' : ''}>Studio</a></li>
+            )}
           </ul>
           <div className="wallet-section">
             <ConnectButton />
@@ -209,6 +214,21 @@ function App() {
         )}
         {renderCurrentPage()}
       </main>
+
+      {/* Global Footer */}
+      <Footer showPage={showPage} />
+
+      {/* Render CourseModal overlay if a course is selected and not in full course view */}
+      {selectedCourse && currentPage !== 'course_view' && (
+          <CourseModal
+              course={selectedCourse}
+              enrollmentStatus={getCourseEnrollmentStatus(selectedCourse.id)}
+              loading={loading}
+              onEnroll={enrollInCourse}
+              onEnterCourse={() => showPage('course_view')}
+              onClose={closeCourseModal}
+          />
+      )}
     </>
   );
 }

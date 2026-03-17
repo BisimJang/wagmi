@@ -24,7 +24,7 @@ export const useCourseData = (address, jwt, showMessage) => {
         isReady,
         txHash,
         prepareError
-    } = useWeb3Enrollment(courseToEnroll?.price, courseToEnroll?.id); 
+    } = useWeb3Enrollment(); 
 
     // --- Core Data Fetching Functions ---
 
@@ -108,6 +108,35 @@ export const useCourseData = (address, jwt, showMessage) => {
     }, [showMessage]);
 
 
+    // --- Course Management ---
+    const createCourse = useCallback(async (courseData) => {
+        const token = localStorage.getItem('jwt');
+        if (!token) { showMessage('Please sign in to create a course', 'warning'); return null; }
+        
+        try {
+            setLoading(true);
+            showMessage('Creating course and syncing with blockchain...', 'info');
+            // Backend will handle the Web3 transaction via Django post_save signal
+            const newCourse = await apiCall('/courses/', {
+                method: 'POST',
+                body: JSON.stringify(courseData),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            showMessage('Course created successfully!', 'success');
+            await loadCourses(); // refresh the course list
+            return newCourse;
+        } catch (error) {
+            console.error('Course creation error:', error);
+            showMessage(`Failed to create course: ${error.message || 'Check console.'}`, 'error');
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    }, [showMessage, loadCourses]);
+
     // --- Enrollment Handler (Triggers Web3 Flow) ---
 
     const enrollInCourse = useCallback(async (course) => {
@@ -121,12 +150,18 @@ export const useCourseData = (address, jwt, showMessage) => {
             return;
         }
         
-        // 🚨 REFACTOR FIX: Removed setLoading(true) here. 
-        // Loading is managed by isWeb3Loading and the final combined state.
-        setCourseToEnroll(course);
+        setCourseToEnroll(course); // Keep it strictly for tracking the background API sync effect
         showMessage('Preparing wallet transaction...', 'info');
         
-    }, [showMessage, address]);
+        try {
+            if (typeof writeEnroll === 'function') {
+                await writeEnroll(course.id, course.price);
+            }
+        } catch (e) {
+            showMessage(`Transaction submission failed: ${e?.message || 'User rejected.'}`, 'error');
+            setCourseToEnroll(null);
+        }
+    }, [showMessage, address, writeEnroll]);
 
 
     const completeCourse = useCallback(async (courseId) => {
@@ -147,43 +182,7 @@ export const useCourseData = (address, jwt, showMessage) => {
     }, [loadUserData, showMessage]);
 
 
-    // ⚠️ Transaction Lifecycle Manager (Web3 Submission Effect)
-    useEffect(() => {
-        if (!courseToEnroll || isWeb3Loading) return;
-
-        if (!address) {
-            showMessage('Wallet disconnected. Please reconnect to enroll.', 'warning');
-            setCourseToEnroll(null);
-            // No need to call setLoading(false) as it wasn't called in enrollInCourse
-            return;
-        }
-
-        if (isReady && typeof writeEnroll === 'function') {
-            (async () => {
-                try {
-                    // Set loading state explicitly when the tx is submitted
-                    setLoading(true); 
-                    console.debug('Invoking writeEnroll for course:', courseToEnroll.id);
-                    await writeEnroll();
-                    showMessage('Confirm in wallet...', 'warning');
-                } catch (e) {
-                    showMessage(`Transaction submission failed: ${e?.message || 'User rejected.'}`, 'error');
-                    setCourseToEnroll(null);
-                    setLoading(false);
-                }
-            })();
-            return;
-        }
-        
-        if (isWeb3Error && !isWeb3Success) {
-            const errorMsg = prepareError ? `Preparation failed: ${prepareError.reason || prepareError.name}` : 'Configuration error.';
-            showMessage(errorMsg, 'error');
-            setCourseToEnroll(null);
-            // No need to call setLoading(false) here either
-            return;
-        }
-        
-    }, [courseToEnroll, isReady, isWeb3Success, isWeb3Error, isWeb3Loading, writeEnroll, showMessage, prepareError, address]);
+    // (Removed Web3 Submission Effect to prevent StrictMode double-firing)
 
 
     // ⚠️ Transaction Backend Sync Effect (Runs only AFTER successful transaction is mined)
@@ -246,6 +245,7 @@ export const useCourseData = (address, jwt, showMessage) => {
         enrollInCourse, 
         completeCourse,
         fetchLessonsAndProgress,
-        markLessonCompleted
+        markLessonCompleted,
+        createCourse
     };
 };

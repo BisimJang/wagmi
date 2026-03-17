@@ -34,9 +34,12 @@ class CourseSerializer(serializers.ModelSerializer):
     imageUrl = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
 
+    title = serializers.CharField(write_only=True)
+    image_url = serializers.URLField(write_only=True, required=False, allow_blank=True)
+
     class Meta:
         model = Course
-        fields = ["id", "name", "description", "instructor", "price", "created_at", "sections", "imageUrl"]
+        fields = ["id", "title", "name", "description", "instructor", "price", "created_at", "sections", "imageUrl", "image_url"]
 
     def get_price(self, obj):
         """

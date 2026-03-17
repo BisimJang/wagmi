@@ -149,3 +149,13 @@ SIMPLE_JWT = {
     'ACCESS TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH TOKEN_LIFETIME': timedelta(days=1),
 }
+
+# WEB3 CONFIGURATION
+import environ
+
+env = environ.Env()
+environ.Env.read_env(BASE_DIR / '.env')
+
+WEB3_PROVIDER_URI = env('SEPOLIA_RPC_URL', default='https://eth-sepolia.g.alchemy.com/v2/rTJTDkjJ0l8pHbi1tIDCp')
+WEB3_CONTRACT_ADDRESS = env('CONTRACT_ADDRESS', default='0xee905bF7719F83968A4B6287AF1651f7EF47b084')
+WEB3_OWNER_PRIVATE_KEY = env('OWNER_PRIVATE_KEY', default='')
