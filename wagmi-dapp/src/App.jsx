@@ -1,6 +1,6 @@
 // src/App.jsx
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
 import './App.css';
@@ -58,6 +58,18 @@ const groupLessonsBySection = (flatLessons) => {
 function App() {
   const { address, isConnected } = useAccount();
 
+  // --- Local Theme State ---
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+  };
+
   // --- Local State ---
   const [currentPage, setCurrentPage] = useState('home');
   const [message, setMessage] = useState(null);
@@ -85,6 +97,8 @@ function App() {
     fetchLessonsAndProgress,
     markLessonCompleted,
     createCourse,
+    createSection,
+    createLesson,
   } = useCourseData(address, null, showMessage);
 
   // 2. Auth Logic Hook
@@ -174,6 +188,8 @@ function App() {
           user={user}
           certificates={certificates}
           loading={loading}
+          theme={theme}
+          toggleTheme={toggleTheme}
         />;
       case 'certificates':
         return <CertificatesPage
@@ -181,7 +197,7 @@ function App() {
           certificates={certificates}
         />;
       case 'instructor':
-        return <InstructorDashboard createCourse={createCourse} />;
+        return <InstructorDashboard createCourse={createCourse} createSection={createSection} createLesson={createLesson} />;
       default: return <HomePage stats={stats} user={user} certificates={certificates} showPage={showPage} />;
     }
   };

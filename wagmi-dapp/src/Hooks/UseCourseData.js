@@ -115,8 +115,8 @@ export const useCourseData = (address, jwt, showMessage) => {
         
         try {
             setLoading(true);
-            showMessage('Creating course and syncing with blockchain...', 'info');
-            // Backend will handle the Web3 transaction via Django post_save signal
+            showMessage('Creating course...', 'info');
+            // Backend handles linking
             const newCourse = await apiCall('/courses/', {
                 method: 'POST',
                 body: JSON.stringify(courseData),
@@ -125,7 +125,7 @@ export const useCourseData = (address, jwt, showMessage) => {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            showMessage('Course created successfully!', 'success');
+            showMessage('Course details saved.', 'success');
             await loadCourses(); // refresh the course list
             return newCourse;
         } catch (error) {
@@ -136,6 +136,55 @@ export const useCourseData = (address, jwt, showMessage) => {
             setLoading(false);
         }
     }, [showMessage, loadCourses]);
+
+    const createSection = useCallback(async (courseId, title) => {
+        const token = localStorage.getItem('jwt');
+        if (!token) { showMessage('Please sign in to add sections', 'warning'); return null; }
+        
+        try {
+            setLoading(true);
+            const newSection = await apiCall('/sections/', {
+                method: 'POST',
+                body: JSON.stringify({ course: courseId, title: title, order: 0 }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            return newSection;
+        } catch (error) {
+            console.error('Section creation error:', error);
+            showMessage(`Failed to add section: ${error.message}`, 'error');
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    }, [showMessage]);
+
+    const createLesson = useCallback(async (sectionId, lessonData) => {
+        const token = localStorage.getItem('jwt');
+        if (!token) { showMessage('Please sign in to add lessons', 'warning'); return null; }
+        
+        try {
+            setLoading(true);
+            const newLesson = await apiCall('/lessons/', {
+                method: 'POST',
+                body: JSON.stringify({ section: sectionId, ...lessonData, order: 0 }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            showMessage('Lesson added.', 'success');
+            return newLesson;
+        } catch (error) {
+            console.error('Lesson creation error:', error);
+            showMessage(`Failed to add lesson: ${error.message}`, 'error');
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    }, [showMessage]);
 
     // --- Enrollment Handler (Triggers Web3 Flow) ---
 
@@ -235,7 +284,7 @@ export const useCourseData = (address, jwt, showMessage) => {
     // --- Final Return ---
     const combinedLoading = loading || isWeb3Loading;
 
-    return { 
+    return {
         user, 
         courses, 
         certificates, 
@@ -246,6 +295,8 @@ export const useCourseData = (address, jwt, showMessage) => {
         completeCourse,
         fetchLessonsAndProgress,
         markLessonCompleted,
-        createCourse
+        createCourse,
+        createSection,
+        createLesson
     };
 };

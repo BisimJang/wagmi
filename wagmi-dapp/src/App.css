@@ -360,3 +360,164 @@ main {
     display: none;
   }
 }
+
+/* NEW PROFILE LAYOUT */
+.profile-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  padding-bottom: 3rem;
+}
+
+.profile-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-card {
+  background: #fff;
+  border: 3px solid var(--border);
+  box-shadow: 6px 6px 0px var(--border);
+  padding: 1.5rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  font-size: 1.2rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  border-bottom: 3px solid var(--primary-color);
+  padding-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.info-block {
+  margin-bottom: 1.5rem;
+}
+.info-block:last-child {
+  margin-bottom: 0;
+}
+
+.wallet-copy-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--background);
+  border: 2px solid var(--border);
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.wallet-copy-container:hover {
+  background: var(--primary-color);
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.stat-box {
+  background: #fff;
+  border: 2px solid var(--border);
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 3px 3px 0px var(--border);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.course-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.course-list-item {
+  padding: 0.75rem;
+  border: 2px solid var(--border);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  background: #fff;
+  box-shadow: 2px 2px 0px var(--primary-color);
+}
+.course-list-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Optional Dark Theme Variables applied via data-theme */
+[data-theme='dark'] {
+  --background: #111111;
+  --surface: #222222;
+  --text: #ffffff;
+  --text-secondary: #cccccc;
+  --border: #ffffff;
+}
+body[data-theme='dark'] {
+  background-color: var(--background);
+  color: var(--text);
+}
+[data-theme='dark'] .profile-card,
+[data-theme='dark'] .stat-box,
+[data-theme='dark'] .course-list-item,
+[data-theme='dark'] .course-card,
+[data-theme='dark'] .form-container,
+[data-theme='dark'] .info-item,
+[data-theme='dark'] .btn {
+  background: var(--surface);
+  color: var(--text);
+}
+[data-theme='dark'] .course-card:hover,
+[data-theme='dark'] .info-item:hover,
+[data-theme='dark'] .btn:hover {
+  background: var(--primary-color);
+  color: #000;
+}
+[data-theme='dark'] .course-card:hover .course-price {
+  background: var(--surface);
+  color: var(--text);
+}
+[data-theme='dark'] .wallet-copy-container {
+  background: var(--surface);
+}
+[data-theme='dark'] .wallet-copy-container:hover {
+  background: var(--primary-color);
+  color: #000;
+}
+[data-theme='dark'] .wallet-copy-container:hover .btn-icon,
+[data-theme='dark'] .wallet-copy-container:hover .info-value {
+  color: #000;
+}

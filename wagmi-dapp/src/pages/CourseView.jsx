@@ -20,7 +20,8 @@ const CourseView = ({
             
             {/* HEROS HEADER BLOCK - GUMROAD STYLE */}
             <div style={{
-                background: '#fff',
+                background: 'var(--surface)',
+                color: 'var(--text)',
                 borderBottom: '6px solid #000',
                 padding: '4rem 1.5rem 3rem 1.5rem',
                 textAlign: 'center',
@@ -95,10 +96,10 @@ const CourseView = ({
             </div>
 
             {/* MAIN CONTENT SPLIT */}
-            <div className="container" style={{ maxWidth: '800px', paddingBottom: '6rem', paddingTop: '3rem' }}>
+            <div className="container" style={{ maxWidth: '1400px', paddingBottom: '6rem', paddingTop: '3rem' }}>
                 
                 {course.imageUrl && (
-                    <div style={{ border: '6px solid #000', marginBottom: '2.25rem', background: '#000' }}>
+                    <div style={{ border: '6px solid #000', marginBottom: '2.25rem', background: '#000', maxWidth: '800px', margin: '0 auto 2.25rem auto' }}>
                         <img 
                             src={course.imageUrl} 
                             alt={course.name} 
@@ -107,20 +108,20 @@ const CourseView = ({
                     </div>
                 )}
 
-                <h2 style={{ fontSize: '1.8rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '-1px', marginBottom: '1.5rem', borderBottom: '4px solid #000', paddingBottom: '0.5rem' }}>
+                <h2 style={{ fontSize: '1.8rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '-1px', marginBottom: '1.5rem', borderBottom: '4px solid #000', paddingBottom: '0.5rem', maxWidth: '800px', margin: '0 auto 1.5rem auto' }}>
                     COURSE MATERIAL
                 </h2>
 
                 {!isEnrolled && (
-                     <div style={{ background: '#000', color: '#ff0000', padding: '1.15rem', border: '3px solid #000', marginBottom: '1.5rem' }}>
+                     <div style={{ background: '#000', color: '#ff0000', padding: '1.15rem', border: '3px solid #000', marginBottom: '1.5rem', maxWidth: '800px', margin: '0 auto 1.5rem auto' }}>
                          <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase' }}>⚠️ UNAUTHORIZED ACCESS</h3>
                          <p style={{ marginTop: '0.5rem', color: '#fff', fontSize: '0.85rem' }}>You must be enrolled to view the full lesson content.</p>
                      </div>
                 )}
 
-                {/* LINEAR CURRICULUM FEED */}
+                {/* LINEAR CURRICULUM FEED - FULL WIDTH */}
                 {isEnrolled && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
                         {lessons?.sort((a, b) => a.order - b.order).map((section, sectionIndex) => (
                             <article key={section.id} style={{ position: 'relative' }}>
                                 {/* SECTION HEADER BLOCK */}
@@ -137,7 +138,7 @@ const CourseView = ({
                                 </div>
 
                                 {/* LESSONS LIST IN THE SECTION */}
-                                <div style={{ border: '3px solid #000', background: '#fff' }}>
+                                <div style={{ border: '3px solid #000', background: 'var(--surface)', color: 'var(--text)' }}>
                                     {section.lessons?.sort((a, b) => a.order - b.order).map((lesson, lessonIndex) => {
                                         const progress = lessonProgress?.[lesson.id] || {};
                                         const isCompleted = progress.completed;
@@ -145,11 +146,11 @@ const CourseView = ({
 
                                         return (
                                             <div key={lesson.id} style={{ 
-                                                padding: '1.15rem', 
+                                                padding: '2rem', 
                                                 borderBottom: isLast ? 'none' : '3px solid #000'
                                             }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.15rem' }}>
-                                                    <h4 style={{ fontSize: '0.9rem', fontWeight: '900', textTransform: 'uppercase' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '2px solid var(--border)', paddingBottom: '0.5rem' }}>
+                                                    <h4 style={{ fontSize: '1.1rem', fontWeight: '900', textTransform: 'uppercase' }}>
                                                         {lesson.title}
                                                     </h4>
                                                     {isCompleted && (
@@ -160,49 +161,69 @@ const CourseView = ({
                                                 </div>
 
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
-                                                    {lesson.video_url && (
-                                                        <div style={{ border: '3px solid #000', background: '#000', padding: '0', aspectRatio: '16/9' }}>
-                                                            <iframe 
-                                                                src={lesson.video_url} 
-                                                                title={lesson.title} 
-                                                                frameBorder="0" 
-                                                                allowFullScreen
-                                                                style={{ width: '100%', height: '100%', display: 'block' }}
-                                                            ></iframe>
-                                                        </div>
-                                                    )}
+                                                    {/* Side-by-Side Flex Container (Wider Layout) */}
+                                                    <div style={{ 
+                                                        display: 'flex', 
+                                                        flexDirection: lessonIndex % 2 === 0 ? 'row' : 'row-reverse',
+                                                        gap: '2.5rem',
+                                                        alignItems: 'flex-start',
+                                                        flexWrap: 'wrap' // Ensures it stack on smaller screens
+                                                    }}>
+                                                        
+                                                        {/* Media Column (Video/Image) */}
+                                                        { (lesson.video_url || lesson.image_url) && (
+                                                            <div style={{ flex: '1.5 1 400px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                                {lesson.video_url && (
+                                                                    <div style={{ border: '3px solid #000', background: '#000', padding: '0', aspectRatio: '16/9', width: '100%' }}>
+                                                                        <iframe 
+                                                                            src={lesson.video_url} 
+                                                                            title={lesson.title} 
+                                                                            frameBorder="0" 
+                                                                            allowFullScreen
+                                                                            style={{ width: '100%', height: '100%', display: 'block' }}
+                                                                        ></iframe>
+                                                                    </div>
+                                                                )}
 
-                                                    {lesson.image_url && (
-                                                        <div style={{ border: '3px solid #000' }}>
-                                                            <img 
-                                                                src={lesson.image_url} 
-                                                                alt={lesson.title} 
-                                                                style={{ width: '100%', display: 'block', filter: 'grayscale(100%) contrast(150%)' }} 
-                                                            />
-                                                        </div>
-                                                    )}
+                                                                {lesson.image_url && (
+                                                                    <div style={{ border: '3px solid #000', width: '100%' }}>
+                                                                        <img 
+                                                                            src={lesson.image_url} 
+                                                                            alt={lesson.title} 
+                                                                            style={{ width: '100%', display: 'block', filter: 'grayscale(100%) contrast(150%)' }} 
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
 
-                                                    {lesson.content && (
-                                                        <div style={{ 
-                                                            fontSize: '0.85rem', 
-                                                            lineHeight: '1.6', 
-                                                            fontWeight: '600', 
-                                                            borderLeft: '3px solid var(--primary-color)',
-                                                            background: '#fafafa',
-                                                            padding: '1.15rem'
-                                                        }}>
-                                                            {lesson.content}
-                                                        </div>
-                                                    )}
+                                                        {/* Text Content Column */}
+                                                        {lesson.content && (
+                                                            <div className="lesson-content-block" style={{ 
+                                                                flex: '1 1 300px',
+                                                                fontSize: '1rem', 
+                                                                lineHeight: '1.8', 
+                                                                fontWeight: '600', 
+                                                                borderLeft: lessonIndex % 2 === 0 ? '4px solid var(--primary-color)' : 'none',
+                                                                borderRight: lessonIndex % 2 !== 0 ? '4px solid var(--primary-color)' : 'none',
+                                                                padding: '0 2rem',
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                justifyContent: 'flex-start'
+                                                            }}>
+                                                                {lesson.content}
+                                                            </div>
+                                                        )}
+                                                    </div>
 
                                                     {/* ACTION BAR FOR LESSON */}
                                                     {!isCompleted && (
-                                                        <div style={{ marginTop: '0.5rem' }}>
+                                                        <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
                                                             <button 
                                                                 onClick={() => onLessonComplete(lesson.id)}
                                                                 className="btn-secondary"
                                                                 disabled={loading}
-                                                                style={{ width: '100%', textAlign: 'center', padding: '0.6rem', fontSize: '0.85rem' }}
+                                                                style={{ width: '100%', maxWidth: '400px', textAlign: 'center', padding: '0.8rem', fontSize: '0.95rem' }}
                                                             >
                                                                 {loading ? <LoadingSpinner /> : 'MARK LESSON COMPLETE'}
                                                             </button>
@@ -220,13 +241,13 @@ const CourseView = ({
 
                 {/* FINAL COMPLETE BUTTON AT THE BOTTOM OF THE FEED */}
                 {isEnrolled && enrollmentStatus !== 'completed' && (
-                    <div style={{ textAlign: 'center', marginTop: '3rem', padding: '2.25rem', background: '#000', color: '#fff', border: '3px solid #000' }}>
-                        <h2 style={{ fontSize: '1.5rem', textTransform: 'uppercase', marginBottom: '1.15rem' }}>Ready to Graduate?</h2>
+                    <div style={{ textAlign: 'center', marginTop: '4rem', padding: '3rem', background: '#000', color: '#fff', border: '3px solid #000', maxWidth: '800px', margin: '4rem auto 0 auto' }}>
+                        <h2 style={{ fontSize: '1.8rem', textTransform: 'uppercase', marginBottom: '1.5rem' }}>Ready to Graduate?</h2>
                         <button 
                             onClick={() => onComplete(course.id)} 
                             className="btn"
                             disabled={loading}
-                            style={{ padding: '0.9rem 2.25rem', fontSize: '0.9rem' }}
+                            style={{ padding: '1rem 2.5rem', fontSize: '1.1rem' }}
                         >
                             {loading ? <LoadingSpinner /> : 'FINALIZE & MINT CERTIFICATE'}
                         </button>
