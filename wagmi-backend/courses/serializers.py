@@ -5,9 +5,11 @@ from .models import Course, Section, Lesson, Enrollment, Certificate, LessonProg
 User = get_user_model()
 
 class LessonSerializer(serializers.ModelSerializer):
+    section = serializers.PrimaryKeyRelatedField(queryset=Section.objects.all(), write_only=True)
+
     class Meta:
         model = Lesson
-        fields = ["id", "title", "content", "video_url", "image_url", "order"]
+        fields = ["id", "section", "title", "content", "video_url", "image_url", "order"]
 
 
 class LessonProgressSerializer(serializers.ModelSerializer):
@@ -21,10 +23,11 @@ class LessonProgressSerializer(serializers.ModelSerializer):
 
 class SectionSerializer(serializers.ModelSerializer):
     lessons = LessonSerializer(many=True, read_only=True)
+    course = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all(), write_only=True)
 
     class Meta:
         model = Section
-        fields = ["id", "title", "order", "lessons"]
+        fields = ["id", "course", "title", "order", "lessons"]
 
 
 class CourseSerializer(serializers.ModelSerializer):

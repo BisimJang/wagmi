@@ -47,39 +47,25 @@ class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
 class SectionListCreateView(generics.ListCreateAPIView):
     queryset = Section.objects.all()
     serializer_class = SectionSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        user = self.request.user
-        if not user.is_authenticated:
-            raise PermissionDenied("You must be logged in to create a section.")
-        
-        # Ensure the course instructor matches the requesting user
-        course_id = self.request.data.get('course')
-        course = get_object_or_404(Course, id=course_id)
-        if course.instructor != user:
-             raise PermissionDenied("Only the instructor of this course can add sections.")
-             
-        serializer.save(course=course)
+        course = serializer.validated_data.get('course')
+        if course.instructor != self.request.user:
+            raise PermissionDenied("Only the instructor of this course can add sections.")
+        serializer.save()
 
 
 class LessonListCreateView(generics.ListCreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        user = self.request.user
-        if not user.is_authenticated:
-            raise PermissionDenied("You must be logged in to create a lesson.")
-        
-        # Verify ownership via Section -> Course
-        section_id = self.request.data.get('section')
-        section = get_object_or_404(Section, id=section_id)
-        if section.course.instructor != user:
-             raise PermissionDenied("Only the instructor of this course can add lessons.")
-             
-        serializer.save(section=section)
+        section = serializer.validated_data.get('section')
+        if section.course.instructor != self.request.user:
+            raise PermissionDenied("Only the instructor of this course can add lessons.")
+        serializer.save()
 
 
 class EnrollmentListCreateView(generics.ListCreateAPIView):
