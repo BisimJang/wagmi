@@ -1,5 +1,6 @@
 import React from 'react';
 import LoadingSpinner from '../Feedback/LoadingSpinner';
+import BrutalistButton from '../UI/BrutalistButton';
 
 const CourseModal = ({ 
     course, 
@@ -15,37 +16,34 @@ const CourseModal = ({
     const renderActionButton = () => {
         if (enrollmentStatus === 'completed') {
              return (
-                 <button 
+                 <BrutalistButton 
                     onClick={onEnterCourse}
-                    className="btn" 
-                    style={{ background: '#fff', color: '#000', width: '100%', maxWidth: '400px', fontSize: '1rem', padding: '1rem' }}
+                    style={{ background: '#fff', color: '#000', maxWidth: '400px' }}
                  >
                      REVIEW COURSE (COMPLETED)
-                 </button>
+                 </BrutalistButton>
              );
         }
         
         if (enrollmentStatus === 'enrolled') {
              return (
-                 <button 
+                 <BrutalistButton 
                     onClick={onEnterCourse}
-                    className="btn" 
-                    style={{ background: '#39ff14', color: '#000', width: '100%', maxWidth: '400px', fontSize: '1rem', padding: '1rem' }}
+                    style={{ background: 'var(--primary-color)', color: '#000', maxWidth: '400px' }}
                  >
                      ENTER COURSE &rarr;
-                 </button>
+                 </BrutalistButton>
              );
         }
 
         return (
-            <button 
+            <BrutalistButton 
                 onClick={() => onEnroll(course)} 
-                className="btn" 
-                style={{ fontSize: '1rem', padding: '1rem 3rem', width: '100%', maxWidth: '400px' }}
+                style={{ maxWidth: '400px' }}
                 disabled={loading}
             >
                 {loading ? <LoadingSpinner /> : `ENROLL FOR ${course.price} ETH`}
-            </button>
+            </BrutalistButton>
         );
     };
 

@@ -8,30 +8,33 @@ import {
   RainbowKitProvider,
 } from "@rainbow-me/rainbowkit";
 import { createConfig, http, WagmiProvider } from "wagmi";
-import { mainnet, sepolia } from "wagmi/chains";
+import { mainnet, sepolia, base, polygon, arbitrum, optimism } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // 1. Create QueryClient
 const queryClient = new QueryClient();
 
 // 2. Define chains
-const chains = [mainnet, sepolia];
+const chains = [mainnet, sepolia, base, polygon, arbitrum, optimism];
 
 // 3. Wallet connectors
 const { connectors } = getDefaultWallets({
-  appName: "walletconnect",
+  appName: "Studyverse",
   projectId: "5ce6c08905bb8e76e534b978151b1989", // your actual WC projectId
   chains,
 });
 
 // 4. Wagmi config
 const config = createConfig({
-  autoConnect: true,
   connectors,
   chains,
   transports: {
     [mainnet.id]: http(),
     [sepolia.id]: http(),
+    [base.id]: http(),
+    [polygon.id]: http(),
+    [arbitrum.id]: http(),
+    [optimism.id]: http(),
   },
 });
 

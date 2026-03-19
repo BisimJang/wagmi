@@ -1,5 +1,6 @@
 // src/pages/InstructorDashboard.jsx
 import React, { useState } from 'react';
+import BrutalistButton from '../components/UI/BrutalistButton';
 
 const InstructorDashboard = ({ createCourse, createSection, createLesson }) => {
 
@@ -120,9 +121,9 @@ const InstructorDashboard = ({ createCourse, createSection, createLesson }) => {
                                         <label style={{ fontWeight: '900', fontSize: '0.9rem', textTransform: 'uppercase' }}>Course Image URL</label>
                                         <input type="url" name="image_url" value={formData.image_url} onChange={handleChange} style={{ padding: '0.8rem', border: '3px solid var(--border)', background: 'var(--background)', color: 'var(--text)', fontSize: '1rem', fontFamily: 'inherit', fontWeight: '600' }} placeholder="https://..." />
                                     </div>
-                                    <button type="submit" className="btn" style={{ marginTop: '1rem', width: '100%', padding: '1rem', fontSize: '1rem' }}>
-                                        SAVE DRAFT & CONTINUE
-                                    </button>
+                                    <BrutalistButton type="submit" style={{ marginTop: '1rem' }}>
+                                        MINT COURSE TO BLOCKCHAIN
+                                    </BrutalistButton>
                                 </form>
                             ) : (
                                 <div style={{ fontSize: '1.2rem', fontWeight: '600' }}>
@@ -167,14 +168,14 @@ const InstructorDashboard = ({ createCourse, createSection, createLesson }) => {
                                                     <input type="url" name="video_url" value={lessonData.video_url} onChange={handleLessonChange} placeholder="Video URL (Optional)" style={{ padding: '0.5rem', border: '2px solid var(--border)', background: 'var(--surface)', color: 'var(--text)'}} />
                                                     <input type="url" name="image_url" value={lessonData.image_url} onChange={handleLessonChange} placeholder="Image URL (Optional)" style={{ padding: '0.5rem', border: '2px solid var(--border)', background: 'var(--surface)', color: 'var(--text)'}} />
                                                     <div style={{ display: 'flex', gap: '1rem' }}>
-                                                        <button className="btn" onClick={handleAddLesson} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>Save Lesson</button>
-                                                        <button className="btn" onClick={() => setActiveLessonSectionId(null)} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: 'transparent', color: 'var(--text)' }}>Cancel</button>
+                                                        <BrutalistButton onClick={handleAddLesson} style={{ flex: 1 }}>SAVE LESSON</BrutalistButton>
+                                                        <BrutalistButton onClick={() => setActiveLessonSectionId(null)} style={{ flex: 1, background: 'var(--surface)', color: 'var(--text)' }}>CANCEL</BrutalistButton>
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <button className="btn" onClick={() => setActiveLessonSectionId(section.id)} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: 'transparent', color: 'var(--text)', border: '2px dashed var(--border)' }}>
+                                                <BrutalistButton onClick={() => setActiveLessonSectionId(section.id)} style={{ background: 'transparent', color: 'var(--text)', border: '2px dashed var(--border)', boxShadow: 'none' }}>
                                                     + ADD CONTENT (TEXT/VIDEO)
-                                                </button>
+                                                </BrutalistButton>
                                             )}
                                         </div>
                                     ))}
@@ -184,14 +185,14 @@ const InstructorDashboard = ({ createCourse, createSection, createLesson }) => {
                                         <div style={{ border: '3px dashed var(--primary-color)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                             <input type="text" value={newSectionTitle} onChange={(e) => setNewSectionTitle(e.target.value)} placeholder="Section Title (e.g. Introduction)" style={{ padding: '0.8rem', border: '3px solid var(--border)', background: 'var(--background)', color: 'var(--text)', fontSize: '1rem', fontWeight: 'bold' }} />
                                             <div style={{ display: 'flex', gap: '1rem' }}>
-                                                <button className="btn" onClick={handleAddSection} style={{ flex: 1 }}>SAVE SECTION</button>
-                                                <button className="btn" onClick={() => setAddingSection(false)} style={{ flex: 1, background: 'var(--surface)', color: 'var(--text)' }}>CANCEL</button>
+                                                <BrutalistButton onClick={handleAddSection} style={{ flex: 1 }}>SAVE SECTION</BrutalistButton>
+                                                <BrutalistButton onClick={() => setAddingSection(false)} style={{ flex: 1, background: 'var(--surface)', color: 'var(--text)' }}>CANCEL</BrutalistButton>
                                             </div>
                                         </div>
                                     ) : (
-                                        <button className="btn" onClick={() => setAddingSection(true)} style={{ width: '100%', padding: '1.5rem', fontSize: '1.2rem', background: 'var(--surface)', color: 'var(--text)', border: '3px dashed var(--border)' }}>
+                                        <BrutalistButton onClick={() => setAddingSection(true)} style={{ background: 'var(--surface)', color: 'var(--text)', border: '3px dashed var(--border)', boxShadow: 'none' }}>
                                             + ADD NEW SECTION
-                                        </button>
+                                        </BrutalistButton>
                                     )}
                                 </div>
                             </div>

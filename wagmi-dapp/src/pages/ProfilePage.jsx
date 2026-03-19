@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useBalance, useDisconnect } from 'wagmi';
+import { useAccount, useBalance, useDisconnect } from 'wagmi';
 import LoadingSpinner from '../components/Feedback/LoadingSpinner';
+import BrutalistButton from '../components/UI/BrutalistButton';
 
 const ProfilePage = ({ isConnected, address, user, certificates, loading, theme, toggleTheme }) => {
     const { data: balanceData } = useBalance({ address });
@@ -75,6 +76,13 @@ const ProfilePage = ({ isConnected, address, user, certificates, loading, theme,
                             </div>
 
                             <div className="info-block">
+                                <div className="info-label">Network</div>
+                                <div className="info-value" style={{ color: chain ? 'var(--primary-color)' : 'var(--error)' }}>
+                                    {chain ? chain.name : 'Unsupported Network'}
+                                </div>
+                            </div>
+
+                            <div className="info-block">
                                 <div className="info-label">Wallet Amount</div>
                                 <div className="info-value">
                                     {balanceData ? `${parseFloat(balanceData.formatted).toFixed(4)} ${balanceData.symbol}` : 'Loading...'}
@@ -82,9 +90,9 @@ const ProfilePage = ({ isConnected, address, user, certificates, loading, theme,
                             </div>
 
                             <div className="info-block" style={{ marginTop: '2rem' }}>
-                                <button className="btn btn-secondary" onClick={() => disconnect()} style={{ width: '100%' }}>
+                                <BrutalistButton onClick={() => disconnect()} style={{ background: 'var(--surface)', color: 'var(--text)' }}>
                                     Change Wallet
-                                </button>
+                                </BrutalistButton>
                             </div>
                         </div>
                     </div>
@@ -134,9 +142,9 @@ const ProfilePage = ({ isConnected, address, user, certificates, loading, theme,
 
                             <div className="info-block" style={{ marginTop: '1.5rem' }}>
                                 <div className="info-label">Theme Preference</div>
-                                <button className="btn btn-secondary" onClick={toggleTheme} style={{ marginTop: '0.5rem' }}>
+                                <BrutalistButton onClick={toggleTheme} style={{ marginTop: '0.5rem', background: 'var(--surface)', color: 'var(--text)' }}>
                                     Switch to {theme === 'light' ? 'Dark' : 'Light'} Mode
-                                </button>
+                                </BrutalistButton>
                             </div>
                         </div>
                     </div>

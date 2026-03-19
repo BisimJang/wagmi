@@ -1,5 +1,6 @@
 import React from 'react';
 import LoadingSpinner from '../components/Feedback/LoadingSpinner';
+import BrutalistButton from '../components/UI/BrutalistButton';
 
 const CourseView = ({ 
     course, 
@@ -219,14 +220,13 @@ const CourseView = ({
                                                     {/* ACTION BAR FOR LESSON */}
                                                     {!isCompleted && (
                                                         <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
-                                                            <button 
+                                                            <BrutalistButton 
                                                                 onClick={() => onLessonComplete(lesson.id)}
-                                                                className="btn-secondary"
                                                                 disabled={loading}
-                                                                style={{ width: '100%', maxWidth: '400px', textAlign: 'center', padding: '0.8rem', fontSize: '0.95rem' }}
+                                                                style={{ maxWidth: '400px' }}
                                                             >
                                                                 {loading ? <LoadingSpinner /> : 'MARK LESSON COMPLETE'}
-                                                            </button>
+                                                            </BrutalistButton>
                                                         </div>
                                                     )}
                                                 </div>
@@ -243,14 +243,12 @@ const CourseView = ({
                 {isEnrolled && enrollmentStatus !== 'completed' && (
                     <div style={{ textAlign: 'center', marginTop: '4rem', padding: '3rem', background: '#000', color: '#fff', border: '3px solid #000', maxWidth: '800px', margin: '4rem auto 0 auto' }}>
                         <h2 style={{ fontSize: '1.8rem', textTransform: 'uppercase', marginBottom: '1.5rem' }}>Ready to Graduate?</h2>
-                        <button 
+                        <BrutalistButton 
                             onClick={() => onComplete(course.id)} 
-                            className="btn"
                             disabled={loading}
-                            style={{ padding: '1rem 2.5rem', fontSize: '1.1rem' }}
                         >
                             {loading ? <LoadingSpinner /> : 'FINALIZE & MINT CERTIFICATE'}
-                        </button>
+                        </BrutalistButton>
                     </div>
                 )}
             </div>
