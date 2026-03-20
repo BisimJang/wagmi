@@ -10,14 +10,26 @@ contract CourseEnrollmentNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
     uint256 private _nextTokenId;
 
     mapping(address => bool) public enrolled;
+    mapping(uint256 => uint256) public coursePrices;
 
-    event Enrolled(address indexed student, uint256 tokenId);
+    event Enrolled(address indexed student, uint256 indexed courseId, uint256 amount);
+    event CoursePublished(address indexed school, uint256 indexed courseId, uint256 price);
 
-    constructor(uint256 _courseFee) ERC721("CourseEnrollmentNFT", "CENFT") Ownable(msg.sender) {
-        require(_courseFee > 0, "Fee must be > 0");
+    constructor(uint256 _courseFee) ERC721("StudyverseCourse", "SVC") Ownable(msg.sender) {
         courseFee = _courseFee;
     }
 
+    /**
+     * @dev Records a course price on-chain. Only the school (owner) can do this.
+     */
+    function publishCourse(uint256 _courseId, uint256 _price) external onlyOwner {
+        coursePrices[_courseId] = _price;
+        emit CoursePublished(msg.sender, _courseId, _price);
+    }
+
+    /**
+     * @dev Fallback enroll for previous compatibility or global fee.
+     */
     function enroll(string memory metadataURI) external payable nonReentrant {
         require(msg.value == courseFee, "Must pay exact course fee");
         require(!enrolled[msg.sender], "Already enrolled");
@@ -27,7 +39,7 @@ contract CourseEnrollmentNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
         _setTokenURI(tokenId, metadataURI);
 
         enrolled[msg.sender] = true;
-        emit Enrolled(msg.sender, tokenId);
+        emit Enrolled(msg.sender, 0, msg.value);
     }
 
     function withdraw() external onlyOwner nonReentrant {

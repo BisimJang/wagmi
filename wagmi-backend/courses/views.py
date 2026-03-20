@@ -74,7 +74,6 @@ class EnrollmentListCreateView(generics.ListCreateAPIView):
 
 
 @api_view(["POST"])
-
 def enroll_in_course(request, course_id):
     """
     Record an enrollment after frontend confirms on-chain tx.
@@ -255,8 +254,7 @@ def complete_lesson(request, lesson_id):
     Requires course_id in the request body for validation.
     """
     try:
-        # Assuming request.data is already parsed by DRF, but using json.loads 
-        # is safer if APIView isn't used. STICKING TO DRF request.data.
+        # Assuming request.data is already parsed by DRF
         data = request.data
         course_id = data.get('course_id') 
         
@@ -289,4 +287,38 @@ def complete_lesson(request, lesson_id):
         
     except Exception as e:
         print(f"Error marking lesson complete: {e}")
-        return Response({"detail": "An internal error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"detail": "An internal error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def confirm_mint(request, course_id):
+    """
+    Confirms that a course has been minted on the blockchain.
+    Expects tx_hash and school_address in the request body.
+    """
+    try:
+        course = Course.objects.get(id=course_id)
+        
+        # Only the instructor can confirm the mint
+        if course.instructor != request.user:
+            return Response({"error": "You are not the instructor of this course."}, status=status.HTTP_403_FORBIDDEN)
+        
+        tx_hash = request.data.get('tx_hash')
+        school_address = request.data.get('school_address')
+        
+        if not tx_hash:
+            return Response({"error": "Transaction hash is required."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        course.is_minted = True
+        course.tx_hash = tx_hash
+        course.school_address = school_address
+        course.save()
+        
+        return Response({
+            "message": "Course mint confirmed!",
+            "course_id": course.id,
+            "tx_hash": tx_hash
+        }, status=status.HTTP_200_OK)
+        
+    except Course.DoesNotExist:
+        return Response({"error": "Course not found."}, status=status.HTTP_404_NOT_FOUND)

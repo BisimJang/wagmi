@@ -1,8 +1,44 @@
-// 🎯 Contract Address - Updated to the newly deployed Sepolia address
+// 🎯 Contract Addresses
 export const COURSE_CONTRACT_ADDRESS = "0xee905bF7719F83968A4B6287AF1651f7EF47b084";
+export const SCHOOL_REGISTRY_ADDRESS = "0xfAB3D29B6e07a0DC50F213F4e2cb1506D86791a5";
 
-// 🎯 Contract ABI - Cleaned for required functions and mappings
+// 🎯 School Registry ABI (Factory)
+export const SCHOOL_REGISTRY_ABI = [
+    { "inputs": [{ "internalType": "address", "name": "_implementation", "type": "address" }], "stateMutability": "nonpayable", "type": "constructor" },
+    { "inputs": [{ "internalType": "string", "name": "_name", "type": "string" }], "name": "createSchool", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "nonpayable", "type": "function" },
+    {
+        "inputs": [
+            { "internalType": "string", "name": "_name", "type": "string" },
+            { "internalType": "uint256[]", "name": "_courseIds", "type": "uint256[]" },
+            { "internalType": "uint256[]", "name": "_prices", "type": "uint256[]" }
+        ], "name": "createSchoolWithCourses", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "nonpayable", "type": "function"
+    },
+    { "inputs": [{ "internalType": "address", "name": "_implementation", "type": "address" }], "name": "setImplementation", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+    { "inputs": [], "name": "implementation", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
+    { "inputs": [{ "internalType": "address", "name": "_creator", "type": "address" }], "name": "getSchoolsByCreator", "outputs": [{ "internalType": "address[]", "name": "", "type": "address[]" }], "stateMutability": "view", "type": "function" }
+];
+
+// 🎯 Sovereign School ABI (Instance / Clone)
+export const SCHOOL_ABI = [
+    { "inputs": [{ "internalType": "string", "name": "_name", "type": "string" }, { "internalType": "address", "name": "_owner", "type": "address" }], "name": "initialize", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+    { "inputs": [{ "internalType": "uint256", "name": "_courseId", "type": "uint256" }, { "internalType": "uint256", "name": "_price", "type": "uint256" }], "name": "publishCourse", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+    {
+        "inputs": [
+            { "internalType": "uint256[]", "name": "_courseIds", "type": "uint256[]" },
+            { "internalType": "uint256[]", "name": "_prices", "type": "uint256[]" }
+        ], "name": "bulkPublishCourses", "outputs": [], "stateMutability": "nonpayable", "type": "function"
+    },
+    { "inputs": [{ "internalType": "uint256", "name": "_courseId", "type": "uint256" }], "name": "enroll", "outputs": [], "stateMutability": "payable", "type": "function" },
+    { "inputs": [], "name": "withdraw", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+    { "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "name": "coursePrices", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+    { "inputs": [{ "internalType": "address", "name": "", "type": "address" }, { "internalType": "uint256", "name": "", "type": "uint256" }], "name": "isEnrolled", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
+    { "inputs": [], "name": "owner", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }
+];
+
+// 🎯 Legacy Course ABI (For backward compatibility)
 export const COURSE_CONTRACT_ABI = [
+    // ... (Keep existing or just use the new SCHOOL_ABI if they are similar)
+    // Actually, let's keep it for safety if any courses are on the old address.
     // --- Constructor ---
     { "inputs": [{ "internalType": "uint256", "name": "_initialFee", "type": "uint256" }], "stateMutability": "nonpayable", "type": "constructor" },
 
@@ -14,12 +50,12 @@ export const COURSE_CONTRACT_ABI = [
         "stateMutability": "payable",
         "type": "function"
     },
-    { // setCoursePrice(uint256 _courseId, uint256 _newFee)
+    { // publishCourse(uint256 _courseId, uint256 _price)
         "inputs": [
             { "internalType": "uint256", "name": "_courseId", "type": "uint256" },
-            { "internalType": "uint256", "name": "_newFee", "type": "uint256" }
+            { "internalType": "uint256", "name": "_price", "type": "uint256" }
         ],
-        "name": "setCoursePrice",
+        "name": "publishCourse",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -45,7 +81,7 @@ export const COURSE_CONTRACT_ABI = [
         "stateMutability": "view",
         "type": "function"
     },
-    
+
     // --- Events ---
     { // Enrolled event
         "anonymous": false, "inputs": [

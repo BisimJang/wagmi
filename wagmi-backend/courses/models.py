@@ -15,6 +15,9 @@ class Course(models.Model):
     )
     price = models.DecimalField(max_digits=20, decimal_places=8, default=0.00)
     image_url = models.URLField(blank=True, null=True)
+    is_minted = models.BooleanField(default=False)
+    tx_hash = models.CharField(max_length=66, blank=True, null=True)
+    school_address = models.CharField(max_length=42, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

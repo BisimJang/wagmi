@@ -3,8 +3,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { apiCall } from '../api/api';
 import { useWeb3Enrollment } from './useWeb3Enrollment'; 
+import { useWeb3Publish } from './useWeb3Publish';
+import { COURSE_CONTRACT_ADDRESS } from '../web3/constants';
 
-export const useCourseData = (address, jwt, showMessage) => {
+export const useCourseData = (address, showMessage) => {
     // --- State Initialization ---
     const [user, setUser] = useState(null);
     const [courses, setCourses] = useState([]);
@@ -12,29 +14,34 @@ export const useCourseData = (address, jwt, showMessage) => {
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState({ totalCourses: 0 });
     
-    // Web3 Enrollment State
+    // Web3 State
     const [courseToEnroll, setCourseToEnroll] = useState(null); 
+    const [courseToMint, setCourseToMint] = useState(null);
 
-    // Wagmi hook access
+    // Wagmi hooks
     const {
         writeEnroll, 
         isLoading: isWeb3Loading, 
-        isError: isWeb3Error, 
         isSuccess: isWeb3Success,
         isReady,
-        txHash,
-        prepareError
+        txHash
     } = useWeb3Enrollment(); 
+
+    const {
+        publishCourseOnChain,
+        bulkPublishOnChain,
+        isLoading: isPublishLoading,
+        isSuccess: isPublishSuccess,
+        txHash: publishTxHash
+    } = useWeb3Publish();
 
     // --- Core Data Fetching Functions ---
 
     const loadUserData = useCallback(async (token) => {
-        if (!address || !token) return;
+        if (!address) return;
         try {
             setLoading(true);
-            const user_data = await apiCall(`/me/`, { 
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const user_data = await apiCall(`/me/`);
             
             setUser(user_data);
             setCertificates(user_data.certificates || []); 
@@ -74,9 +81,7 @@ export const useCourseData = (address, jwt, showMessage) => {
         
         try {
             setLoading(true);
-            const data = await apiCall(`/courses/${courseId}/lessons_and_progress/`, {
-                 headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const data = await apiCall(`/courses/${courseId}/lessons_and_progress/`);
             return { lessons: data.lessons || [], progress: data.progress || {} };
         } catch (error) {
             console.error('Error loading lessons and progress:', error);
@@ -94,8 +99,7 @@ export const useCourseData = (address, jwt, showMessage) => {
             setLoading(true);
             await apiCall(`/lessons/${lessonId}/complete/`, { 
                 method: 'POST', 
-                body: JSON.stringify({ course_id: courseId }),
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+                body: JSON.stringify({ course_id: courseId })
             });
             return true; 
         } catch (error) {
@@ -119,11 +123,7 @@ export const useCourseData = (address, jwt, showMessage) => {
             // Backend handles linking
             const newCourse = await apiCall('/courses/', {
                 method: 'POST',
-                body: JSON.stringify(courseData),
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
+                body: JSON.stringify(courseData)
             });
             showMessage('Course details saved.', 'success');
             await loadCourses(); // refresh the course list
@@ -145,11 +145,7 @@ export const useCourseData = (address, jwt, showMessage) => {
             setLoading(true);
             const newSection = await apiCall('/sections/', {
                 method: 'POST',
-                body: JSON.stringify({ course: courseId, title: title, order: 0 }),
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
+                body: JSON.stringify({ course: courseId, title: title, order: 0 })
             });
             return newSection;
         } catch (error) {
@@ -169,11 +165,7 @@ export const useCourseData = (address, jwt, showMessage) => {
             setLoading(true);
             const newLesson = await apiCall('/lessons/', {
                 method: 'POST',
-                body: JSON.stringify({ section: sectionId, ...lessonData, order: 0 }),
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
+                body: JSON.stringify({ section: sectionId, ...lessonData, order: 0 })
             });
             showMessage('Lesson added.', 'success');
             return newLesson;
@@ -204,14 +196,73 @@ export const useCourseData = (address, jwt, showMessage) => {
         
         try {
             if (typeof writeEnroll === 'function') {
-                await writeEnroll(course.id, course.price);
+                // Pass the sovereign school address if it exists, otherwise it defaults to legacy in the hook
+                await writeEnroll(course.id, course.price, course.school_address);
             }
-        } catch (e) {
-            showMessage(`Transaction submission failed: ${e?.message || 'User rejected.'}`, 'error');
+        } catch (error) {
+            showMessage(`Transaction submission failed: ${error?.message || 'User rejected.'}`, 'error');
             setCourseToEnroll(null);
         }
     }, [showMessage, address, writeEnroll]);
 
+
+    /**
+     * Bulk Mints multiple courses in one transaction.
+     */
+    const bulkMintCourses = useCallback(async (courseIds, prices, targetAddress) => {
+        if (!address) { showMessage('Please connect your wallet', 'warning'); return; }
+        if (!targetAddress) { showMessage('No school contract found to mint on.', 'error'); return; }
+        
+        setLoading(true);
+        try {
+            const receipt = await bulkPublishOnChain(courseIds, prices, targetAddress);
+            if (receipt) {
+                // Update local state for all courses
+                setCourses(prev => prev.map(c => 
+                    courseIds.includes(c.id) ? { ...c, is_minted: true, school_address: targetAddress } : c
+                ));
+
+                // Notify backend for each course using the correct endpoint
+                await Promise.all(courseIds.map(id => apiCall(`/courses/${id}/confirm_mint/`, { 
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        tx_hash: receipt.transactionHash || receipt.hash,
+                        school_address: targetAddress 
+                    })
+                })));
+                showMessage(`${courseIds.length} courses verified on-chain!`, 'success');
+                await loadCourses();
+            }
+        } catch (error) {
+            console.error('Bulk minting error:', error);
+            showMessage(`Bulk minting failed: ${error.message}`, 'error');
+        } finally {
+            setLoading(false);
+        }
+    }, [bulkPublishOnChain, address, showMessage, loadCourses]);
+
+    const mintCourse = useCallback(async (courseId, price, targetAddress) => {
+        const token = localStorage.getItem('jwt');
+        if (!token) { showMessage('Please sign in to mint a course', 'warning'); return; }
+        if (!address) { showMessage('Please connect your wallet', 'warning'); return; }
+        if (!targetAddress) { showMessage('No school contract found to mint on.', 'error'); return; }
+
+        const course = courses.find(c => c.id === courseId);
+        if (!course) { showMessage('Course not found.', 'error'); return; }
+
+        setCourseToMint(course);
+        setLastMintSchoolAddress(targetAddress);
+        showMessage('Initializing on-chain minting...', 'info');
+
+        try {
+            // This triggers the useEffect when successful
+            await publishCourseOnChain(courseId, price, targetAddress);
+        } catch (e) {
+            showMessage(`Minting failed: ${e.message}`, 'error');
+            setCourseToMint(null);
+            setLastMintSchoolAddress(null);
+        }
+    }, [address, courses, showMessage, publishCourseOnChain]);
 
     const completeCourse = useCallback(async (courseId) => {
         const token = localStorage.getItem('jwt');
@@ -255,11 +306,7 @@ export const useCourseData = (address, jwt, showMessage) => {
                         tx_hash: txHash,
                         wallet_address: address,
                         course_id: courseToEnroll.id
-                    }),
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
+                    })
                 });
                 
                 showMessage('Enrollment confirmed on server!', 'success');
@@ -276,13 +323,44 @@ export const useCourseData = (address, jwt, showMessage) => {
 
     }, [isWeb3Success, courseToEnroll, txHash, address, showMessage, loadUserData]);
 
+    // ⚠️ Mint Sync Effect
+    const [lastMintSchoolAddress, setLastMintSchoolAddress] = useState(null);
+
+    useEffect(() => {
+        if (!isPublishSuccess || !courseToMint || !publishTxHash) return;
+
+        (async () => {
+            const token = localStorage.getItem('jwt');
+            if (!token) return;
+
+            try {
+                showMessage('Verifying mint on backend...', 'info');
+                await apiCall(`/courses/${courseToMint.id}/confirm_mint/`, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        tx_hash: publishTxHash,
+                        school_address: lastMintSchoolAddress
+                    })
+                });
+                showMessage('Course successfully minted on-chain!', 'success');
+                await loadCourses();
+            } catch (error) {
+                console.error('Mint sync error:', error);
+                showMessage('Failed to sync mint status to server.', 'error');
+            } finally {
+                setCourseToMint(null);
+                setLastMintSchoolAddress(null);
+            }
+        })();
+    }, [isPublishSuccess, courseToMint, publishTxHash, lastMintSchoolAddress, showMessage, loadCourses]);
+
     // --- Initial Load Effect (CRITICAL for courses display) ---
     useEffect(() => {
         loadCourses();
     }, [loadCourses]); 
 
     // --- Final Return ---
-    const combinedLoading = loading || isWeb3Loading;
+    const combinedLoading = loading || isWeb3Loading || isPublishLoading;
 
     return {
         user, 
@@ -297,6 +375,8 @@ export const useCourseData = (address, jwt, showMessage) => {
         markLessonCompleted,
         createCourse,
         createSection,
-        createLesson
+        createLesson,
+        mintCourse,
+        bulkMintCourses
     };
 };

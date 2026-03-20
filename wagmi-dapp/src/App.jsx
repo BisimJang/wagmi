@@ -8,6 +8,7 @@ import './App.css';
 // Hooks
 import { useAuth } from './hooks/useAuth';
 import { useCourseData } from './hooks/useCourseData';
+import { useSchoolRegistry } from './hooks/useSchoolRegistry';
 
 // Components
 import Message from './components/Feedback/Message';
@@ -99,7 +100,25 @@ function App() {
     createCourse,
     createSection,
     createLesson,
-  } = useCourseData(address, null, showMessage);
+    mintCourse,
+    bulkMintCourses
+  } = useCourseData(address, showMessage);
+
+  // 1.5. School Registry Hook
+  const {
+    createSchoolOnChain,
+    createSchoolWithCourses,
+    fetchOwnedSchools,
+    ownedSchools,
+    isLoading: isSchoolLoading
+  } = useSchoolRegistry(showMessage);
+
+  // Auto-fetch schools when address changes
+  useEffect(() => {
+    if (address) {
+      fetchOwnedSchools();
+    }
+  }, [address, fetchOwnedSchools]);
 
   // 2. Auth Logic Hook
   const {
@@ -183,8 +202,6 @@ function App() {
         />;
       case 'profile':
         return <ProfilePage
-          isConnected={isConnected}
-          address={address}
           user={user}
           certificates={certificates}
           loading={loading}
@@ -197,7 +214,17 @@ function App() {
           certificates={certificates}
         />;
       case 'instructor':
-        return <InstructorDashboard createCourse={createCourse} createSection={createSection} createLesson={createLesson} />;
+        return <InstructorDashboard 
+          createCourse={createCourse} 
+          createSection={createSection} 
+          createLesson={createLesson} 
+          mintCourse={mintCourse} 
+          bulkMintCourses={bulkMintCourses}
+          courses={courses}
+          createSchoolOnChain={createSchoolOnChain}
+          ownedSchools={ownedSchools}
+          isSchoolLoading={isSchoolLoading}
+        />;
       default: return <HomePage stats={stats} user={user} certificates={certificates} showPage={showPage} />;
     }
   };

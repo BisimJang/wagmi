@@ -2,7 +2,19 @@
 import React, { useState } from 'react';
 import BrutalistButton from '../components/UI/BrutalistButton';
 
-const InstructorDashboard = ({ createCourse, createSection, createLesson }) => {
+const InstructorDashboard = ({ 
+    createCourse, 
+    createSection, 
+    createLesson, 
+    mintCourse, 
+    bulkMintCourses,
+    courses,
+    createSchoolOnChain,
+    ownedSchools,
+    isSchoolLoading 
+}) => {
+    // -- State: Step 0 (School Onboarding) --
+    const [schoolName, setSchoolName] = useState('');
 
     // -- State: Step 1 (Course Details) --
     const [formData, setFormData] = useState({
@@ -11,16 +23,23 @@ const InstructorDashboard = ({ createCourse, createSection, createLesson }) => {
         price: '',
         image_url: ''
     });
-    const [createdCourse, setCreatedCourse] = useState(null); // Holds the course complete object after creation
+    const [createdCourse, setCreatedCourse] = useState(null);
 
     // -- State: Step 2 (Curriculum Builder) --
-    const [sections, setSections] = useState([]); // Array of { id, title, lessons: [] }
+    const [sections, setSections] = useState([]);
     const [addingSection, setAddingSection] = useState(false);
     const [newSectionTitle, setNewSectionTitle] = useState('');
     
-    // Track which section adding a lesson to
     const [activeLessonSectionId, setActiveLessonSectionId] = useState(null);
     const [lessonData, setLessonData] = useState({ title: '', content: '', video_url: '', image_url: '' });
+
+    const hasSchool = ownedSchools && ownedSchools.length > 0;
+
+    // --- Onboarding Functions ---
+    const handleLaunchSchool = async () => {
+        if (!schoolName.trim()) return;
+        await createSchoolOnChain(schoolName);
+    };
 
     // --- Course Details Functions ---
     const handleChange = (e) => {
@@ -46,6 +65,10 @@ const InstructorDashboard = ({ createCourse, createSection, createLesson }) => {
     // --- Section Functions ---
     const handleAddSection = async () => {
         if (!newSectionTitle.trim()) return;
+        if (!createdCourse || !createdCourse.id) {
+            alert('Please save course details first.');
+            return;
+        }
         const result = await createSection(createdCourse.id, newSectionTitle);
         if (result && result.id) {
             setSections([...sections, { id: result.id, title: result.title, lessons: [] }]);
@@ -64,193 +87,207 @@ const InstructorDashboard = ({ createCourse, createSection, createLesson }) => {
         if (!lessonData.title.trim()) return;
         const result = await createLesson(activeLessonSectionId, lessonData);
         if (result && result.id) {
-            // Update local state by nesting lesson
-            setSections(sections.map(sec => {
-                if (sec.id === activeLessonSectionId) {
-                    return { ...sec, lessons: [...sec.lessons, result] };
-                }
-                return sec;
-            }));
+            setSections(sections.map(sec => 
+                sec.id === activeLessonSectionId ? { ...sec, lessons: [...sec.lessons, result] } : sec
+            ));
             setLessonData({ title: '', content: '', video_url: '', image_url: '' });
             setActiveLessonSectionId(null);
         }
     };
 
+    // --- Minting ---
+    const handleMint = async () => {
+        if (!hasSchool) return;
+        const targetSchool = ownedSchools[0];
+        const result = await mintCourse(createdCourse.id, createdCourse.price, targetSchool);
+        if (result) {
+            setCreatedCourse({ ...createdCourse, is_minted: true });
+        }
+    };
+
+    const handleBulkSync = async () => {
+        if (!hasSchool) return;
+        const unsynced = courses.filter(c => c.is_instructor && !c.is_minted);
+        if (unsynced.length === 0) return;
+
+        const ids = unsynced.map(c => c.id);
+        const prices = unsynced.map(c => c.price);
+        await bulkMintCourses(ids, prices, ownedSchools[0]);
+    };
+
+    // --- RENDER ---
     return (
         <section className="page active" style={{ padding: '2rem 0', background: 'var(--background)' }}>
             <div className="container" style={{ maxWidth: '1200px' }}>
-                <h1 style={{ 
-                    fontSize: '2.5rem', 
-                    fontWeight: '900', 
-                    textTransform: 'uppercase', 
-                    borderBottom: '4px solid #000', 
-                    paddingBottom: '0.5rem', 
-                    marginBottom: '2rem',
-                    textAlign: 'center'
-                }}>
-                    Instructor Studio
-                </h1>
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3rem', alignItems: 'flex-start' }}>
-                    
-                    {/* LEFT COLUMN: BUILDER */}
-                    <div style={{ flex: '1 1 500px', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                        
-                        {/* ACCORDION STEP 1: COURSE DETAILS */}
-                        <div className="form-container" style={{ margin: '0', maxWidth: '100%', padding: '2.5rem', opacity: createdCourse ? 0.6 : 1, transition: 'all 0.3s ease' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '3px solid var(--primary-color)' }}>
-                                <h2 className="card-header" style={{ border: 'none', margin: 0, padding: 0 }}>Step 1: Details</h2>
-                                {createdCourse && <span style={{ background: 'var(--success)', color: '#fff', padding: '0.2rem 0.5rem', fontWeight: 'bold' }}>✓ SAVED</span>}
-                            </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <h1 style={{ fontSize: '2.5rem', fontWeight: '900', letterSpacing: '-2px', margin: 0 }}>
+                        INSTRUCTOR STUDIO
+                    </h1>
+                    {(() => {
+                        try {
+                            if (!Array.isArray(courses)) return null;
+                            const unsynced = courses.filter(c => c.is_instructor && !c.is_minted);
+                            console.log('Dashboard State:', { hasSchool, ownedSchools, unsyncedCount: unsynced.length });
                             
-                            {!createdCourse ? (
-                                <form onSubmit={handleCourseSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                        <label style={{ fontWeight: '900', fontSize: '0.9rem', textTransform: 'uppercase' }}>Course Title *</label>
-                                        <input type="text" name="title" value={formData.title} onChange={handleChange} required style={{ padding: '0.8rem', border: '3px solid var(--border)', background: 'var(--background)', color: 'var(--text)', fontSize: '1rem', fontFamily: 'inherit', fontWeight: '600' }} placeholder="e.g. DIGITAL POTTERY 101" />
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                        <label style={{ fontWeight: '900', fontSize: '0.9rem', textTransform: 'uppercase' }}>Description *</label>
-                                        <textarea name="description" value={formData.description} onChange={handleChange} required rows="4" style={{ padding: '0.8rem', border: '3px solid var(--border)', background: 'var(--background)', color: 'var(--text)', fontSize: '1rem', fontFamily: 'inherit', fontWeight: '600', resize: 'vertical' }} placeholder="A raw, brutalist approach..." />
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                        <label style={{ fontWeight: '900', fontSize: '0.9rem', textTransform: 'uppercase' }}>Price (ETH) *</label>
-                                        <input type="number" step="0.0001" min="0" name="price" value={formData.price} onChange={handleChange} required style={{ padding: '0.8rem', border: '3px solid var(--border)', background: 'var(--background)', color: 'var(--text)', fontSize: '1rem', fontFamily: 'inherit', fontWeight: '600' }} placeholder="0.03" />
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                        <label style={{ fontWeight: '900', fontSize: '0.9rem', textTransform: 'uppercase' }}>Course Image URL</label>
-                                        <input type="url" name="image_url" value={formData.image_url} onChange={handleChange} style={{ padding: '0.8rem', border: '3px solid var(--border)', background: 'var(--background)', color: 'var(--text)', fontSize: '1rem', fontFamily: 'inherit', fontWeight: '600' }} placeholder="https://..." />
-                                    </div>
-                                    <BrutalistButton type="submit" style={{ marginTop: '1rem' }}>
-                                        MINT COURSE TO BLOCKCHAIN
+                            if (hasSchool && unsynced.length > 0) {
+                                return (
+                                    <BrutalistButton onClick={handleBulkSync} style={{ background: 'var(--accent-color)', fontSize: '0.8rem' }}>
+                                        SYNC {unsynced.length} TO BLOCKCHAIN (PRICE INITIALIZER)
                                     </BrutalistButton>
-                                </form>
-                            ) : (
-                                <div style={{ fontSize: '1.2rem', fontWeight: '600' }}>
-                                    <p><strong>Title:</strong> {createdCourse.title}</p>
-                                    <p><strong>Price:</strong> {createdCourse.price} ETH</p>
-                                    <p style={{ fontStyle: 'italic', fontSize: '0.9rem', marginTop: '1rem' }}>Course details locked. Proceed to curriculum below.</p>
+                                );
+                            }
+                        } catch (e) {
+                            console.error('Error rendering sync button:', e);
+                        }
+                        return null;
+                    })()}
+                </div>
+
+                {!hasSchool ? (
+                    <div className="form-container" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: '800' }}>STEP 0: LAUNCH YOUR SOVEREIGN SCHOOL</h2>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+                            You need a blockchain contract to publish courses. Launch your own hub now.
+                        </p>
+                        <input 
+                            type="text" 
+                            placeholder="e.g. Harvard CS / The Art Hub" 
+                            value={schoolName}
+                            onChange={(e) => setSchoolName(e.target.value)}
+                            style={{ padding: '1rem', width: '100%', marginBottom: '1rem' }}
+                        />
+                        <BrutalistButton onClick={handleLaunchSchool} disabled={isSchoolLoading} style={{ width: '100%' }}>
+                            {isSchoolLoading ? 'LAUNCHING...' : 'LAUNCH SCHOOL ON-CHAIN'}
+                        </BrutalistButton>
+                    </div>
+                ) : (
+                    <div className="studio-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 400px', gap: '3rem', alignItems: 'start' }}>
+                        {/* LEFT COLUMN: EDITOR */}
+                        <div className="editor-side">
+                            {/* STEP 1: Details */}
+                            <div className="form-container" style={{ marginBottom: '2rem', border: '5px solid var(--text)', padding: '2rem' }}>
+                                <h2 style={{ fontWeight: '800', borderBottom: '4px solid var(--text)', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
+                                    {createdCourse ? '✓ 1. COURSE DETAILS SAVED' : '1. COURSE DETAILS'}
+                                </h2>
+                                {!createdCourse ? (
+                                    <form onSubmit={handleCourseSubmit}>
+                                        <div className="input-group">
+                                            <label>TITLE</label>
+                                            <input type="text" name="title" value={formData.title} onChange={handleChange} required />
+                                        </div>
+                                        <div className="input-group">
+                                            <label>DESCRIPTION</label>
+                                            <textarea name="description" value={formData.description} onChange={handleChange} required />
+                                        </div>
+                                        <div className="input-group">
+                                            <label>PRICE (ETH)</label>
+                                            <input type="number" step="0.001" name="price" value={formData.price} onChange={handleChange} required />
+                                        </div>
+                                        <BrutalistButton type="submit" style={{ width: '100%', marginTop: '1rem' }}>SAVE & CONTINUE</BrutalistButton>
+                                    </form>
+                                ) : (
+                                    <div style={{ color: 'var(--text-secondary)' }}>
+                                        {formData.title} saved at {formData.price} ETH
+                                        <button onClick={() => setCreatedCourse(null)} className="btn-text" style={{ marginLeft: '1rem' }}>Edit</button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* STEP 2: Curriculum */}
+                            {createdCourse && !createdCourse.is_minted && (
+                                <div className="form-container" style={{ border: '5px solid var(--text)', padding: '2rem', marginBottom: '2rem' }}>
+                                    <h2 style={{ fontWeight: '800', borderBottom: '4px solid var(--text)', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
+                                        2. CURRICULUM BUILDER
+                                    </h2>
+                                    
+                                    <div className="section-list">
+                                        {sections.map((section, idx) => (
+                                            <div key={section.id} style={{ marginBottom: '1.5rem', background: 'var(--surface)', border: '3px solid var(--text)', padding: '1rem' }}>
+                                                <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>SECTION {idx + 1}: {section.title.toUpperCase()}</div>
+                                                <div style={{ marginLeft: '1rem', marginTop: '0.5rem' }}>
+                                                    {section.lessons?.map(lesson => (
+                                                        <div key={lesson.id} style={{ color: 'var(--text-secondary)', padding: '0.2rem 0' }}>• {lesson.title}</div>
+                                                    ))}
+                                                    
+                                                    {activeLessonSectionId === section.id ? (
+                                                        <div style={{ borderTop: '2px solid var(--text)', marginTop: '1rem', paddingTop: '1rem' }}>
+                                                            <input type="text" placeholder="Lesson Title" name="title" value={lessonData.title} onChange={handleLessonChange} />
+                                                            <textarea placeholder="Content/Markdown" name="content" value={lessonData.content} onChange={handleLessonChange} />
+                                                            <BrutalistButton onClick={handleAddLesson} style={{ fontSize: '0.8rem' }}>SAVE LESSON</BrutalistButton>
+                                                        </div>
+                                                    ) : (
+                                                        <button className="btn-text" onClick={() => setActiveLessonSectionId(section.id)} style={{ marginTop: '0.5rem' }}>+ Add Lesson</button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {addingSection ? (
+                                            <div style={{ background: 'var(--background)', border: '3px dashed var(--text)', padding: '1rem' }}>
+                                                <input type="text" value={newSectionTitle} onChange={(e) => setNewSectionTitle(e.target.value)} placeholder="SECTION TITLE" />
+                                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                                    <BrutalistButton onClick={handleAddSection} style={{ flex: 1 }}>SAVE SECTION</BrutalistButton>
+                                                    <BrutalistButton onClick={() => setAddingSection(false)} style={{ background: 'var(--error)', flex: 1 }}>CANCEL</BrutalistButton>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <BrutalistButton onClick={() => setAddingSection(true)} style={{ background: 'var(--surface)', color: 'var(--text)', width: '100%' }}>
+                                                + ADD NEW SECTION
+                                            </BrutalistButton>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* STEP 3: Mint */}
+                            {createdCourse && (
+                                <div className="form-container" style={{ border: '5px solid var(--text)', padding: '2rem' }}>
+                                    <h2 style={{ fontWeight: '800', borderBottom: '4px solid var(--text)', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
+                                        3. MINT TO BLOCKCHAIN
+                                    </h2>
+                                    {createdCourse.is_minted ? (
+                                        <div style={{ background: 'var(--primary-color)', color: 'white', padding: '1rem', fontWeight: '800', textAlign: 'center' }}>
+                                            ✓ PUBLISHED ON-CHAIN
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
+                                                Ready to finalize? This will anchor your course to your sovereign school contract: <b>{ownedSchools[0]}</b>
+                                            </p>
+                                            <BrutalistButton onClick={handleMint} style={{ width: '100%', fontSize: '1.5rem' }}>
+                                                MINT COURSE ON-CHAIN
+                                            </BrutalistButton>
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </div>
 
-                        {/* ACCORDION STEP 2: CURRICULUM */}
-                        {createdCourse && (
-                            <div className="form-container" style={{ margin: '0', maxWidth: '100%', padding: '2.5rem', animation: 'slideDown 0.3s ease-out' }}>
-                                <h2 className="card-header" style={{ width: '100%', marginBottom: '2rem', borderBottom: '3px solid var(--primary-color)' }}>
-                                    Step 2: Curriculum
-                                </h2>
-                                
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                    {/* Map through mapped sections */}
-                                    {sections.map((section, idx) => (
-                                        <div key={section.id} style={{ border: '3px solid var(--border)', background: 'var(--background)', padding: '1.5rem' }}>
-                                            <h3 style={{ fontSize: '1.4rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1rem' }}>
-                                                {`Section ${idx + 1}: ${section.title}`}
-                                            </h3>
-                                            
-                                            {/* List Lessons */}
-                                            {section.lessons.length > 0 && (
-                                                <ul style={{ listStyleType: 'none', padding: 0, margin: '0 0 1.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                                    {section.lessons.map((lesson, lIdx) => (
-                                                        <li key={lesson.id} style={{ padding: '0.8rem', border: '2px dashed var(--border)', background: 'var(--surface)', fontWeight: 'bold' }}>
-                                                            {`Lesson ${lIdx + 1}: ${lesson.title}`}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            )}
-
-                                            {/* Add Lesson Form or Button */}
-                                            {activeLessonSectionId === section.id ? (
-                                                <div style={{ borderTop: '2px solid var(--border)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                                    <input type="text" name="title" value={lessonData.title} onChange={handleLessonChange} placeholder="Lesson Title" style={{ padding: '0.5rem', border: '2px solid var(--border)', background: 'var(--surface)', color: 'var(--text)'}} />
-                                                    <textarea name="content" value={lessonData.content} onChange={handleLessonChange} placeholder="Lesson Content (Text/Article)" rows="3" style={{ padding: '0.5rem', border: '2px solid var(--border)', background: 'var(--surface)', color: 'var(--text)'}} />
-                                                    <input type="url" name="video_url" value={lessonData.video_url} onChange={handleLessonChange} placeholder="Video URL (Optional)" style={{ padding: '0.5rem', border: '2px solid var(--border)', background: 'var(--surface)', color: 'var(--text)'}} />
-                                                    <input type="url" name="image_url" value={lessonData.image_url} onChange={handleLessonChange} placeholder="Image URL (Optional)" style={{ padding: '0.5rem', border: '2px solid var(--border)', background: 'var(--surface)', color: 'var(--text)'}} />
-                                                    <div style={{ display: 'flex', gap: '1rem' }}>
-                                                        <BrutalistButton onClick={handleAddLesson} style={{ flex: 1 }}>SAVE LESSON</BrutalistButton>
-                                                        <BrutalistButton onClick={() => setActiveLessonSectionId(null)} style={{ flex: 1, background: 'var(--surface)', color: 'var(--text)' }}>CANCEL</BrutalistButton>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <BrutalistButton onClick={() => setActiveLessonSectionId(section.id)} style={{ background: 'transparent', color: 'var(--text)', border: '2px dashed var(--border)', boxShadow: 'none' }}>
-                                                    + ADD CONTENT (TEXT/VIDEO)
-                                                </BrutalistButton>
-                                            )}
-                                        </div>
-                                    ))}
-
-                                    {/* Add Section Controller */}
-                                    {addingSection ? (
-                                        <div style={{ border: '3px dashed var(--primary-color)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                            <input type="text" value={newSectionTitle} onChange={(e) => setNewSectionTitle(e.target.value)} placeholder="Section Title (e.g. Introduction)" style={{ padding: '0.8rem', border: '3px solid var(--border)', background: 'var(--background)', color: 'var(--text)', fontSize: '1rem', fontWeight: 'bold' }} />
-                                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                                <BrutalistButton onClick={handleAddSection} style={{ flex: 1 }}>SAVE SECTION</BrutalistButton>
-                                                <BrutalistButton onClick={() => setAddingSection(false)} style={{ flex: 1, background: 'var(--surface)', color: 'var(--text)' }}>CANCEL</BrutalistButton>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <BrutalistButton onClick={() => setAddingSection(true)} style={{ background: 'var(--surface)', color: 'var(--text)', border: '3px dashed var(--border)', boxShadow: 'none' }}>
-                                            + ADD NEW SECTION
-                                        </BrutalistButton>
-                                    )}
+                        {/* RIGHT COLUMN: PREVIEW */}
+                        <div className="preview-side" style={{ position: 'sticky', top: '100px' }}>
+                            <div style={{ border: '5px solid var(--text)', padding: '1.5rem', background: 'var(--surface)', boxShadow: '10px 10px 0 var(--text)' }}>
+                                <div style={{ fontSize: '0.7rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '1rem' }}>STUDIO PREVIEW</div>
+                                <div style={{ 
+                                    width: '100%', 
+                                    height: '200px', 
+                                    background: 'var(--background)', 
+                                    border: '4px solid var(--text)',
+                                    backgroundImage: `url(${formData.image_url})`,
+                                    backgroundSize: 'cover',
+                                    marginBottom: '1rem'
+                                }}></div>
+                                <h3 style={{ fontSize: '1.8rem', fontWeight: '900', lineHeight: '1' }}>{formData.title || 'COURSE TITLE'}</h3>
+                                <p style={{ fontSize: '0.9rem', margin: '1rem 0', color: 'var(--text-secondary)' }}>{formData.description || 'Course description preview...'}</p>
+                                <div style={{ fontSize: '1.5rem', fontWeight: '900', borderTop: '4px solid var(--text)', paddingTop: '1rem' }}>
+                                    {formData.price ? `${formData.price} ETH` : 'FREE'}
                                 </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* RIGHT COLUMN: LIVE PREVIEW */}
-                    <div style={{ flex: '1 1 400px', display: 'flex', flexDirection: 'column', position: 'sticky', top: '2rem' }}>
-                        <h2 style={{ fontSize: '1.2rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ display: 'inline-block', width: '12px', height: '12px', background: 'var(--error)', borderRadius: '50%', animation: 'pulse 2s infinite' }}></span>
-                            Live Preview
-                        </h2>
-                        
-                        <div style={{ background: 'var(--surface)', border: '3px dashed var(--border)', padding: '2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-                            <div className="course-card" style={{ width: '100%', maxWidth: '350px', cursor: 'default' }}>
-                                <div 
-                                    className="course-image" 
-                                    style={{ backgroundImage: `url(${formData.image_url || 'https://via.placeholder.com/400x250.png?text=COUR$E+VIEW'})` }}
-                                />
-                                <div className="course-content">
-                                    <h3 className="course-title">
-                                        {formData.title || 'UNTITLED COURSE'}
-                                    </h3>
-                                    <p className="course-description">
-                                        {formData.description || 'Description will appear here...'}
-                                    </p>
-                                    <div className="course-price">
-                                        {formData.price || '0.000'} ETH
-                                    </div>
-                                    <div className="course-stats" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span>Instructor: You</span>
-                                            <span>Preview</span>
-                                        </div>
-                                        {/* Dynamic stats overlay */}
-                                        {sections.length > 0 && (
-                                            <div style={{ borderTop: '2px dashed var(--border)', paddingTop: '0.5rem', fontSize: '0.85rem' }}>
-                                                <strong>Curriculum size:</strong> {sections.length} Sections, {sections.reduce((acc, s) => acc + s.lessons.length, 0)} Lessons
-                                            </div>
-                                        )}
-                                    </div>
+                                <div style={{ marginTop: '1rem', borderTop: '2px solid var(--text)', paddingTop: '1rem' }}>
+                                    <div style={{ fontSize: '0.7rem', fontWeight: '800' }}>CURRICULUM ({sections.length} SECTIONS)</div>
                                 </div>
                             </div>
                         </div>
-                        
-                        <style>{`
-                            @keyframes pulse {
-                                0% { opacity: 1; transform: scale(1); }
-                                50% { opacity: 0.5; transform: scale(1.2); }
-                                100% { opacity: 1; transform: scale(1); }
-                            }
-                            @keyframes slideDown {
-                                from { opacity: 0; transform: translateY(-20px); }
-                                to { opacity: 1; transform: translateY(0); }
-                            }
-                        `}</style>
                     </div>
-                </div>
+                )}
             </div>
         </section>
     );

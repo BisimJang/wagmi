@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useWalletClient, usePublicClient } from 'wagmi';
 import { parseUnits } from 'viem'; // parseUnits is a direct export
 import { waitForTransactionReceipt } from 'viem/actions'; // 🎯 FIX: Import from the dedicated actions path
-import { COURSE_CONTRACT_ADDRESS, COURSE_CONTRACT_ABI } from '../web3/constants';
+import { COURSE_CONTRACT_ADDRESS, SCHOOL_ABI } from '../web3/constants';
 
 export default function useWeb3Enrollment() {
     const { data: walletClient } = useWalletClient();
@@ -16,7 +16,7 @@ export default function useWeb3Enrollment() {
 
     const isReady = !!walletClient;
 
-    const writeEnroll = useCallback(async (courseId, coursePrice) => {
+    const writeEnroll = useCallback(async (courseId, coursePrice, targetAddress = COURSE_CONTRACT_ADDRESS) => {
         if (!walletClient) {
             const err = new Error('No wallet client available');
             setPrepareError(err);
@@ -24,8 +24,8 @@ export default function useWeb3Enrollment() {
             throw err;
         }
         
-        if (!courseId || !coursePrice) {
-            const err = new Error('Course ID or Price is missing for enrollment.');
+        if (!courseId) {
+            const err = new Error('Course ID is missing for enrollment.');
             setPrepareError(err);
             setIsError(true);
             throw err;
@@ -33,7 +33,7 @@ export default function useWeb3Enrollment() {
 
         let valueInWei;
         try {
-            valueInWei = parseUnits(String(coursePrice), 18);
+            valueInWei = parseUnits(String(coursePrice || '0'), 18);
         } catch (error) {
             console.error("Error parsing course price to Wei:", error);
             const err = new Error('Invalid course price');
@@ -49,10 +49,10 @@ export default function useWeb3Enrollment() {
 
         try {
             const result = await walletClient.writeContract({
-                address: COURSE_CONTRACT_ADDRESS,
-                abi: COURSE_CONTRACT_ABI,
+                address: targetAddress,
+                abi: SCHOOL_ABI,
                 functionName: 'enroll',
-                args: [BigInt(courseId)], // PASS THE COURSE ID AS THE ARGUMENT
+                args: [BigInt(courseId)], 
                 value: valueInWei,
             });
 

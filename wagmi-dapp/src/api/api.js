@@ -19,6 +19,10 @@ export const apiCall = async (endpoint, options = {}) => {
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+        localStorage.removeItem('jwt');
+        // Optional: window.location.reload() or notify user
+    }
     let errorDetail = `API Error: ${response.status} - ${response.statusText}`;
     try {
         const errorBody = await response.json();

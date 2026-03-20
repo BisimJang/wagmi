@@ -6,7 +6,8 @@ import { useAccount, useBalance, useDisconnect } from 'wagmi';
 import LoadingSpinner from '../components/Feedback/LoadingSpinner';
 import BrutalistButton from '../components/UI/BrutalistButton';
 
-const ProfilePage = ({ isConnected, address, user, certificates, loading, theme, toggleTheme }) => {
+const ProfilePage = ({ user, certificates, loading, theme, toggleTheme }) => {
+    const { address, isConnected, chain } = useAccount();
     const { data: balanceData } = useBalance({ address });
     const { disconnect } = useDisconnect();
 

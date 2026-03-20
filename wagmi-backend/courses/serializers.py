@@ -35,21 +35,19 @@ class CourseSerializer(serializers.ModelSerializer):
     instructor = serializers.StringRelatedField(read_only=True)
     name = serializers.CharField(source='title', read_only=True)
     imageUrl = serializers.SerializerMethodField()
-    price = serializers.SerializerMethodField()
-
+    
+    # Enable writing to these fields
+    price = serializers.DecimalField(max_digits=20, decimal_places=8, required=False)
     title = serializers.CharField(write_only=True)
     image_url = serializers.URLField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = Course
-        fields = ["id", "title", "name", "description", "instructor", "price", "created_at", "sections", "imageUrl", "image_url"]
-
-    def get_price(self, obj):
-        """
-        ensures price is formatted as a string with 18 decimal places
-        to match the ethereum standard (1 eth = 10^18 wei), prventing precision errors.
-        """
-        return "{:.8f}".format(obj.price)
+        fields = [
+            "id", "title", "name", "description", "instructor", "price", 
+            "created_at", "sections", "imageUrl", "image_url", 
+            "is_minted", "tx_hash", "school_address"
+        ]
 
     def get_imageUrl(self, obj):
         """
