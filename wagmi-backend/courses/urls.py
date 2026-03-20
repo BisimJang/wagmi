@@ -13,7 +13,9 @@ from .views import (
     me,
     LessonsAndProgressView, 
     complete_lesson,
-    confirm_mint
+    confirm_mint,
+    school_list,
+    register_school
 )
 
 # Router for viewsets (only lesson progress for now)
@@ -29,6 +31,8 @@ urlpatterns = [
     path("courses/<int:course_id>/enroll/", enroll_in_course, name="course-enroll"),
     path("courses/<int:course_id>/confirm_mint/", confirm_mint, name="course-confirm-mint"),
     path("courses/<int:course_id>/certificate/", issue_certificate, name="issue-certificate"),
+    path("schools/", school_list, name="school-list"),
+    path("schools/register/", register_school, name="school-register"),
     
     # Sections & Lessons
     path("sections/", SectionListCreateView.as_view(), name="section-list-create"),

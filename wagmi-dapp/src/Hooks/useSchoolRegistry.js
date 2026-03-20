@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import { useWalletClient, usePublicClient, useAccount } from 'wagmi';
-import { parseUnits } from 'viem';
+import { parseUnits, decodeEventLog } from 'viem';
 import { waitForTransactionReceipt } from 'viem/actions';
 import { SCHOOL_REGISTRY_ADDRESS, SCHOOL_REGISTRY_ABI } from '../web3/constants';
+import { apiCall } from '../api/api';
 
 /**
  * Hook to interact with the School Registry Factory.
@@ -37,6 +38,34 @@ export function useSchoolRegistry(showMessage) {
             const receipt = await waitForTransactionReceipt(publicClient, { hash });
 
             if (receipt.status === 'success') {
+                // Find school address from logs
+                let schoolAddress = null;
+                try {
+                    for (const log of receipt.logs) {
+                        try {
+                            const decoded = decodeEventLog({
+                                abi: SCHOOL_REGISTRY_ABI,
+                                data: log.data,
+                                topics: log.topics,
+                            });
+                            if (decoded.eventName === 'SchoolCreated') {
+                                schoolAddress = decoded.args.schoolAddress;
+                                break;
+                            }
+                        } catch (e) { /* ignore other events */ }
+                    }
+                    
+                    if (schoolAddress) {
+                        await apiCall('/schools/register/', {
+                            method: 'POST',
+                            body: JSON.stringify({ address: schoolAddress, name: schoolName })
+                        });
+                        console.log('School registered in backend:', schoolAddress);
+                    }
+                } catch (syncErr) {
+                    console.error('Failed to sync school to backend:', syncErr);
+                }
+
                 showMessage('School successfully created on-chain!', 'success');
                 await fetchOwnedSchools();
                 return receipt;
@@ -107,6 +136,34 @@ export function useSchoolRegistry(showMessage) {
             const receipt = await waitForTransactionReceipt(publicClient, { hash });
 
             if (receipt.status === 'success') {
+                // Find school address from logs
+                let schoolAddress = null;
+                try {
+                    for (const log of receipt.logs) {
+                        try {
+                            const decoded = decodeEventLog({
+                                abi: SCHOOL_REGISTRY_ABI,
+                                data: log.data,
+                                topics: log.topics,
+                            });
+                            if (decoded.eventName === 'SchoolCreated') {
+                                schoolAddress = decoded.args.schoolAddress;
+                                break;
+                            }
+                        } catch (e) { /* ignore other events */ }
+                    }
+                    
+                    if (schoolAddress) {
+                        await apiCall('/schools/register/', {
+                            method: 'POST',
+                            body: JSON.stringify({ address: schoolAddress, name: schoolName })
+                        });
+                        console.log('School & Courses registered in backend:', schoolAddress);
+                    }
+                } catch (syncErr) {
+                    console.error('Failed to sync school to backend:', syncErr);
+                }
+
                 showMessage('School & Courses successfully initialized on-chain!', 'success');
                 await fetchOwnedSchools();
                 return receipt;

@@ -46,7 +46,7 @@ class CourseSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "name", "description", "instructor", "price", 
             "created_at", "sections", "imageUrl", "image_url", 
-            "is_minted", "tx_hash", "school_address"
+            "is_minted", "tx_hash", "school_address", "school_name"
         ]
 
     def get_imageUrl(self, obj):

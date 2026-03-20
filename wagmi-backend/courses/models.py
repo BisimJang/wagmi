@@ -5,6 +5,16 @@ from django.conf import settings
 User = settings.AUTH_USER_MODEL
 
 
+class SovereignSchool(models.Model):
+    address = models.CharField(max_length=42, unique=True)
+    name = models.CharField(max_length=200)
+    instructor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="owned_schools")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Course(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -17,7 +27,9 @@ class Course(models.Model):
     image_url = models.URLField(blank=True, null=True)
     is_minted = models.BooleanField(default=False)
     tx_hash = models.CharField(max_length=66, blank=True, null=True)
+    school = models.ForeignKey(SovereignSchool, on_delete=models.SET_NULL, null=True, blank=True, related_name="courses")
     school_address = models.CharField(max_length=42, blank=True, null=True)
+    school_name = models.CharField(max_length=200, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

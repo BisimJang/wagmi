@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import BrutalistButton from '../components/UI/BrutalistButton';
 
 const InstructorDashboard = ({ 
+    user,
     createCourse, 
     createSection, 
     createLesson, 
@@ -99,7 +100,8 @@ const InstructorDashboard = ({
     const handleMint = async () => {
         if (!hasSchool) return;
         const targetSchool = ownedSchools[0];
-        const result = await mintCourse(createdCourse.id, createdCourse.price, targetSchool);
+        // We don't have the name of an existing school easily, so we use a fallback or the instructor name
+        const result = await mintCourse(createdCourse.id, createdCourse.price, targetSchool, `${user?.username || 'Instructor'}'s School`);
         if (result) {
             setCreatedCourse({ ...createdCourse, is_minted: true });
         }

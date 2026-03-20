@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 import json
-from .models import Course, Section, Lesson, Enrollment, Certificate, LessonProgress
+from .models import Course, Section, Lesson, Enrollment, Certificate, LessonProgress, SovereignSchool
 from django.core.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import (
@@ -21,10 +21,21 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+from rest_framework.filters import SearchFilter
+from rest_framework.pagination import PageNumberPagination
+
+class CoursePagination(PageNumberPagination):
+    page_size = 6
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 class CourseListCreateView(generics.ListCreateAPIView):
-    queryset = Course.objects.all()
+    queryset = Course.objects.all().order_by('-created_at')
     serializer_class = CourseSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [SearchFilter]
+    search_fields = ['title', 'description', 'school_name', 'school__name']
+    pagination_class = CoursePagination
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -107,10 +118,10 @@ def enroll_in_course(request, course_id):
         return Response({"error": "You are already enrolled in this course."},
                         status=status.HTTP_400_BAD_REQUEST)
 
-    # 5) Enforce max 2 active enrollments
+    # 5) Enforce max 20 active enrollments (Lifted from 2 for Phase 2)
     active_count = Enrollment.objects.filter(user=user, status='enrolled').count()
-    if active_count >= 2:
-        return Response({"error": "Maximum of 2 active enrollments allowed."},
+    if active_count >= 20:
+        return Response({"error": "Maximum of 20 active enrollments allowed."},
                         status=status.HTTP_400_BAD_REQUEST)
 
     # Optional: verify tx on-chain here (recommended). If you have web3 configured, verify tx_hash
@@ -305,6 +316,7 @@ def confirm_mint(request, course_id):
         
         tx_hash = request.data.get('tx_hash')
         school_address = request.data.get('school_address')
+        school_name = request.data.get('school_name')
         
         if not tx_hash:
             return Response({"error": "Transaction hash is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -312,6 +324,16 @@ def confirm_mint(request, course_id):
         course.is_minted = True
         course.tx_hash = tx_hash
         course.school_address = school_address
+        if school_name:
+            course.school_name = school_name
+            
+        # Link to SovereignSchool object if it exists
+        try:
+            school_obj = SovereignSchool.objects.get(address=school_address)
+            course.school = school_obj
+        except SovereignSchool.DoesNotExist:
+            pass
+            
         course.save()
         
         return Response({
@@ -322,3 +344,51 @@ def confirm_mint(request, course_id):
         
     except Course.DoesNotExist:
         return Response({"error": "Course not found."}, status=status.HTTP_404_NOT_FOUND)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def register_school(request):
+    """
+    Registers a newly deployed sovereign school in the backend.
+    """
+    address = request.data.get('address')
+    name = request.data.get('name')
+    
+    if not address or not name:
+        return Response({"error": "Address and name are required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+    school, created = SovereignSchool.objects.get_or_create(
+        address=address,
+        defaults={
+            'name': name,
+            'instructor': request.user
+        }
+    )
+    
+    if not created:
+        school.name = name  # Update name if changed
+        school.save()
+        
+    return Response({
+        "message": "School registered successfully!",
+        "address": school.address,
+        "name": school.name
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def school_list(request):
+    """
+    Returns a list of unique sovereign schools.
+    """
+    schools = SovereignSchool.objects.all().select_related('instructor')
+    
+    return Response([
+        {
+            'address': s.address,
+            'name': s.name,
+            'instructor_name': s.instructor.display_name or s.instructor.address[:8],
+            'instructor_address': s.instructor.address
+        } for s in schools
+    ], status=status.HTTP_200_OK)
+

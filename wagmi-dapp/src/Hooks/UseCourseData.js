@@ -1,4 +1,4 @@
-// src/hooks/useCourseData.js - REVERTED & FIXED
+// src/hooks/useCourseData.js
 
 import { useState, useCallback, useEffect } from 'react';
 import { apiCall } from '../api/api';
@@ -13,6 +13,18 @@ export const useCourseData = (address, showMessage) => {
     const [certificates, setCertificates] = useState([]);
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState({ totalCourses: 0 });
+    const [schools, setSchools] = useState([]);
+    
+    // Pagination State
+    const [pagination, setPagination] = useState({
+        count: 0,
+        next: null,
+        previous: null,
+        currentPage: 1
+    });
+
+    const [lastMintSchoolAddress, setLastMintSchoolAddress] = useState(null);
+    const [lastMintSchoolName, setLastMintSchoolName] = useState(null);
     
     // Web3 State
     const [courseToEnroll, setCourseToEnroll] = useState(null); 
@@ -53,26 +65,44 @@ export const useCourseData = (address, showMessage) => {
         }
     }, [address, showMessage]);
 
-    const loadCourses = useCallback(async () => {
+    const loadCourses = useCallback(async (searchQuery = '', page = 1) => {
         try {
-            console.debug('Attempting to load available courses...');
-            const coursesData = await apiCall('/courses/');
+            console.debug('Attempting to load courses...', { searchQuery, page });
+            let url = `/courses/?page=${page}`;
+            if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
             
-            if (Array.isArray(coursesData)) {
-                 setCourses(coursesData);
-                 setStats(prev => ({ ...prev, totalCourses: coursesData.length }));
-                 console.debug(`Successfully loaded ${coursesData.length} courses.`);
-            } else {
-                 // 🚨 ENHANCED CHECK: If API returns unexpected format (e.g., an error object)
-                 console.error('API /courses/ did not return an array:', coursesData);
-                 showMessage('Course API returned unexpected data format.', 'error');
+            const data = await apiCall(url);
+            
+            // Handle Paginated Results
+            if (data && data.results) {
+                 setCourses(data.results);
+                 setPagination({
+                     count: data.count,
+                     next: data.next,
+                     previous: data.previous,
+                     currentPage: page
+                 });
+                 setStats(prev => ({ ...prev, totalCourses: data.count }));
+            } 
+            // Fallback for non-paginated (legacy or special)
+            else if (Array.isArray(data)) {
+                 setCourses(data);
+                 setStats(prev => ({ ...prev, totalCourses: data.length }));
             }
-           
         } catch (error) {
-            console.error('FATAL Error loading courses:', error);
+            console.error('Error loading courses:', error);
             showMessage(`Failed to load courses: ${error.message || 'Network error.'}`, 'error');
         }
     }, [showMessage]);
+
+    const fetchSchools = useCallback(async () => {
+        try {
+            const data = await apiCall('/schools/');
+            setSchools(data || []);
+        } catch (error) {
+            console.error('Error loading schools:', error);
+        }
+    }, []);
 
     // 📚 Lesson Functions (Simplified)
     const fetchLessonsAndProgress = useCallback(async (courseId) => {
@@ -227,7 +257,8 @@ export const useCourseData = (address, showMessage) => {
                     method: 'POST',
                     body: JSON.stringify({ 
                         tx_hash: receipt.transactionHash || receipt.hash,
-                        school_address: targetAddress 
+                        school_address: targetAddress,
+                        school_name: targetAddress === course.school_address ? course.school_name : null // Fallback
                     })
                 })));
                 showMessage(`${courseIds.length} courses verified on-chain!`, 'success');
@@ -241,7 +272,7 @@ export const useCourseData = (address, showMessage) => {
         }
     }, [bulkPublishOnChain, address, showMessage, loadCourses]);
 
-    const mintCourse = useCallback(async (courseId, price, targetAddress) => {
+    const mintCourse = useCallback(async (courseId, price, targetAddress, schoolName) => {
         const token = localStorage.getItem('jwt');
         if (!token) { showMessage('Please sign in to mint a course', 'warning'); return; }
         if (!address) { showMessage('Please connect your wallet', 'warning'); return; }
@@ -252,6 +283,7 @@ export const useCourseData = (address, showMessage) => {
 
         setCourseToMint(course);
         setLastMintSchoolAddress(targetAddress);
+        setLastMintSchoolName(schoolName);
         showMessage('Initializing on-chain minting...', 'info');
 
         try {
@@ -261,6 +293,7 @@ export const useCourseData = (address, showMessage) => {
             showMessage(`Minting failed: ${e.message}`, 'error');
             setCourseToMint(null);
             setLastMintSchoolAddress(null);
+            setLastMintSchoolName(null);
         }
     }, [address, courses, showMessage, publishCourseOnChain]);
 
@@ -323,8 +356,6 @@ export const useCourseData = (address, showMessage) => {
 
     }, [isWeb3Success, courseToEnroll, txHash, address, showMessage, loadUserData]);
 
-    // ⚠️ Mint Sync Effect
-    const [lastMintSchoolAddress, setLastMintSchoolAddress] = useState(null);
 
     useEffect(() => {
         if (!isPublishSuccess || !courseToMint || !publishTxHash) return;
@@ -339,7 +370,8 @@ export const useCourseData = (address, showMessage) => {
                     method: 'POST',
                     body: JSON.stringify({ 
                         tx_hash: publishTxHash,
-                        school_address: lastMintSchoolAddress
+                        school_address: lastMintSchoolAddress,
+                        school_name: lastMintSchoolName
                     })
                 });
                 showMessage('Course successfully minted on-chain!', 'success');
@@ -350,6 +382,7 @@ export const useCourseData = (address, showMessage) => {
             } finally {
                 setCourseToMint(null);
                 setLastMintSchoolAddress(null);
+                setLastMintSchoolName(null);
             }
         })();
     }, [isPublishSuccess, courseToMint, publishTxHash, lastMintSchoolAddress, showMessage, loadCourses]);
@@ -373,6 +406,10 @@ export const useCourseData = (address, showMessage) => {
         completeCourse,
         fetchLessonsAndProgress,
         markLessonCompleted,
+        loadCourses,
+        fetchSchools,
+        schools,
+        pagination,
         createCourse,
         createSection,
         createLesson,

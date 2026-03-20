@@ -23,6 +23,7 @@ import CourseView from './pages/CourseView.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import CertificatesPage from './pages/CertificatesPage.jsx';
 import InstructorDashboard from './pages/InstructorDashboard.jsx';
+import SchoolsPage from './pages/SchoolsPage.jsx';
 
 // Helper function to convert flat lessons into nested sections
 const groupLessonsBySection = (flatLessons) => {
@@ -97,11 +98,15 @@ function App() {
     completeCourse,
     fetchLessonsAndProgress,
     markLessonCompleted,
+    loadCourses,
     createCourse,
     createSection,
     createLesson,
     mintCourse,
-    bulkMintCourses
+    bulkMintCourses,
+    fetchSchools,
+    schools,
+    pagination
   } = useCourseData(address, showMessage);
 
   // 1.5. School Registry Hook
@@ -188,6 +193,14 @@ function App() {
           enrollmentStatusGetter={getCourseEnrollmentStatus}
           onEnroll={enrollInCourse}
           onViewDetails={loadCourseDetails}
+          loadCourses={loadCourses}
+          pagination={pagination}
+        />;
+      case 'schools':
+        return <SchoolsPage 
+          schools={schools}
+          fetchSchools={fetchSchools}
+          isSchoolLoading={loading}
         />;
       case 'course_view':
         return <CourseView
@@ -207,6 +220,8 @@ function App() {
           loading={loading}
           theme={theme}
           toggleTheme={toggleTheme}
+          allCourses={courses}
+          onViewCourse={loadCourseDetails}
         />;
       case 'certificates':
         return <CertificatesPage
@@ -215,6 +230,7 @@ function App() {
         />;
       case 'instructor':
         return <InstructorDashboard 
+          user={user}
           createCourse={createCourse} 
           createSection={createSection} 
           createLesson={createLesson} 
@@ -236,6 +252,7 @@ function App() {
           <div className="logo"><a onClick={() => showPage('home')} style={{cursor: 'pointer'}}>Studyverse</a></div>
           <ul className="nav-links">
             <li><a onClick={() => showPage('courses')} className={currentPage === 'courses' ? 'active' : ''}>Grid</a></li>
+            <li><a onClick={() => showPage('schools')} className={currentPage === 'schools' ? 'active' : ''}>Schools</a></li>
             <li><a onClick={() => showPage('profile')} className={currentPage === 'profile' ? 'active' : ''}>Dashboard</a></li>
             {user && (
               <li><a onClick={() => showPage('instructor')} className={currentPage === 'instructor' ? 'active' : ''}>Studio</a></li>
