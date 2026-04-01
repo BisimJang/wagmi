@@ -1,2 +1,13 @@
-wagmi-backend/seed_pottery_course.py
+# Environments
+.env
 wagmi-dapp/.env
+
+# Python / Django
+__pycache__/
+*.pyc
+wagmi-backend/seed_pottery_course.py
+
+# IDE / OS
+.vscode/
+.DS_Store
+
