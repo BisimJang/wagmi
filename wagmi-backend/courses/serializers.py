@@ -38,7 +38,7 @@ class CourseSerializer(serializers.ModelSerializer):
     
     # Enable writing to these fields
     price = serializers.DecimalField(max_digits=20, decimal_places=8, required=False)
-    title = serializers.CharField(write_only=True)
+    title = serializers.CharField()
     image_url = serializers.URLField(write_only=True, required=False, allow_blank=True)
 
     class Meta:

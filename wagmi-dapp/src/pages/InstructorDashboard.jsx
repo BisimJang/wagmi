@@ -101,7 +101,12 @@ const InstructorDashboard = ({
         if (!hasSchool) return;
         const targetSchool = ownedSchools[0];
         // We don't have the name of an existing school easily, so we use a fallback or the instructor name
-        const result = await mintCourse(createdCourse.id, createdCourse.price, targetSchool, `${user?.username || 'Instructor'}'s School`);
+        const result = await mintCourse(
+            createdCourse.id, 
+            createdCourse.price, 
+            targetSchool, 
+            user?.display_name ? `${user.display_name}'s School` : `${address.slice(0, 6)}... School`
+        );
         if (result) {
             setCreatedCourse({ ...createdCourse, is_minted: true });
         }

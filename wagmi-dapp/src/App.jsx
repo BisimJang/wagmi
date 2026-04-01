@@ -106,7 +106,8 @@ function App() {
     bulkMintCourses,
     fetchSchools,
     schools,
-    pagination
+    pagination,
+    syncEnrollmentWithBackend
   } = useCourseData(address, showMessage);
 
   // 1.5. School Registry Hook
@@ -195,12 +196,17 @@ function App() {
           onViewDetails={loadCourseDetails}
           loadCourses={loadCourses}
           pagination={pagination}
+          schools={schools}
         />;
       case 'schools':
         return <SchoolsPage 
+          address={address}
+          user={user}
           schools={schools}
           fetchSchools={fetchSchools}
           isSchoolLoading={loading}
+          courses={courses}
+          showMessage={showMessage}
         />;
       case 'course_view':
         return <CourseView
@@ -211,6 +217,7 @@ function App() {
           loading={loading}
           onComplete={completeCourse}
           onLessonComplete={handleLessonComplete}
+          onEnroll={enrollInCourse}
           onBack={() => showPage('courses')}
         />;
       case 'profile':
@@ -222,6 +229,8 @@ function App() {
           toggleTheme={toggleTheme}
           allCourses={courses}
           onViewCourse={loadCourseDetails}
+          syncOnChainEnrollment={syncEnrollmentWithBackend}
+          showMessage={showMessage}
         />;
       case 'certificates':
         return <CertificatesPage
@@ -251,9 +260,9 @@ function App() {
         <nav className="container">
           <div className="logo"><a onClick={() => showPage('home')} style={{cursor: 'pointer'}}>Studyverse</a></div>
           <ul className="nav-links">
-            <li><a onClick={() => showPage('courses')} className={currentPage === 'courses' ? 'active' : ''}>Grid</a></li>
-            <li><a onClick={() => showPage('schools')} className={currentPage === 'schools' ? 'active' : ''}>Schools</a></li>
-            <li><a onClick={() => showPage('profile')} className={currentPage === 'profile' ? 'active' : ''}>Dashboard</a></li>
+            <li><a onClick={() => showPage('courses')} className={currentPage === 'courses' ? 'active' : ''}>Explore</a></li>
+            <li><a onClick={() => showPage('schools')} className={currentPage === 'schools' ? 'active' : ''}>Institutional</a></li>
+            <li><a onClick={() => showPage('profile')} className={currentPage === 'profile' ? 'active' : ''}>Portfolio</a></li>
             {user && (
               <li><a onClick={() => showPage('instructor')} className={currentPage === 'instructor' ? 'active' : ''}>Studio</a></li>
             )}

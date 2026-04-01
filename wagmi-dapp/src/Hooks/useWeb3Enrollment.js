@@ -16,7 +16,10 @@ export default function useWeb3Enrollment() {
 
     const isReady = !!walletClient;
 
-    const writeEnroll = useCallback(async (courseId, coursePrice, targetAddress = COURSE_CONTRACT_ADDRESS) => {
+    const writeEnroll = useCallback(async (courseId, coursePrice, targetAddress) => {
+        // 🎯 FIX: Explicitly handle null/undefined/empty targetAddress to prevent "Contract Deployment" prompt
+        // Default parameters only trigger for 'undefined'. This ensures 'null' or '' also fallback correctly.
+        const contractAddress = targetAddress || COURSE_CONTRACT_ADDRESS;
         if (!walletClient) {
             const err = new Error('No wallet client available');
             setPrepareError(err);
@@ -49,7 +52,7 @@ export default function useWeb3Enrollment() {
 
         try {
             const result = await walletClient.writeContract({
-                address: targetAddress,
+                address: contractAddress,
                 abi: SCHOOL_ABI,
                 functionName: 'enroll',
                 args: [BigInt(courseId)], 

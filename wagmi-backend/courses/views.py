@@ -96,7 +96,8 @@ def enroll_in_course(request, course_id):
     tx_hash = request.data.get("tx_hash")
     wallet_address = request.data.get("wallet_address") or getattr(user, "address", None)
 
-    if not tx_hash or not isinstance(tx_hash, str) or not tx_hash.startswith("0x"):
+    SENTINEL_HASHES = {'on-chain-verified', 'on-chain-sync'}
+    if not tx_hash or not isinstance(tx_hash, str) or (not tx_hash.startswith("0x") and tx_hash not in SENTINEL_HASHES):
         return Response({"error": "tx_hash (hex string) is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     if not wallet_address:

@@ -1,6 +1,8 @@
 import React from 'react';
+import { useAccount, useReadContract } from 'wagmi';
 import LoadingSpinner from '../Feedback/LoadingSpinner';
 import BrutalistButton from '../UI/BrutalistButton';
+import { SCHOOL_ABI, COURSE_CONTRACT_ADDRESS } from '../../web3/constants';
 
 const CourseModal = ({ 
     course, 
@@ -10,11 +12,31 @@ const CourseModal = ({
     onEnterCourse,
     onClose 
 }) => {
-    
+    const { address } = useAccount();
+    const targetContract = course?.school_address || COURSE_CONTRACT_ADDRESS;
+
+    // On-chain fallback — same logic as CourseCard
+    const { data: isOnChainEnrolled } = useReadContract({
+        address: targetContract,
+        abi: SCHOOL_ABI,
+        functionName: 'isEnrolled',
+        args: [address, BigInt(course?.id ?? 0)],
+        query: {
+            enabled: !!address && !!course?.id,
+            staleTime: 60000,
+        }
+    });
+
     if (!course) return null;
 
+    // Combine backend status with on-chain truth
+    const effectiveStatus =
+        enrollmentStatus === 'completed' ? 'completed' :
+        (enrollmentStatus === 'enrolled' || isOnChainEnrolled) ? 'enrolled' :
+        null;
+
     const renderActionButton = () => {
-        if (enrollmentStatus === 'completed') {
+        if (effectiveStatus === 'completed') {
              return (
                  <BrutalistButton 
                     onClick={onEnterCourse}
@@ -25,7 +47,7 @@ const CourseModal = ({
              );
         }
         
-        if (enrollmentStatus === 'enrolled') {
+        if (effectiveStatus === 'enrolled') {
              return (
                  <BrutalistButton 
                     onClick={onEnterCourse}

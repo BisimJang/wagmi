@@ -318,6 +318,27 @@ export const useCourseData = (address, showMessage) => {
     // (Removed Web3 Submission Effect to prevent StrictMode double-firing)
 
 
+    const syncEnrollmentWithBackend = useCallback(async (courseId, txHash = 'on-chain-verified') => {
+        const token = localStorage.getItem('jwt');
+        if (!token || !address) return;
+
+        try {
+            await apiCall(`/courses/${courseId}/enroll/`, {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    tx_hash: txHash,
+                    wallet_address: address,
+                    course_id: courseId
+                })
+            });
+            await loadUserData(token);
+            return true;
+        } catch (error) {
+            console.error('Manual sync failed:', error);
+            return false;
+        }
+    }, [address, loadUserData]);
+
     // ⚠️ Transaction Backend Sync Effect (Runs only AFTER successful transaction is mined)
     useEffect(() => {
         if (!isWeb3Success || !courseToEnroll || !txHash) return;
@@ -333,18 +354,8 @@ export const useCourseData = (address, showMessage) => {
 
             try {
                 showMessage('Recording enrollment on server...', 'info');
-                await apiCall(`/courses/${courseToEnroll.id}/enroll/`, {
-                    method: 'POST',
-                    body: JSON.stringify({ 
-                        tx_hash: txHash,
-                        wallet_address: address,
-                        course_id: courseToEnroll.id
-                    })
-                });
-                
+                await syncEnrollmentWithBackend(courseToEnroll.id, txHash);
                 showMessage('Enrollment confirmed on server!', 'success');
-                await loadUserData(token);
-                
             } catch (error) {
                 console.error('Backend enrollment error:', error);
                 showMessage(`Server sync failed: ${error?.message || 'Unknown error'}`, 'error');
@@ -354,7 +365,7 @@ export const useCourseData = (address, showMessage) => {
             }
         })();
 
-    }, [isWeb3Success, courseToEnroll, txHash, address, showMessage, loadUserData]);
+    }, [isWeb3Success, courseToEnroll, txHash, address, showMessage, syncEnrollmentWithBackend]);
 
 
     useEffect(() => {
@@ -414,6 +425,7 @@ export const useCourseData = (address, showMessage) => {
         createSection,
         createLesson,
         mintCourse,
-        bulkMintCourses
+        bulkMintCourses,
+        syncEnrollmentWithBackend
     };
 };
