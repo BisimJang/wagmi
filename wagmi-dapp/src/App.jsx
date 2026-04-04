@@ -150,15 +150,12 @@ function App() {
   // UPDATED: Fetch lessons, group by section, and update state
   const loadCourseDetails = async (course) => {
     setSelectedCourse(course);
+    showPage('course_view'); // Route immediately to prevent modal flash
 
-    // Call the assumed hook function to fetch specific course lessons and user progress
-    // Assume flatLessons contains lesson objects with section_id and section_title
     const { lessons: flatLessons, progress } = await fetchLessonsAndProgress(course.id);
-
-    // Group the flat lessons into the section hierarchy
     const nestedSections = groupLessonsBySection(flatLessons);
 
-    setSelectedCourseLessons(nestedSections); // Now contains sections -> lessons
+    setSelectedCourseLessons(nestedSections);
     setLessonProgress(progress);
   };
 
@@ -287,17 +284,6 @@ function App() {
       {/* Global Footer */}
       <Footer showPage={showPage} />
 
-      {/* Render CourseModal overlay if a course is selected and not in full course view */}
-      {selectedCourse && currentPage !== 'course_view' && (
-          <CourseModal
-              course={selectedCourse}
-              enrollmentStatus={getCourseEnrollmentStatus(selectedCourse.id)}
-              loading={loading}
-              onEnroll={enrollInCourse}
-              onEnterCourse={() => showPage('course_view')}
-              onClose={closeCourseModal}
-          />
-      )}
     </>
   );
 }

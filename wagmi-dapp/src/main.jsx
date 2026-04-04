@@ -29,7 +29,7 @@ const config = createConfig({
   connectors,
   chains,
   transports: {
-    [mainnet.id]: http(),
+    [mainnet.id]: http('https://cloudflare-eth.com'),
     [sepolia.id]: http(),
     [base.id]: http(),
     [polygon.id]: http(),

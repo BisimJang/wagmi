@@ -2,6 +2,7 @@ import React from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import LoadingSpinner from '../components/Feedback/LoadingSpinner';
 import BrutalistButton from '../components/UI/BrutalistButton';
+import LessonWorkspace from '../components/Course/LessonWorkspace';
 import { SCHOOL_ABI, COURSE_CONTRACT_ADDRESS } from '../web3/constants';
 
 const getEmbedUrl = (url) => {
@@ -28,6 +29,7 @@ const CourseView = ({
 }) => {
     const { address } = useAccount();
     const targetContract = course?.school_address || COURSE_CONTRACT_ADDRESS;
+    const [activeLesson, setActiveLesson] = React.useState(null);
 
     // On-chain fallback
     const { data: isOnChainEnrolled } = useReadContract({
@@ -45,188 +47,241 @@ const CourseView = ({
 
     const isEnrolled = enrollmentStatus === 'enrolled' || enrollmentStatus === 'completed' || isOnChainEnrolled;
 
+    const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+
+    if (activeLesson) {
+        return (
+            <section className="page active" style={{ padding: '0', display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#fff' }}>
+                {/* LEFT SIDEBAR - COMPACT CURRICULUM */}
+                <div style={{ 
+                    width: isSidebarOpen ? '350px' : '60px', 
+                    background: '#000', 
+                    color: '#fff', 
+                    borderRight: '4px solid #000', 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    transition: 'width 0.2s',
+                    position: 'relative'
+                }}>
+                    {/* Collapser Toggle */}
+                    <div 
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        style={{
+                            position: 'absolute',
+                            top: '1rem',
+                            right: isSidebarOpen ? '1rem' : 'auto',
+                            left: isSidebarOpen ? 'auto' : '50%',
+                            transform: isSidebarOpen ? 'none' : 'translateX(-50%)',
+                            cursor: 'pointer',
+                            zIndex: 20
+                        }}
+                    >
+                        {isSidebarOpen ? '◀' : '▶'}
+                    </div>
+
+                    {isSidebarOpen ? (
+                        <>
+                            <div style={{ padding: '1.5rem', borderBottom: '2px solid #333', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                                <div>
+                                    <h2 style={{ fontSize: '1rem', color: '#ccc', marginBottom: '0.2rem', lineHeight: 1.1 }}>{course.name.toUpperCase()}</h2>
+                                    <h3 style={{ fontSize: '0.9rem', color: '#39ff14', margin: 0, fontWeight: '900' }}>STUDIO: {activeLesson.title.toUpperCase()}</h3>
+                                </div>
+                                <button 
+                                    style={{ background: '#ff0000', color: '#fff', padding: '0.4rem 0.6rem', fontSize: '0.7rem', border: '2px solid #000', cursor: 'pointer', fontWeight: '900', flexShrink: 0 }} 
+                                    onClick={() => setActiveLesson(null)}
+                                >
+                                    CLOSE [X]
+                                </button>
+                            </div>
+                            
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '0 2rem 2rem 2rem' }} className="sidebar-scroll">
+                                {lessons?.sort((a, b) => a.order - b.order).map((section, sIdx) => (
+                                    <div key={section.id} style={{ marginBottom: '2rem' }}>
+                                        <div style={{ fontSize: '0.8rem', color: '#39ff14', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                                            MODULE {String(sIdx + 1).padStart(2, '0')}: {section.title.toUpperCase()}
+                                        </div>
+                                        <div>
+                                            {section.lessons?.sort((a, b) => a.order - b.order).map((lesson, lIdx) => {
+                                                const isActive = activeLesson.id === lesson.id;
+                                                const isCompleted = lessonProgress?.[lesson.id]?.completed;
+                                                return (
+                                                    <div 
+                                                        key={lesson.id} 
+                                                        onClick={() => setActiveLesson(lesson)}
+                                                        style={{ 
+                                                            padding: '0.6rem', 
+                                                            marginBottom: '0.5rem',
+                                                            border: '2px solid #fff',
+                                                            background: isActive ? '#39ff14' : 'transparent',
+                                                            color: isActive ? '#000' : '#fff',
+                                                            cursor: 'pointer',
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            transition: 'all 0.1s'
+                                                        }}
+                                                    >
+                                                        <span style={{ fontSize: '0.7rem', fontWeight: '900' }}>{lesson.title}</span>
+                                                        {isCompleted && <span style={{ fontSize: '0.7rem' }}>✓</span>}
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                        </>
+                    ) : (
+                        // Collapsed State
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 0 1rem 0' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
+                                <div style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '0.8rem', color: '#39ff14', fontWeight: 'bold', letterSpacing: '2px' }}>
+                                    {activeLesson.title.toUpperCase()}
+                                </div>
+                            </div>
+                            <div style={{ marginTop: 'auto' }}>
+                                <div style={{ fontSize: '1.2rem', cursor: 'pointer', color: '#ff0000' }} onClick={() => setActiveLesson(null)}>
+                                    ✖
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* RIGHT CANVAS */}
+                <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                    <LessonWorkspace lesson={activeLesson} onClose={() => setActiveLesson(null)} />
+                </div>
+            </section>
+        );
+    }
+
     return (
-        <section className="page active" style={{ padding: '0', background: 'var(--background)' }}>
+        <section className="page active" style={{ padding: '0', background: 'var(--background)', position: 'relative' }}>
             
+            {/* BACK BUTTON */}
+            <button 
+                onClick={onBack}
+                style={{ 
+                    position: 'absolute', 
+                    top: '1.5rem', 
+                    left: '1.5rem', 
+                    background: 'transparent',
+                    border: 'none',
+                    fontWeight: '900',
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    textTransform: 'uppercase',
+                    color: '#666',
+                    zIndex: 10
+                }}
+            >
+                &larr; BACK TO CATALOG
+            </button>
+
             {/* 1. TOP HEADER / BADGES */}
-            <div style={{ padding: '3rem 1.5rem 0 1.5rem', textAlign: 'center' }}>
+            <div style={{ padding: '4rem 1.5rem 0 1.5rem', textAlign: 'center' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
                     <span className="neon-block" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem' }}>INSTRUCTOR: {course.instructor_name || 'STUDYVERSE OWNER'}</span>
                     <span className="neon-block" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem', background: '#fff' }}>DURATION: 8 WEEKS</span>
                     <span className="neon-block" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem' }}>LEVEL: ADVANCED</span>
                 </div>
 
-                <h1 style={{ 
-                    fontSize: 'clamp(3rem, 10vw, 5.5rem)', 
-                    fontWeight: '900', 
-                    letterSpacing: '-4px', 
+                <div className="container" style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between', 
+                    gap: '2rem', 
+                    flexWrap: 'wrap', 
                     marginBottom: '2rem',
-                    lineHeight: '0.9'
+                    textAlign: 'left'
                 }}>
-                    {course.name.toUpperCase()}
-                </h1>
+                    <div style={{ flex: '1 1 500px' }}>
+                        <h1 style={{ 
+                            fontSize: 'clamp(2rem, 5vw, 4rem)', 
+                            fontWeight: '900', 
+                            letterSpacing: '-2px', 
+                            marginBottom: '1rem',
+                            lineHeight: '1'
+                        }}>
+                            {course.name.toUpperCase()}
+                        </h1>
+                        <p style={{ color: '#666', fontSize: '1.2rem', margin: 0, lineHeight: 1.5 }}>
+                            {course.description || "A deep dive into structural anarchy, deconstructionism, and the ethics of permanent structures in an impermanent world."}
+                        </p>
+                    </div>
 
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem' }}>
-                    {!isEnrolled ? (
-                        <BrutalistButton onClick={() => onEnroll(course)} style={{ background: 'var(--primary-color)', fontSize: '1.2rem' }}>
-                            ENROLL NOW
-                        </BrutalistButton>
-                    ) : (
-                        <div className="neon-block" style={{ padding: '0.8rem 1.6rem', fontSize: '1.2rem' }}>
-                            ✓ ENROLLED
-                        </div>
-                    )}
-                    <BrutalistButton style={{ background: '#fff', fontSize: '1.2rem' }}>
-                        PREVIEW SYLLABUS
-                    </BrutalistButton>
+                    <div style={{ flexShrink: 0 }}>
+                        {!isEnrolled ? (
+                            <BrutalistButton onClick={() => onEnroll(course)} style={{ background: '#fff', fontSize: '1.2rem', padding: '1rem 2rem' }}>
+                                ENROLL NOW
+                            </BrutalistButton>
+                        ) : (
+                            <BrutalistButton 
+                                onClick={() => {
+                                    const firstLesson = lessons?.[0]?.lessons?.[0];
+                                    if (firstLesson) setActiveLesson(firstLesson);
+                                }} 
+                                style={{ background: '#fff', fontSize: '1.2rem', padding: '1rem 2rem' }}
+                            >
+                                START COURSE
+                            </BrutalistButton>
+                        )}
+                    </div>
                 </div>
 
-                <div className="handwritten">
+                <div className="handwritten" style={{ marginTop: '2rem' }}>
                     "DESTROY THE BOX BEFORE YOU TRY TO THINK OUTSIDE OF IT."
                 </div>
             </div>
 
-            {/* 2. HERO IMAGE & FLOATING OVERVIEW */}
-            <div className="container" style={{ maxWidth: '1000px', marginTop: '4rem', position: 'relative' }}>
-                <div className="brutalist-card" style={{ padding: '0', overflow: 'hidden', background: '#000' }}>
-                    <img 
-                        src={course.imageUrl || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070'} 
-                        alt="Hero" 
-                        style={{ width: '100%', display: 'block', filter: 'grayscale(100%) contrast(120%)', opacity: 0.8 }}
-                    />
-                </div>
-                
-                {/* Floating Overview Card */}
-                <div className="brutalist-card" style={{ 
-                    position: 'absolute', 
-                    bottom: '-2rem', 
-                    right: '2rem', 
-                    maxWidth: '350px', 
-                    padding: '1.5rem',
-                    zIndex: 10
-                }}>
-                    <h3 style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>COURSE OVERVIEW</h3>
-                    <p style={{ fontSize: '0.8rem', color: '#666', lineHeight: '1.4' }}>
-                        {course.description || "A deep dive into structural anarchy, deconstructionism, and the ethics of permanent structures in an impermanent world."}
-                    </p>
-                </div>
-            </div>
-
-            {/* 3. CURRICULUM FEED */}
-            <div style={{ marginTop: '8rem', paddingBottom: '6rem' }}>
-                {lessons?.sort((a, b) => a.order - b.order).map((section, sIdx) => (
-                    <div key={section.id} style={{ marginBottom: '4rem' }}>
-                        {/* MODULE HEADER */}
-                        <div className="neon-block" style={{ 
-                            padding: '1.5rem 0', 
-                            fontSize: '2rem', 
-                            textAlign: 'center', 
-                            borderLeft: 'none', 
-                            borderRight: 'none',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            gap: '4rem'
-                        }}>
-                            <span>MODULE {String(sIdx + 1).padStart(2, '0')}: {section.title.toUpperCase()}</span>
-                            <span className="handwritten" style={{ color: '#000', marginTop: 0, fontSize: '1rem' }}>Essential Skills</span>
-                        </div>
-
-                        {/* LESSONS */}
-                        <div className="container" style={{ maxWidth: '1000px', marginTop: '3rem' }}>
-                            {isEnrolled ? (
-                                section.lessons?.sort((a, b) => a.order - b.order).map((lesson, lIdx) => {
-                                    const isCompleted = lessonProgress?.[lesson.id]?.completed;
-                                    const isEven = lIdx % 2 === 0;
-
-                                    return (
-                                        <div key={lesson.id} style={{ 
-                                            display: 'flex', 
-                                            flexDirection: isEven ? 'row' : 'row-reverse',
-                                            gap: '3rem',
-                                            marginBottom: '4rem',
-                                            alignItems: 'center',
-                                            flexWrap: 'wrap'
-                                        }}>
-                                            {/* IMAGE / VIDEO SIDE */}
-                                            <div style={{ flex: 1 }}>
-                                                <div className="brutalist-card" style={{ padding: 0, overflow: 'hidden', background: '#000' }}>
-                                                    {lesson.video_url ? (
-                                                        <div style={{ aspectRatio: '16/9', width: '100%' }}>
-                                                            <iframe 
-                                                                src={getEmbedUrl(lesson.video_url)} 
-                                                                title={lesson.title} 
-                                                                frameBorder="0" 
-                                                                allowFullScreen
-                                                                style={{ width: '100%', height: '100%', display: 'block' }}
-                                                            ></iframe>
-                                                        </div>
-                                                    ) : (
-                                                        <img 
-                                                            src={lesson.image_url || 'https://images.unsplash.com/photo-1518005020480-1a2fd6d52579?q=80&w=1964'} 
-                                                            alt={lesson.title}
-                                                            style={{ width: '100%', display: 'block', filter: 'grayscale(100%)' }}
-                                                        />
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* CONTENT SIDE */}
-                                            <div style={{ flex: 1.5 }}>
-                                                <div className="brutalist-card" style={{ padding: '2rem' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                                        {isCompleted ? (
-                                                            <span className="neon-block" style={{ fontSize: '0.6rem', padding: '0.2rem 0.5rem' }}>✓ COMPLETED</span>
-                                                        ) : (
-                                                            <span className="neon-block" style={{ fontSize: '0.6rem', padding: '0.2rem 0.5rem', background: '#000', color: 'var(--primary-color)' }}>◉ CURRENT</span>
-                                                        )}
-                                                        <span style={{ fontSize: '0.6rem', fontWeight: 'bold' }}>14:20:00</span>
-                                                    </div>
-                                                    <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>{lesson.title.toUpperCase()}</h3>
-                                                    <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '1.5rem' }}>
-                                                        {lesson.content?.substring(0, 150) || "Understanding the brutalist movement's obsession with honesty in materials and the rejection of ornamentation."}...
-                                                    </p>
-                                                    <BrutalistButton 
-                                                        onClick={() => onLessonComplete(lesson.id)}
-                                                        style={{ background: '#000', color: '#fff', fontSize: '0.7rem' }}
-                                                    >
-                                                        {isCompleted ? 'REWATCH LESSON' : 'MARK COMPLETE'}
-                                                    </BrutalistButton>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                /* LOCKED CONTENT VIEW */
-                                <div className="locked-block" style={{ 
-                                    padding: '5rem 2rem', 
-                                    textAlign: 'center', 
-                                    display: 'flex', 
-                                    flexDirection: 'column', 
-                                    alignItems: 'center',
-                                    gap: '1.5rem'
-                                }}>
-                                    <div style={{ fontSize: '4rem' }}>🔒</div>
-                                    <h2 style={{ fontSize: '2.5rem', color: '#ff0000', maxWidth: '600px' }}>LOCKED CONTENT: UNAUTHORIZED ACCESS</h2>
-                                    <p style={{ color: '#fff', maxWidth: '500px', fontSize: '0.9rem' }}>
-                                        ENROLLMENT IN '{course.name.toUpperCase()}' REQUIRED FOR DECRYPTING THIS SECTOR
-                                    </p>
-                                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                        <BrutalistButton onClick={() => onEnroll(course)} style={{ background: '#ff0000', color: '#fff' }}>PURCHASE ACCESS</BrutalistButton>
-                                        <BrutalistButton style={{ background: '#000', color: '#fff' }}>VIEW PREREQUISITES</BrutalistButton>
-                                    </div>
+            {/* 3. COMPACT SYLLABUS */}
+            <div style={{ marginTop: '4rem', paddingBottom: '6rem' }}>
+                <div className="container">
+                    <h2 style={{ fontSize: '3rem', marginBottom: '3rem', borderBottom: '6px solid #000', paddingBottom: '1rem' }}>COURSE SYLLABUS</h2>
+                    
+                    {lessons?.sort((a, b) => a.order - b.order).map((section, sIdx) => {
+                        const moduleCompleted = isEnrolled && section.lessons?.every(l => lessonProgress?.[l.id]?.completed);
+                        
+                        return (
+                            <div key={section.id} className="brutalist-card" style={{ marginBottom: '2rem', padding: '2rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                    <h3 style={{ fontSize: '1.5rem', margin: 0 }}>
+                                        <span style={{ color: 'var(--primary-color)', marginRight: '1rem' }}>{String(sIdx + 1).padStart(2, '0')}</span>
+                                        {section.title.toUpperCase()}
+                                    </h3>
+                                    {moduleCompleted && <span className="neon-block" style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem' }}>✓</span>}
                                 </div>
-                            )}
-                        </div>
-                    </div>
-                ))}
+                                <p style={{ color: '#666', fontSize: '1rem', marginBottom: '1.5rem', paddingLeft: '2.5rem' }}>
+                                    {section.description || `Explore the foundational concepts of "${section.title}" through aggressive, uncompromising architectural learning nodes.`}
+                                </p>
+                                <div style={{ paddingLeft: '2.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                    {section.lessons?.sort((a, b) => a.order - b.order).map((lesson, lIdx) => (
+                                        <span key={lesson.id} style={{ 
+                                            background: '#f0f0f0', 
+                                            padding: '0.4rem 0.8rem', 
+                                            fontSize: '0.75rem', 
+                                            fontWeight: 'bold',
+                                            border: '2px solid #000'
+                                        }}>
+                                            {lessonProgress?.[lesson.id]?.completed && '✓ '}{lesson.title}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* 4. READY TO GRADUATE SECTION */}
             {isEnrolled && (
                 <div style={{ background: '#222', color: '#fff', padding: '6rem 1.5rem', textAlign: 'center', borderTop: '6px solid #000' }}>
-                    <div className="container" style={{ maxWidth: '800px' }}>
+                    <div className="container">
                         <h2 style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>READY TO GRADUATE?</h2>
                         <p style={{ color: 'var(--primary-color)', fontWeight: '900', fontSize: '1.1rem', marginBottom: '3rem' }}>
                             VALIDATE YOUR ARCHITECTURAL REBELLION ON THE BLOCKCHAIN
@@ -260,14 +315,6 @@ const CourseView = ({
                     </div>
                 </div>
             )}
-
-            {/* BACK BUTTON */}
-            <BrutalistButton 
-                onClick={onBack}
-                style={{ position: 'fixed', bottom: '2rem', left: '2rem', background: '#000', color: '#fff', zIndex: 100 }}
-            >
-                &larr; EXIT STUDIO
-            </BrutalistButton>
 
         </section>
     );
