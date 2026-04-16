@@ -147,7 +147,7 @@ const LessonWorkspace = ({ lesson, onClose, onNext }) => {
             display: isMobile ? 'flex' : 'block',
             flexDirection: isMobile ? 'column' : 'unset',
             padding: isMobile ? '1rem' : '0',
-            paddingTop: isMobile ? '2rem' : '0'
+            paddingTop: isMobile ? '2rem' : '6rem'
         }}>
             <DesktopRecommendation />
             {/* Toolbar for toggling widgets - DESKTOP ONLY */}
@@ -162,7 +162,6 @@ const LessonWorkspace = ({ lesson, onClose, onNext }) => {
                 gap: '0.8rem', 
                 background: dockHoveredWidgetId !== null ? '#39ff14' : '#000', 
                 padding: '0.5rem 1rem', 
-                border: '3px solid #000', 
                 borderRadius: isMobile ? '0' : '40px',
                 width: isMobile ? '100%' : 'auto',
                 transition: 'background 0.2s',
@@ -170,6 +169,7 @@ const LessonWorkspace = ({ lesson, onClose, onNext }) => {
                 borderLeft: isMobile ? 'none' : '3px solid #000',
                 borderRight: isMobile ? 'none' : '3px solid #000',
                 borderTop: isMobile ? 'none' : '3px solid #000',
+                borderBottom: '3px solid #000',
             }}>
                 {widgets
                     .map(w => (
@@ -200,28 +200,37 @@ const LessonWorkspace = ({ lesson, onClose, onNext }) => {
                     </button>
                 ))}
                 
-                {/* Desktop Next Button */}
+                {/* Desktop Next Button - Integrated Power Shortcut */}
                 {onNext && (
                     <button 
                         onClick={onNext}
-                        title="Next Lesson"
+                        title="Mark Complete & Next Lesson"
                         style={{
                             background: '#39ff14',
                             color: '#000',
-                            border: '2px solid #000',
+                            border: '3px solid #000',
                             borderRadius: '50%',
-                            width: '40px',
-                            height: '40px',
+                            width: '42px',
+                            height: '42px',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            boxShadow: '2px 2px 0px #000',
+                            boxShadow: '3px 3px 0px #000',
                             marginLeft: '1rem',
-                            borderLeft: '4px solid #000'
+                            borderLeft: '4px solid #000',
+                            transition: 'all 0.1s'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translate(-2px, -2px)';
+                            e.currentTarget.style.boxShadow = '5px 5px 0px #000';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'none';
+                            e.currentTarget.style.boxShadow = '3px 3px 0px #000';
                         }}
                     >
-                        <ChevronRight size={22} />
+                        <ChevronRight size={24} strokeWidth={3} />
                     </button>
                 )}
             </div>
@@ -335,38 +344,9 @@ const LessonWorkspace = ({ lesson, onClose, onNext }) => {
             })}
             </div>
 
-            {/* NEXT LESSON NAVIGATION */}
-            {onNext && (
-                <div style={{ padding: isMobile ? '0 1rem 6rem 1rem' : '3rem 1.5rem', display: 'flex', justifyContent: 'center' }}>
-                    <button 
-                        onClick={onNext}
-                        className="brutalist-card"
-                        style={{
-                            width: isMobile ? '100%' : 'auto',
-                            background: 'var(--primary-color)',
-                            color: '#000',
-                            border: '5px solid #000',
-                            padding: '1rem 3rem',
-                            fontSize: '1.2rem',
-                            fontWeight: '900',
-                            textTransform: 'uppercase',
-                            boxShadow: '8px 8px 0 #000',
-                            cursor: 'pointer',
-                            transition: 'all 0.1s',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '1rem'
-                        }}
-                    >
-                        <span>Complete & Next Section</span>
-                        <ChevronRight size={24} strokeWidth={3} />
-                    </button>
-                </div>
-            )}
 
-            {/* WIDGET HUB - MOBILE ONLY */}
-            {isMobile && (
+            {/* STUDIO HUB / WIDGET HUB - Persistent Action Center */}
+            {true && (
                 <div style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 3000 }}>
                     {/* Pop-up Menu */}
                     {isMenuOpen && (
@@ -383,9 +363,50 @@ const LessonWorkspace = ({ lesson, onClose, onNext }) => {
                             boxShadow: '8px 8px 0 #000',
                             border: '4px solid #000'
                         }}>
-                            <div style={{ fontSize: '0.7rem', fontWeight: '900', textTransform: 'uppercase', borderBottom: '2px solid #000', paddingBottom: '0.4rem', marginBottom: '0.2rem' }}>
-                                Workspace Modules
-                            </div>
+                             <div style={{ fontSize: '0.7rem', fontWeight: '900', textTransform: 'uppercase', borderBottom: '2px solid #000', paddingBottom: '0.4rem', marginBottom: '0.2rem', color: '#666' }}>
+                                 Lesson Controls
+                             </div>
+                             
+                             {onNext && (
+                                 <button 
+                                     onClick={onNext}
+                                     style={{
+                                         display: 'flex',
+                                         alignItems: 'center',
+                                         gap: '1rem',
+                                         padding: '0.8rem 1rem',
+                                         background: '#000',
+                                         color: '#39ff14',
+                                         border: '3px solid #000',
+                                         cursor: 'pointer',
+                                         fontSize: '0.75rem',
+                                         fontWeight: '900',
+                                         textTransform: 'uppercase',
+                                         textAlign: 'left',
+                                         width: '100%',
+                                         boxShadow: '4px 4px 0 #39ff14',
+                                         transition: 'all 0.1s'
+                                     }}
+                                     onMouseEnter={(e) => {
+                                         e.currentTarget.style.transform = 'translate(-2px, -2px)';
+                                         e.currentTarget.style.boxShadow = '6px 6px 0 #39ff14';
+                                     }}
+                                     onMouseLeave={(e) => {
+                                         e.currentTarget.style.transform = 'none';
+                                         e.currentTarget.style.boxShadow = '4px 4px 0 #39ff14';
+                                     }}
+                                 >
+                                     <div style={{ padding: '4px', background: '#39ff14', color: '#000', borderRadius: '50%' }}>
+                                         <Plus size={14} style={{ transform: 'rotate(45deg)' }} strokeWidth={4} />
+                                     </div>
+                                     <span>Finish & Next</span>
+                                     <ChevronRight size={16} />
+                                 </button>
+                             )}
+
+                             <div style={{ fontSize: '0.7rem', fontWeight: '900', textTransform: 'uppercase', borderBottom: '2px solid #000', paddingBottom: '0.4rem', marginBottom: '0.2rem', color: '#666', marginTop: '0.5rem' }}>
+                                 Workspace Modules
+                             </div>
                             {widgets.map(w => (
                                 <div 
                                     key={w.id} 

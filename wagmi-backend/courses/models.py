@@ -62,6 +62,8 @@ class LessonProgress(models.Model):
     lesson = models.ForeignKey("Lesson", on_delete=models.CASCADE)
     progress = models.FloatField(default=0.0)  # percentage: 0 - 100
     completed = models.BooleanField(default=False)
+    layout_config = models.JSONField(blank=True, default=dict)
+    notes = models.TextField(blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

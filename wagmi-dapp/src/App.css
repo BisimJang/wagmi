@@ -72,18 +72,27 @@ nav {
 .nav-links a {
   color: var(--text);
   text-decoration: none;
-  font-weight: 600;
-  font-size: 0.75rem; /* Reduced */
+  font-weight: 700;
+  font-size: 0.8rem;
   text-transform: uppercase;
-  border-bottom: 3px solid transparent;
+  border-bottom: 2px solid transparent;
   transition: all 0.2s;
-  padding: 0.25rem; /* Reduced */
+  padding: 0.4rem 0.8rem;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.nav-links li {
+  display: flex;
+  align-items: center;
 }
 
 .nav-links a:hover,
 .nav-links a.active {
   background-color: var(--primary-color);
-  border-bottom: 3px solid var(--border);
+  color: #000;
+  border-bottom: 2px solid var(--border);
+  box-shadow: 2px 2px 0px #000;
 }
 
 .wallet-section {
