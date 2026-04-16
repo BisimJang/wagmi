@@ -181,6 +181,27 @@ export const useCourseData = (address, showMessage) => {
         }
     }, [showMessage, loadCourses]);
 
+    const updateCourse = useCallback(async (courseId, courseData) => {
+        const token = localStorage.getItem('jwt');
+        if (!token) return null;
+        try {
+            setLoading(true);
+            const updated = await apiCall(`/courses/${courseId}/`, {
+                method: 'PATCH',
+                body: JSON.stringify(courseData)
+            });
+            showMessage('Course updated.', 'success');
+            await loadCourses();
+            return updated;
+        } catch (error) {
+            console.error('Course update error:', error);
+            showMessage(`Failed to update course: ${error.message}`, 'error');
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    }, [showMessage, loadCourses]);
+
     const createSection = useCallback(async (courseId, title) => {
         const token = localStorage.getItem('jwt');
         if (!token) { showMessage('Please sign in to add sections', 'warning'); return null; }
@@ -195,6 +216,24 @@ export const useCourseData = (address, showMessage) => {
         } catch (error) {
             console.error('Section creation error:', error);
             showMessage(`Failed to add section: ${error.message}`, 'error');
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    }, [showMessage]);
+
+    const updateSection = useCallback(async (sectionId, title) => {
+        try {
+            setLoading(true);
+            const updated = await apiCall(`/sections/${sectionId}/`, {
+                method: 'PATCH',
+                body: JSON.stringify({ title })
+            });
+            showMessage('Section updated.', 'success');
+            return updated;
+        } catch (error) {
+            console.error('Section update error:', error);
+            showMessage(`Failed to update section: ${error.message}`, 'error');
             return null;
         } finally {
             setLoading(false);
@@ -216,6 +255,24 @@ export const useCourseData = (address, showMessage) => {
         } catch (error) {
             console.error('Lesson creation error:', error);
             showMessage(`Failed to add lesson: ${error.message}`, 'error');
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    }, [showMessage]);
+
+    const updateLesson = useCallback(async (lessonId, lessonData) => {
+        try {
+            setLoading(true);
+            const updated = await apiCall(`/lessons/${lessonId}/`, {
+                method: 'PATCH',
+                body: JSON.stringify(lessonData)
+            });
+            showMessage('Lesson updated.', 'success');
+            return updated;
+        } catch (error) {
+            console.error('Lesson update error:', error);
+            showMessage(`Failed to update lesson: ${error.message}`, 'error');
             return null;
         } finally {
             setLoading(false);
@@ -436,8 +493,11 @@ export const useCourseData = (address, showMessage) => {
         schools,
         pagination,
         createCourse,
+        updateCourse,
         createSection,
+        updateSection,
         createLesson,
+        updateLesson,
         mintCourse,
         bulkMintCourses,
         syncEnrollmentWithBackend,

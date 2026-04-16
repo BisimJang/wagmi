@@ -259,14 +259,18 @@ function App() {
         return <InstructorDashboard 
           user={user}
           createCourse={createCourse} 
+          updateCourse={updateCourse}
           createSection={createSection} 
+          updateSection={updateSection}
           createLesson={createLesson} 
+          updateLesson={updateLesson}
           mintCourse={mintCourse} 
           bulkMintCourses={bulkMintCourses}
           courses={courses}
           createSchoolOnChain={createSchoolOnChain}
           ownedSchools={ownedSchools}
           isSchoolLoading={isSchoolLoading}
+          fetchLessons={fetchLessonsAndProgress}
         />;
       default: return <HomePage stats={stats} user={user} certificates={certificates} showPage={showPage} />;
     }

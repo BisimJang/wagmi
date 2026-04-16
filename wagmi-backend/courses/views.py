@@ -78,6 +78,28 @@ class LessonListCreateView(generics.ListCreateAPIView):
             raise PermissionDenied("Only the instructor of this course can add lessons.")
         serializer.save()
 
+class SectionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Section.objects.all()
+    serializer_class = SectionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_update(self, serializer):
+        section = self.get_object()
+        if section.course.instructor != self.request.user:
+            raise PermissionDenied("Only the instructor of this course can edit this section.")
+        serializer.save()
+
+class LessonDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Lesson.objects.all()
+    serializer_class = LessonSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_update(self, serializer):
+        lesson = self.get_object()
+        if lesson.section.course.instructor != self.request.user:
+            raise PermissionDenied("Only the instructor of this course can edit this lesson.")
+        serializer.save()
+
 
 class EnrollmentListCreateView(generics.ListCreateAPIView):
     queryset = Enrollment.objects.all()
@@ -266,19 +288,24 @@ def complete_lesson(request, lesson_id):
     Requires course_id in the request body for validation.
     """
     try:
-        # Assuming request.data is already parsed by DRF
         data = request.data
         course_id = data.get('course_id') 
+        
+        if course_id is None:
+            return Response({"detail": "course_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            course_id = int(course_id)
+        except (ValueError, TypeError):
+            return Response({"detail": "Invalid course_id format."}, status=status.HTTP_400_BAD_REQUEST)
         
         # 1. Verify the Lesson and Course relationship
         lesson = get_object_or_404(Lesson, pk=lesson_id)
         
         if lesson.section.course_id != course_id:
-            # Although the frontend sends course_id, we should verify the relationship
             return Response({"detail": "Lesson verification failed: Lesson does not belong to the specified course."}, status=status.HTTP_400_BAD_REQUEST)
         
         # 2. Create or Update LessonProgress
-        # update_or_create handles both creation (first time) and updating (re-marking complete)
         lesson_progress, created = LessonProgress.objects.update_or_create(
             user=request.user,
             lesson=lesson,
@@ -296,10 +323,9 @@ def complete_lesson(request, lesson_id):
 
     except Lesson.DoesNotExist:
         return Response({"detail": "Lesson not found."}, status=status.HTTP_404_NOT_FOUND)
-        
     except Exception as e:
-        print(f"Error marking lesson complete: {e}")
-        return Response({"detail": "An internal error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        logger.exception("Error marking lesson complete")
+        return Response({"detail": f"An internal error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
