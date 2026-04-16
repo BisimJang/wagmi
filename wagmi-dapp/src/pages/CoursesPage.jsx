@@ -11,7 +11,8 @@ const CoursesPage = ({
     onViewDetails,
     loadCourses,
     pagination,
-    schools = []
+    schools = [],
+    syncEnrollment
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedSchool, setSelectedSchool] = useState(null); // null = All Schools
@@ -70,11 +71,11 @@ const CoursesPage = ({
                             onChange={(e) => setSearchQuery(e.target.value)}
                             style={{
                                 width: '100%',
-                                padding: '1.2rem 1.5rem',
-                                fontSize: '1.1rem',
+                                padding: 'clamp(0.8rem, 3vw, 1.2rem) clamp(1rem, 4vw, 1.5rem)',
+                                fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
                                 border: '4px solid #000',
                                 outline: 'none',
-                                boxShadow: '5px 5px 0px #000',
+                                boxShadow: 'clamp(3px, 1vw, 5px) clamp(3px, 1vw, 5px) 0px #000',
                                 boxSizing: 'border-box',
                             }}
                         />
@@ -100,13 +101,21 @@ const CoursesPage = ({
 
                 {/* SCHOOL FILTER CHIPS */}
                 {availableSchools.length > 0 && (
-                    <div style={{
+                    <div className="filter-scroll-container" style={{
                         display: 'flex',
-                        flexWrap: 'wrap',
+                        flexWrap: 'nowrap',
+                        overflowX: 'auto',
                         gap: '0.6rem',
                         alignItems: 'center',
                         marginBottom: '2.5rem',
+                        paddingBottom: '1rem',
+                        WebkitOverflowScrolling: 'touch',
+                        msOverflowStyle: 'none',
+                        scrollbarWidth: 'none'
                     }}>
+                        <style>{`
+                            .filter-scroll-container::-webkit-scrollbar { display: none; }
+                        `}</style>
                         <span style={{ 
                             fontSize: '0.75rem', 
                             fontWeight: '900', 
@@ -114,6 +123,7 @@ const CoursesPage = ({
                             letterSpacing: '1px',
                             color: 'var(--text-secondary)',
                             marginRight: '0.4rem',
+                            flexShrink: 0
                         }}>
                             Filter by School:
                         </span>
@@ -131,6 +141,7 @@ const CoursesPage = ({
                                 color: selectedSchool === null ? '#fff' : '#000',
                                 transition: 'background 0.15s, color 0.15s',
                                 boxShadow: selectedSchool === null ? '3px 3px 0 var(--primary-color)' : 'none',
+                                flexShrink: 0
                             }}
                         >
                             All Schools
@@ -154,6 +165,7 @@ const CoursesPage = ({
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
+                                    flexShrink: 0
                                 }}
                                 title={name}
                             >
@@ -172,6 +184,7 @@ const CoursesPage = ({
                                     cursor: 'pointer',
                                     textDecoration: 'underline',
                                     marginLeft: '0.25rem',
+                                    flexShrink: 0
                                 }}
                             >
                                 Clear filter
@@ -220,6 +233,7 @@ const CoursesPage = ({
                                     onEnroll={onEnroll}
                                     onViewDetails={onViewDetails}
                                     enrollmentStatus={enrollmentStatusGetter(course.id)}
+                                    onSync={() => syncEnrollment(course.id)}
                                 />
                             ))}
                         </div>

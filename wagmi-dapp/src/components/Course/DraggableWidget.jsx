@@ -13,7 +13,8 @@ const DraggableWidget = ({
     onFocus,
     onClose,
     onDrag,
-    isDockingTarget
+    isDockingTarget,
+    isMobile = false
 }) => {
     // Local state for smooth dragging/resizing
     const [localPos, setLocalPos] = useState(position);
@@ -35,6 +36,7 @@ const DraggableWidget = ({
 
     /* DRAGGING LOGIC */
     const startDrag = (e) => {
+        if (isMobile) return; // No dragging on mobile
         if (e.button !== 0) return; // Only left click
         setIsDragging(true);
         if (onFocus) onFocus(id);
@@ -49,6 +51,7 @@ const DraggableWidget = ({
 
     /* RESIZING LOGIC */
     const startResize = (e) => {
+        if (isMobile) return; // No resizing on mobile
         if (e.button !== 0) return;
         setIsResizing(true);
         if (onFocus) onFocus(id);
@@ -114,24 +117,29 @@ const DraggableWidget = ({
             onClick={handleWidgetClick}
             className={`brutalist-card widget-container ${isDragging ? 'dragging' : ''}`}
             style={{
-                position: 'absolute',
-                left: localPos.x,
-                top: localPos.y,
-                width: localSize.width,
-                height: localSize.height,
+                position: isMobile ? 'relative' : 'absolute',
+                left: isMobile ? '0' : localPos.x,
+                top: isMobile ? '0' : localPos.y,
+                width: isMobile ? '100%' : localSize.width,
+                height: isMobile ? 'auto' : localSize.height,
+                minHeight: isMobile ? '300px' : 'none',
                 padding: 0,
                 display: 'flex',
                 flexDirection: 'column',
                 background: '#fff',
                 overflow: 'hidden',
                 zIndex: zIndex,
-                boxShadow: isDragging ? '16px 16px 0px #000' : '8px 8px 0px #000',
+                boxShadow: isMobile ? 'none' : (isDragging ? '16px 16px 0px #000' : '8px 8px 0px #000'),
+                border: isMobile ? '3px solid #000' : '3px solid #000',
+                borderBottom: isMobile ? '8px solid #000' : '3px solid #000', // Stronger divider on mobile
+                marginBottom: isMobile ? '2rem' : '0',
                 opacity: isDragging && isDockingTarget ? 0.5 : 1,
                 transform: isDragging && isDockingTarget ? 'scale(0.95)' : 'scale(1)',
                 transition: isDragging || isResizing ? 'opacity 0.2s, transform 0.2s' : 'box-shadow 0.2s, z-index 0.1s, opacity 0.2s, transform 0.2s',
                 transformOrigin: 'top center'
             }}
         >
+            {!isMobile && (
             <div 
                 className="window-titlebar"
                 onMouseDown={startDrag}
@@ -143,7 +151,7 @@ const DraggableWidget = ({
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     borderBottom: '3px solid #000',
-                    cursor: isDragging ? 'grabbing' : 'grab'
+                    cursor: isMobile ? 'default' : (isDragging ? 'grabbing' : 'grab')
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
@@ -156,30 +164,57 @@ const DraggableWidget = ({
                     <X size={10} style={{ cursor: 'pointer', color: '#ff0000' }} onClick={(e) => { e.stopPropagation(); if(onClose) onClose(id); }} />
                 </div>
             </div>
+            )}
 
             {/* Window Content */}
-            <div className="window-content" style={{ flex: 1, padding: '0.5rem', overflowY: 'auto' }}>
+            <div className="window-content" style={{ flex: 1, padding: isMobile ? '1rem' : '0.5rem', overflowY: isMobile ? 'visible' : 'auto' }}>
+                {isMobile && (
+                    <div style={{ marginBottom: '1rem', borderBottom: '2px solid #000', paddingBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>{title}</span>
+                        <div 
+                            onClick={(e) => { e.stopPropagation(); if(onClose) onClose(id); }}
+                            style={{
+                                background: '#000',
+                                color: '#fff',
+                                width: '24px',
+                                height: '24px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.8rem',
+                                fontWeight: '900',
+                                cursor: 'pointer',
+                                border: '2px solid #000',
+                                boxShadow: '2px 2px 0 #39ff14'
+                            }}
+                        >
+                            <X size={14} />
+                        </div>
+                    </div>
+                )}
                 {children}
             </div>
 
-            {/* Custom Corner Gripper */}
-            <div 
-                className="gripper"
-                onMouseDown={startResize}
-                style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    right: 0,
-                    width: '20px',
-                    height: '20px',
-                    cursor: 'se-resize',
-                    background: 'linear-gradient(135deg, transparent 50%, #000 50%, transparent 60%, transparent 70%, #000 70%, transparent 80%, transparent 90%, #000 90%)',
-                    backgroundSize: '10px 10px',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'bottom right',
-                    zIndex: 10
-                }}
-            />
+            {/* Custom Corner Gripper - Hidden on Mobile */}
+            {!isMobile && (
+                <div 
+                    className="gripper"
+                    onMouseDown={startResize}
+                    style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        right: 0,
+                        width: '20px',
+                        height: '20px',
+                        cursor: 'se-resize',
+                        background: 'linear-gradient(135deg, transparent 50%, #000 50%, transparent 60%, transparent 70%, #000 70%, transparent 80%, transparent 90%, #000 90%)',
+                        backgroundSize: '10px 10px',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'bottom right',
+                        zIndex: 10
+                    }}
+                />
+            )}
         </div>
     );
 };

@@ -47,23 +47,58 @@ const CourseView = ({
 
     const isEnrolled = enrollmentStatus === 'enrolled' || enrollmentStatus === 'completed' || isOnChainEnrolled;
 
-    const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+    const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 768);
+    React.useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const [isSidebarOpen, setIsSidebarOpen] = React.useState(!isMobile);
 
     if (activeLesson) {
         return (
-            <section className="page active" style={{ padding: '0', display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#fff' }}>
+            <section className="page active" style={{ padding: '0', display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#fff', position: 'relative' }}>
+                {/* Mobile Toggle Button (when sidebar is closed) */}
+                {isMobile && !isSidebarOpen && (
+                    <div 
+                        onClick={() => setIsSidebarOpen(true)}
+                        style={{
+                            position: 'absolute',
+                            top: '1rem',
+                            left: '1rem',
+                            cursor: 'pointer',
+                            zIndex: 60,
+                            background: '#000',
+                            color: '#39ff14',
+                            padding: '0.4rem 0.6rem',
+                            border: '3px solid #000',
+                            fontWeight: '900',
+                            fontSize: '0.7rem'
+                        }}
+                    >
+                        ☰ CURRICULUM
+                    </div>
+                )}
+
                 {/* LEFT SIDEBAR - COMPACT CURRICULUM */}
                 <div style={{ 
-                    width: isSidebarOpen ? '350px' : '60px', 
+                    width: isSidebarOpen ? (isMobile ? '100vw' : '350px') : (isMobile ? '0px' : '60px'), 
                     background: '#000', 
                     color: '#fff', 
-                    borderRight: '4px solid #000', 
+                    borderRight: isMobile && !isSidebarOpen ? 'none' : '4px solid #000', 
                     display: 'flex', 
                     flexDirection: 'column',
                     transition: 'width 0.2s',
-                    position: 'relative'
+                    position: isMobile ? 'absolute' : 'relative',
+                    zIndex: 50,
+                    height: '100%',
+                    left: 0,
+                    top: 0,
+                    overflow: isSidebarOpen || !isMobile ? 'visible' : 'hidden'
                 }}>
-                    {/* Collapser Toggle */}
+                    {/* Desktop/Open Toggle */}
+                    {(!isMobile || isSidebarOpen) && (
                     <div 
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                         style={{
@@ -78,6 +113,7 @@ const CourseView = ({
                     >
                         {isSidebarOpen ? '◀' : '▶'}
                     </div>
+                    )}
 
                     {isSidebarOpen ? (
                         <>

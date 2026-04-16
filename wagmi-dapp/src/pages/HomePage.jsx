@@ -32,11 +32,26 @@ const HomePage = ({ stats, user, certificates, showPage }) => {
                 }
                 @media (max-width: 768px) {
                     .hero-title-massive {
-                        font-size: 5rem !important;
+                        font-size: 3rem !important;
+                        letter-spacing: -1px !important;
                     }
                     .hero-subtitle-massive {
-                        font-size: 1.2rem !important;
-                        padding: 1rem !important;
+                        font-size: 0.9rem !important;
+                        padding: 0.8rem 1rem !important;
+                    }
+                    .hero-grid {
+                        grid-template-columns: 1fr !important;
+                        text-align: center;
+                    }
+                    .hero-buttons {
+                        align-items: stretch !important;
+                        width: 100% !important;
+                    }
+                    .hero-buttons > button {
+                        font-size: 0.8rem !important;
+                    }
+                    .section-title-massive {
+                        font-size: 2.2rem !important;
                     }
                 }
             `}</style>
@@ -52,7 +67,7 @@ const HomePage = ({ stats, user, certificates, showPage }) => {
                     alignItems: 'center',
                     justifyContent: 'center'
                 }}>
-                    <div className="container" style={{
+                    <div className="container hero-grid" style={{
                         maxWidth: '900px',
                         width: '100%',
                         display: 'grid',
@@ -101,7 +116,7 @@ const HomePage = ({ stats, user, certificates, showPage }) => {
                         </div>
 
                         {/* RIGHT SIDE - BUTTONS */}
-                        <div style={{
+                        <div className="hero-buttons" style={{
                             display: 'flex',
                             flexDirection: 'column',
                             gap: '1rem',
@@ -146,8 +161,8 @@ const HomePage = ({ stats, user, certificates, showPage }) => {
                 </div>
 
                 {/* MARQUEE */}
-                <div className="marquee-container" style={{ marginTop: '-4px', borderBottom: '6px solid #000' }}>
-                    <div className="marquee-content" style={{ fontSize: '2.25rem' }}>
+                <div className="marquee-container" style={{ marginTop: '-4px', borderBottom: '6px solid #000', overflow: 'hidden' }}>
+                    <div className="marquee-content" style={{ fontSize: '1.5rem' }}>
                         <span>⚡ DECENTRALIZED EDUCATION ⚡</span>
                         <span>🔥 NFT CERTIFICATES 🔥</span>
                         <span>⚠️ PROOF OF SKILL ⚠️</span>
@@ -166,7 +181,7 @@ const HomePage = ({ stats, user, certificates, showPage }) => {
                     borderBottom: '6px solid #000'
                 }}>
                     <div className="container" style={{ maxWidth: '900px' }}>
-                        <h2 style={{
+                        <h2 className="section-title-massive" style={{
                             fontSize: '3.75rem',
                             fontWeight: '900',
                             textTransform: 'uppercase',
@@ -184,22 +199,22 @@ const HomePage = ({ stats, user, certificates, showPage }) => {
                             gridTemplateColumns: 'repeat(auto-fit, minmax(225px, 1fr))',
                             gap: '3rem'
                         }}>
-                            <div style={{ border: '6px solid #000', padding: '2.25rem', background: '#e0e0e0', position: 'relative' }}>
-                                <div style={{ position: 'absolute', top: '-1.5rem', left: '-1.5rem', background: '#000', color: '#39ff14', fontSize: '2.25rem', fontWeight: '900', padding: '0.4rem 0.75rem', border: '3px solid #000' }}>01</div>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1rem', marginTop: '0.75rem' }}>Reject Linear</h3>
-                                <p style={{ fontSize: '0.9rem', lineHeight: '1.6', fontWeight: '600' }}>Conventional learning forces a single start and end. Here, you dive in anywhere. The curriculum adapts and guides you to a cohesive understanding, regardless of your entry point.</p>
+                            <div className="brutalist-card" style={{ padding: '2.25rem', background: '#e0e0e0', position: 'relative', border: '6px solid #000', boxShadow: 'none' }}>
+                                <div style={{ position: 'absolute', top: '-1rem', left: '-1rem', background: '#000', color: '#39ff14', fontSize: '1.5rem', fontWeight: '900', padding: '0.4rem 0.75rem', border: '3px solid #000' }}>01</div>
+                                <h3 style={{ fontSize: '1.3rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1rem', marginTop: '0.75rem' }}>Reject Linear</h3>
+                                <p style={{ fontSize: '0.85rem', lineHeight: '1.6', fontWeight: '600' }}>Conventional learning forces a single start and end. Here, you dive in anywhere. The curriculum adapts and guides you to a cohesive understanding.</p>
                             </div>
 
-                            <div style={{ border: '6px solid #000', padding: '2.25rem', background: '#39ff14', position: 'relative' }}>
-                                <div style={{ position: 'absolute', top: '-1.5rem', left: '-1.5rem', background: '#000', color: '#ff00ff', fontSize: '2.25rem', fontWeight: '900', padding: '0.4rem 0.75rem', border: '3px solid #000' }}>02</div>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1rem', marginTop: '0.75rem' }}>Mint & Earn</h3>
-                                <p style={{ fontSize: '0.9rem', lineHeight: '1.6', fontWeight: '600' }}>Instructors deploy courses directly onto the decentralized ledger. Set your ETH price, own your content, and retain 100% of the value you generate.</p>
+                            <div className="brutalist-card" style={{ padding: '2.25rem', background: '#39ff14', position: 'relative', border: '6px solid #000', boxShadow: 'none' }}>
+                                <div style={{ position: 'absolute', top: '-1rem', left: '-1rem', background: '#000', color: '#ff00ff', fontSize: '1.5rem', fontWeight: '900', padding: '0.4rem 0.75rem', border: '3px solid #000' }}>02</div>
+                                <h3 style={{ fontSize: '1.3rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1rem', marginTop: '0.75rem' }}>Mint & Earn</h3>
+                                <p style={{ fontSize: '0.85rem', lineHeight: '1.6', fontWeight: '600' }}>Instructors deploy courses directly onto the decentralized ledger. Set your ETH price, own your content, and retain 100% of the value you generate.</p>
                             </div>
 
-                            <div style={{ border: '6px solid #000', padding: '2.25rem', background: '#000', color: '#fff', position: 'relative' }}>
-                                <div style={{ position: 'absolute', top: '-1.5rem', left: '-1.5rem', background: '#fff', color: '#000', fontSize: '2.25rem', fontWeight: '900', padding: '0.4rem 0.75rem', border: '3px solid #000' }}>03</div>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1rem', marginTop: '0.75rem' }}>Absolute Validation</h3>
-                                <p style={{ fontSize: '0.9rem', lineHeight: '1.6', fontWeight: '600' }}>Complete the process and mint your cryptographic certificate. Immutable, verifiable proof of skill that lives in your wallet, not on a centralized server.</p>
+                            <div className="brutalist-card" style={{ padding: '2.25rem', background: '#000', color: '#fff', position: 'relative', border: '6px solid #000', boxShadow: 'none' }}>
+                                <div style={{ position: 'absolute', top: '-1rem', left: '-1rem', background: '#fff', color: '#000', fontSize: '1.5rem', fontWeight: '900', padding: '0.4rem 0.75rem', border: '3px solid #000' }}>03</div>
+                                <h3 style={{ fontSize: '1.3rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1rem', marginTop: '0.75rem' }}>Absolute Validation</h3>
+                                <p style={{ fontSize: '0.85rem', lineHeight: '1.6', fontWeight: '600' }}>Complete the process and mint your cryptographic certificate. Immutable, verifiable proof of skill that lives in your wallet.</p>
                             </div>
                         </div>
                     </div>
@@ -209,25 +224,26 @@ const HomePage = ({ stats, user, certificates, showPage }) => {
                 {/* SIGNBOARD 1 */}
                 <div style={{
                     background: '#ff00ff',
-                    padding: '7rem 1.5rem',
+                    padding: 'clamp(3rem, 10vw, 7rem) 1.5rem',
                     borderBottom: '6px solid #000',
-                    position: 'relative'
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}>
                     <div className="container" style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', justifyContent: 'flex-start' }}>
                         <div style={{
                             background: '#fff',
                             color: '#000',
                             border: '6px solid #000',
-                            boxShadow: '18px 18px 0 #000',
-                            padding: '3rem',
+                            boxShadow: 'clamp(8px, 4vw, 18px) clamp(8px, 4vw, 18px) 0 #000',
+                            padding: 'clamp(1.5rem, 5vw, 3rem)',
                             maxWidth: '525px',
-                            transform: 'rotate(-2deg)'
+                            transform: 'rotate(-1deg)'
                         }}>
-                             <h2 style={{ fontSize: '3rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1.5rem', lineHeight: '1' }}>
+                             <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 3rem)', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1.5rem', lineHeight: '1' }}>
                                  NOTICE 01:<br/>THE GENESIS
                              </h2>
-                             <p style={{ fontSize: '1.15rem', fontWeight: '600', lineHeight: '1.6' }}>
-                                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate.
+                             <p style={{ fontSize: 'clamp(0.85rem, 3vw, 1.15rem)', fontWeight: '600', lineHeight: '1.6' }}>
+                                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
                              </p>
                         </div>
                     </div>
@@ -236,25 +252,26 @@ const HomePage = ({ stats, user, certificates, showPage }) => {
                 {/* SIGNBOARD 2 */}
                 <div style={{
                     background: '#e0e0e0',
-                    padding: '7rem 1.5rem',
+                    padding: 'clamp(3rem, 10vw, 7rem) 1.5rem',
                     borderBottom: '6px solid #000',
-                    position: 'relative'
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}>
                     <div className="container" style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', justifyContent: 'flex-end' }}>
                         <div style={{
                             background: '#000',
                             color: 'var(--primary-color)',
                             border: '6px solid var(--primary-color)',
-                            boxShadow: '-18px 18px 0 var(--primary-color)',
-                            padding: '3rem',
+                            boxShadow: 'clamp(-18px, -4vw, -8px) clamp(8px, 4vw, 18px) 0 var(--primary-color)',
+                            padding: 'clamp(1.5rem, 5vw, 3rem)',
                             maxWidth: '525px',
-                            transform: 'rotate(2deg)'
+                            transform: 'rotate(1deg)'
                         }}>
-                             <h2 style={{ fontSize: '3rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1.5rem', lineHeight: '1' }}>
+                             <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 3rem)', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1.5rem', lineHeight: '1' }}>
                                  NOTICE 02:<br/>THE PROTOCOL
                              </h2>
-                             <p style={{ fontSize: '1.15rem', fontWeight: '600', lineHeight: '1.6' }}>
-                                 Massa tempor nec feugiat nisl. Dictumst quisque sagittis purus sit. Ultricies integer quis auctor elit sed vulputate mi sit. Et malesuada fames ac turpis egestas integer eget aliquet nibh. Tincidunt lobortis feugiat vivamus at augue eget arcu.
+                             <p style={{ fontSize: 'clamp(0.85rem, 3vw, 1.15rem)', fontWeight: '600', lineHeight: '1.6' }}>
+                                 Massa tempor nec feugiat nisl. Dictumst quisque sagittis purus sit. Ultricies integer quis auctor elit sed vulputate mi sit. Et malesuada fames ac turpis egestas integer eget aliquet nibh.
                              </p>
                         </div>
                     </div>
@@ -263,26 +280,27 @@ const HomePage = ({ stats, user, certificates, showPage }) => {
                 {/* SIGNBOARD 3 */}
                 <div style={{
                     background: 'var(--primary-color)',
-                    padding: '7rem 1.5rem',
+                    padding: 'clamp(3rem, 10vw, 7rem) 1.5rem',
                     borderBottom: '6px solid #000',
-                    position: 'relative'
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}>
                     <div className="container" style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', justifyContent: 'center' }}>
                         <div style={{
                             background: '#fff',
                             color: '#000',
                             border: '6px solid #000',
-                            boxShadow: '18px 18px 0 #000',
-                            padding: '3rem',
+                            boxShadow: 'clamp(8px, 4vw, 18px) clamp(8px, 4vw, 18px) 0 #000',
+                            padding: 'clamp(1.5rem, 5vw, 3rem)',
                             maxWidth: '600px',
-                            transform: 'rotate(-1deg)',
+                            transform: 'rotate(0deg)',
                             textAlign: 'center'
                         }}>
-                             <h2 style={{ fontSize: '3rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1.5rem', lineHeight: '1' }}>
+                             <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 3rem)', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1.5rem', lineHeight: '1' }}>
                                  NOTICE 03:<br/>THE FRONTIER
                              </h2>
-                             <p style={{ fontSize: '1.15rem', fontWeight: '600', lineHeight: '1.6' }}>
-                                 Volutpat diam ut venenatis tellus in metus vulputate eu. Condimentum lacinia quis vel eros donec. Eleifend mi in nulla posuere sollicitudin aliquam ultrices. Faucibus purus in massa tempor nec feugiat. Tellus pellentesque eu tincidunt tortor aliquam.
+                             <p style={{ fontSize: 'clamp(0.85rem, 3vw, 1.15rem)', fontWeight: '600', lineHeight: '1.6' }}>
+                                 Volutpat diam ut venenatis tellus in metus vulputate eu. Condimentum lacinia quis vel eros donec. Eleifend mi in nulla posuere sollicitudin aliquam ultrices. Faucibus purus in massa tempor nec feugiat.
                              </p>
                         </div>
                     </div>

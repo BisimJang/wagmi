@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import DraggableWidget from './DraggableWidget';
 import BrutalistButton from '../UI/BrutalistButton';
-import { Video, Book, PenTool } from 'lucide-react';
+import { Video, Book, PenTool, Bot, Plus, X } from 'lucide-react';
+import DesktopRecommendation from '../UI/DesktopRecommendation';
 
 const getEmbedUrl = (url) => {
     if (!url) return null;
@@ -19,19 +20,29 @@ const LessonWorkspace = ({ lesson, onClose }) => {
         { id: 'widget-media', title: 'Media Viewer', type: 'media', size: { width: 300, height: 195 }, pos: { x: 20, y: 20 }, isVisible: true },
         { id: 'widget-syllabus', title: 'Curriculum & Content', type: 'content', size: { width: 195, height: 195 }, pos: { x: 340, y: 20 }, isVisible: true },
         { id: 'widget-notes', title: 'Personal Notes', type: 'notes', size: { width: 300, height: 175 }, pos: { x: 20, y: 230 }, isVisible: true },
+        { id: 'widget-ai', title: 'Studyverse AI', type: 'ai', size: { width: 280, height: 385 }, pos: { x: 340, y: 230 }, isVisible: false },
     ];
 
     const [widgets, setWidgets] = useState([]);
     const [notesText, setNotesText] = useState("");
-    const [stackOrder, setStackOrder] = useState(['widget-media', 'widget-syllabus', 'widget-notes']);
+    const [stackOrder, setStackOrder] = useState(['widget-media', 'widget-syllabus', 'widget-notes', 'widget-ai']);
     const [dockHoveredWidgetId, setDockHoveredWidgetId] = useState(null);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const workspaceRef = React.useRef(null);
+
+    // Handle Resize for Mobile Detection
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Load from local storage or use defaults
     useEffect(() => {
         if (!lesson) return;
         
-        const storageKey = `studyverse_layout_v4_${lesson.id}`;
+        const storageKey = `studyverse_layout_v5_${lesson.id}`;
         const savedLayout = localStorage.getItem(storageKey);
         
         if (savedLayout) {
@@ -51,7 +62,7 @@ const LessonWorkspace = ({ lesson, onClose }) => {
     // Save to local storage whenever widgets change
     useEffect(() => {
         if (!lesson || widgets.length === 0) return;
-        const storageKey = `studyverse_layout_v2_${lesson.id}`;
+        const storageKey = `studyverse_layout_v5_${lesson.id}`;
         localStorage.setItem(storageKey, JSON.stringify({ widgets, stackOrder }));
     }, [widgets, stackOrder, lesson]);
 
@@ -113,10 +124,13 @@ const LessonWorkspace = ({ lesson, onClose }) => {
 
     const handleWidgetToggle = (id) => {
         setWidgets(widgets.map(w => w.id === id ? { ...w, isVisible: w.isVisible === false ? true : false } : w));
-        setStackOrder(prev => {
-            const filtered = prev.filter(wId => wId !== id);
-            return [...filtered, id];
-        });
+        
+        if (!isMobile) {
+            setStackOrder(prev => {
+                const filtered = prev.filter(wId => wId !== id);
+                return [...filtered, id];
+            });
+        }
     };
 
     if (!lesson) return null;
@@ -126,13 +140,18 @@ const LessonWorkspace = ({ lesson, onClose }) => {
             position: 'relative',
             width: '100%',
             height: '100%',
-            minHeight: '800px',
-            backgroundColor: '#f0f0f0',
-            backgroundImage: 'radial-gradient(#ccc 2px, transparent 2px)',
+            backgroundColor: isMobile ? '#fff' : '#f0f0f0',
+            backgroundImage: isMobile ? 'none' : 'radial-gradient(#ccc 2px, transparent 2px)',
             backgroundSize: '30px 30px', /* Dotted grid background */
-            overflow: 'hidden', /* True canvas, no scrollbars over the overall area. Can be panning later */
+            overflow: isMobile ? 'auto' : 'hidden', /* Allow scrolling on mobile fixed view */
+            display: isMobile ? 'flex' : 'block',
+            flexDirection: isMobile ? 'column' : 'unset',
+            padding: isMobile ? '1rem' : '0',
+            paddingTop: isMobile ? '2rem' : '0'
         }}>
-            {/* Toolbar for toggling widgets */}
+            <DesktopRecommendation />
+            {/* Toolbar for toggling widgets - DESKTOP ONLY */}
+            {!isMobile && (
             <div style={{ 
                 position: 'absolute', 
                 top: '1rem', 
@@ -144,20 +163,26 @@ const LessonWorkspace = ({ lesson, onClose }) => {
                 background: dockHoveredWidgetId !== null ? '#39ff14' : '#000', 
                 padding: '0.5rem 1rem', 
                 border: '3px solid #000', 
-                borderRadius: '40px',
+                borderRadius: isMobile ? '0' : '40px',
+                width: isMobile ? '100%' : 'auto',
                 transition: 'background 0.2s',
-                boxShadow: dockHoveredWidgetId !== null ? '0 0 20px rgba(57, 255, 20, 0.8)' : 'none'
+                boxShadow: isMobile ? 'none' : (dockHoveredWidgetId !== null ? '0 0 20px rgba(57, 255, 20, 0.8)' : 'none'),
+                borderLeft: isMobile ? 'none' : '3px solid #000',
+                borderRight: isMobile ? 'none' : '3px solid #000',
+                borderTop: isMobile ? 'none' : '3px solid #000',
             }}>
-                {widgets.map(w => (
+                {widgets
+                    .map(w => (
                     <button 
                         key={w.id}
                         onClick={() => handleWidgetToggle(w.id)}
                         title={`Toggle ${w.title}`}
                         style={{
-                            background: w.isVisible !== false ? '#39ff14' : '#fff',
+                            background: (w.isVisible !== false ? '#39ff14' : '#fff'),
                             color: '#000',
                             border: '2px solid #000',
                             borderRadius: '50%',
+                            flex: 'none',
                             width: '40px',
                             height: '40px',
                             cursor: 'pointer',
@@ -171,27 +196,38 @@ const LessonWorkspace = ({ lesson, onClose }) => {
                         {w.type === 'media' && <Video size={18} />}
                         {w.type === 'content' && <Book size={18} />}
                         {w.type === 'notes' && <PenTool size={18} />}
+                        {w.type === 'ai' && <Bot size={18} />}
                     </button>
                 ))}
             </div>
+            )}
 
-            {widgets.filter(w => w.isVisible !== false).map((widget) => {
-                const zIndex = 10 + stackOrder.indexOf(widget.id);
-                return (
-                    <DraggableWidget 
-                        key={widget.id} 
-                        id={widget.id} 
-                        title={widget.title}
-                        position={widget.pos}
-                        size={widget.size}
-                        zIndex={zIndex}
-                        onPositionChange={handlePosChange}
-                        onSizeChange={handleSizeChange}
-                        onFocus={handleFocus}
-                        onClose={handleWidgetClose}
-                        onDrag={handleDrag}
-                        isDockingTarget={dockHoveredWidgetId === widget.id}
-                    >
+            {/* Content Area for Mobile or Floating Canvas for Desktop */}
+            <div style={{
+                flex: isMobile ? 'none' : 'none',
+                position: isMobile ? 'relative' : 'static',
+                width: '100%',
+                height: isMobile ? 'auto' : 'auto',
+                overflow: isMobile ? 'visible' : 'visible'
+            }}>
+                {widgets.filter(w => isMobile ? w.isVisible !== false : w.isVisible !== false).map((widget) => {
+                    const zIndex = 10 + stackOrder.indexOf(widget.id);
+                    return (
+                        <DraggableWidget 
+                            key={widget.id} 
+                            id={widget.id} 
+                            title={widget.title}
+                            position={widget.pos}
+                            size={widget.size}
+                            zIndex={zIndex}
+                            onPositionChange={handlePosChange}
+                            onSizeChange={handleSizeChange}
+                            onFocus={handleFocus}
+                            onClose={handleWidgetClose}
+                            onDrag={handleDrag}
+                            isDockingTarget={dockHoveredWidgetId === widget.id}
+                            isMobile={isMobile}
+                        >
                         {/* Render content conditionally based on type */}
                         {widget.type === 'media' && (
                             <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -248,9 +284,112 @@ const LessonWorkspace = ({ lesson, onClose }) => {
                                 </div>
                             </div>
                         )}
+
+                        {widget.type === 'ai' && (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>
+                                <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem', fontSize: '0.7rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <div style={{ alignSelf: 'flex-start', background: '#333', padding: '0.4rem 0.6rem', border: '1px solid #555' }}>
+                                        <p style={{ margin: 0, color: '#39ff14', fontWeight: 'bold' }}>[AI SYSTEM READY]</p>
+                                        <p style={{ margin: '0.3rem 0 0 0' }}>I am your Studyverse assistant. How can I help you with <strong>{lesson.title}</strong>?</p>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', borderTop: '2px solid #555', padding: '0.4rem', background: '#111' }}>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Ask AI..." 
+                                        style={{ flex: 1, background: '#000', color: '#fff', border: '1px solid #333', padding: '0.4rem', fontSize: '0.7rem', outline: 'none' }}
+                                    />
+                                    <button style={{ background: '#39ff14', color: '#000', border: 'none', padding: '0.4rem 0.8rem', fontSize: '0.7rem', fontWeight: '900', cursor: 'pointer', marginLeft: '0.4rem' }}>
+                                        ASK
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </DraggableWidget>
                 );
             })}
+            </div>
+
+            {/* WIDGET HUB - MOBILE ONLY */}
+            {isMobile && (
+                <div style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 3000 }}>
+                    {/* Pop-up Menu */}
+                    {isMenuOpen && (
+                        <div className="brutalist-card" style={{
+                            position: 'absolute',
+                            bottom: '4.5rem',
+                            right: 0,
+                            width: '200px',
+                            background: '#fff',
+                            padding: '1rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.8rem',
+                            boxShadow: '8px 8px 0 #000',
+                            border: '4px solid #000'
+                        }}>
+                            <div style={{ fontSize: '0.7rem', fontWeight: '900', textTransform: 'uppercase', borderBottom: '2px solid #000', paddingBottom: '0.4rem', marginBottom: '0.2rem' }}>
+                                Workspace Modules
+                            </div>
+                            {widgets.map(w => (
+                                <div 
+                                    key={w.id} 
+                                    onClick={() => handleWidgetToggle(w.id)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.8rem',
+                                        padding: '0.5rem',
+                                        background: w.isVisible !== false ? 'var(--primary-color)' : '#f0f0f0',
+                                        border: '3px solid #000',
+                                        cursor: 'pointer',
+                                        fontSize: '0.8rem',
+                                        fontWeight: '700'
+                                    }}
+                                >
+                                    <div style={{ flexShrink: 0 }}>
+                                        {w.type === 'media' && <Video size={16} />}
+                                        {w.type === 'content' && <Book size={16} />}
+                                        {w.type === 'notes' && <PenTool size={16} />}
+                                        {w.type === 'ai' && <Bot size={16} />}
+                                    </div>
+                                    <span style={{ flex: 1 }}>{w.title.split(' ')[0]}</span>
+                                    <div style={{ 
+                                        width: '12px', 
+                                        height: '12px', 
+                                        borderRadius: '50%', 
+                                        background: w.isVisible !== false ? '#000' : '#ccc',
+                                        border: '2px solid #000'
+                                    }} />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* FAB Bubble */}
+                    <button
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        style={{
+                            width: '56px',
+                            height: '56px',
+                            background: isMenuOpen ? '#ff00ff' : 'var(--primary-color)',
+                            color: '#000',
+                            borderRadius: '50%',
+                            border: '4px solid #000',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '6px 6px 0 #000',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            transition: 'all 0.2s',
+                            transform: isMenuOpen ? 'rotate(45deg)' : 'none'
+                        }}
+                    >
+                        <Plus size={32} strokeWidth={3} />
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

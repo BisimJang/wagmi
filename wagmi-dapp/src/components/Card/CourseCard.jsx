@@ -4,7 +4,7 @@ import { useAccount, useReadContract } from 'wagmi';
 import BrutalistButton from '../UI/BrutalistButton';
 import { SCHOOL_ABI, COURSE_CONTRACT_ADDRESS } from '../../web3/constants';
 
-const CourseCard = ({ course, onEnroll, onViewDetails, enrollmentStatus }) => {
+const CourseCard = ({ course, onEnroll, onViewDetails, enrollmentStatus, onSync }) => {
   const { address } = useAccount();
   const targetContract = course.school_address || COURSE_CONTRACT_ADDRESS;
 
@@ -23,6 +23,14 @@ const CourseCard = ({ course, onEnroll, onViewDetails, enrollmentStatus }) => {
   // Effective status (either backend reported it OR the blockchain verified it)
   const isEnrolled = enrollmentStatus === 'enrolled' || enrollmentStatus === 'completed' || isOnChainEnrolled;
   const isCompleted = enrollmentStatus === 'completed';
+
+  // 🆕 Background Sync: if we FOUND it on chain but backend doesn't know, tell the backend!
+  React.useEffect(() => {
+    if (isOnChainEnrolled && !enrollmentStatus && address && onSync) {
+      console.log(`Auto-syncing on-chain enrollment for course ${course.id}`);
+      onSync();
+    }
+  }, [isOnChainEnrolled, enrollmentStatus, address, onSync, course.id]);
 
   return (
     <div className="course-card" onClick={() => onViewDetails(course)}> 

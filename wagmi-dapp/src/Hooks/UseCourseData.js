@@ -14,6 +14,7 @@ export const useCourseData = (address, showMessage) => {
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState({ totalCourses: 0 });
     const [schools, setSchools] = useState([]);
+    const [myCourses, setMyCourses] = useState([]);
     
     // Pagination State
     const [pagination, setPagination] = useState({
@@ -57,6 +58,19 @@ export const useCourseData = (address, showMessage) => {
             
             setUser(user_data);
             setCertificates(user_data.certificates || []); 
+            
+            // 🆕 Consolidation: Fetch full course objects for all enrollments
+            if (user_data.enrollments && user_data.enrollments.length > 0) {
+                const enrolledIds = user_data.enrollments.map(e => e.course_id);
+                try {
+                    const coursesData = await Promise.all(enrolledIds.map(id => apiCall(`/courses/${id}/`)));
+                    setMyCourses(coursesData);
+                } catch (e) {
+                    console.error('Error fetching enrolled course details:', e);
+                }
+            } else {
+                setMyCourses([]);
+            }
         } catch (error) {
             console.error('Error loading user data:', error);
             showMessage(`Failed to load user data: ${error.message || 'Check console.'}`, 'error');
@@ -426,6 +440,8 @@ export const useCourseData = (address, showMessage) => {
         createLesson,
         mintCourse,
         bulkMintCourses,
-        syncEnrollmentWithBackend
+        syncEnrollmentWithBackend,
+        myCourses,
+        setMyCourses
     };
 };

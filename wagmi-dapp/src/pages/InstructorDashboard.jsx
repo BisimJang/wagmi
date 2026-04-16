@@ -1,5 +1,5 @@
-// src/pages/InstructorDashboard.jsx
 import React, { useState } from 'react';
+import { useAccount } from 'wagmi';
 import BrutalistButton from '../components/UI/BrutalistButton';
 
 const InstructorDashboard = ({ 
@@ -14,6 +14,8 @@ const InstructorDashboard = ({
     ownedSchools,
     isSchoolLoading 
 }) => {
+    const { address } = useAccount();
+
     // -- State: Step 0 (School Onboarding) --
     const [schoolName, setSchoolName] = useState('');
 
@@ -33,6 +35,8 @@ const InstructorDashboard = ({
     
     const [activeLessonSectionId, setActiveLessonSectionId] = useState(null);
     const [lessonData, setLessonData] = useState({ title: '', content: '', video_url: '', image_url: '' });
+
+    const [showMobilePreview, setShowMobilePreview] = useState(false);
 
     const hasSchool = ownedSchools && ownedSchools.length > 0;
 
@@ -126,28 +130,36 @@ const InstructorDashboard = ({
     return (
         <section className="page active" style={{ padding: '2rem 0', background: 'var(--background)' }}>
             <div className="container" style={{ maxWidth: '1200px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                     <h1 style={{ fontSize: '2.5rem', fontWeight: '900', letterSpacing: '-2px', margin: 0 }}>
                         INSTRUCTOR STUDIO
                     </h1>
-                    {(() => {
-                        try {
-                            if (!Array.isArray(courses)) return null;
-                            const unsynced = courses.filter(c => c.is_instructor && !c.is_minted);
-                            console.log('Dashboard State:', { hasSchool, ownedSchools, unsyncedCount: unsynced.length });
-                            
-                            if (hasSchool && unsynced.length > 0) {
-                                return (
-                                    <BrutalistButton onClick={handleBulkSync} style={{ background: 'var(--accent-color)', fontSize: '0.8rem' }}>
-                                        SYNC {unsynced.length} TO BLOCKCHAIN (PRICE INITIALIZER)
-                                    </BrutalistButton>
-                                );
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <button 
+                            className="btn-secondary mobile-only" 
+                            onClick={() => setShowMobilePreview(!showMobilePreview)}
+                            style={{ fontSize: '0.7rem' }}
+                        >
+                            {showMobilePreview ? 'EDIT MODE' : 'PREVIEW MODE'}
+                        </button>
+                        {(() => {
+                            try {
+                                if (!Array.isArray(courses)) return null;
+                                const unsynced = courses.filter(c => c.is_instructor && !c.is_minted);
+                                
+                                if (hasSchool && unsynced.length > 0) {
+                                    return (
+                                        <BrutalistButton onClick={handleBulkSync} style={{ background: 'var(--accent-color)', fontSize: '0.8rem' }}>
+                                            SYNC {unsynced.length}
+                                        </BrutalistButton>
+                                    );
+                                }
+                            } catch (e) {
+                                console.error('Error rendering sync button:', e);
                             }
-                        } catch (e) {
-                            console.error('Error rendering sync button:', e);
-                        }
-                        return null;
-                    })()}
+                            return null;
+                        })()}
+                    </div>
                 </div>
 
                 {!hasSchool ? (
@@ -168,13 +180,13 @@ const InstructorDashboard = ({
                         </BrutalistButton>
                     </div>
                 ) : (
-                    <div className="studio-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 400px', gap: '3rem', alignItems: 'start' }}>
+                    <div className={`studio-layout ${showMobilePreview ? 'show-preview' : ''}`} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 400px', gap: '3rem', alignItems: 'start' }}>
                         {/* LEFT COLUMN: EDITOR */}
                         <div className="editor-side">
                             {/* STEP 1: Details */}
-                            <div className="form-container" style={{ marginBottom: '2rem', border: '5px solid var(--text)', padding: '2rem' }}>
+                            <div className="form-container" style={{ marginBottom: '2rem', border: '5px solid var(--text)', padding: '2rem', marginLeft: 0, marginRight: 0, maxWidth: '100%' }}>
                                 <h2 style={{ fontWeight: '800', borderBottom: '4px solid var(--text)', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
-                                    {createdCourse ? '✓ 1. COURSE DETAILS SAVED' : '1. COURSE DETAILS'}
+                                    {createdCourse ? '✓ 1. COURSE SAVED' : '1. COURSE DETAILS'}
                                 </h2>
                                 {!createdCourse ? (
                                     <form onSubmit={handleCourseSubmit}>
