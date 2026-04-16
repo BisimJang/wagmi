@@ -15,7 +15,7 @@ const getEmbedUrl = (url) => {
     return url;
 };
 
-const LessonWorkspace = ({ lesson, onClose, onNext }) => {
+const LessonWorkspace = ({ lesson, isCompleted, onClose, onNext }) => {
     const defaultWidgets = [
         { id: 'widget-media', title: 'Media Viewer', type: 'media', size: { width: 300, height: 195 }, pos: { x: 20, y: 20 }, isVisible: true },
         { id: 'widget-syllabus', title: 'Curriculum & Content', type: 'content', size: { width: 195, height: 195 }, pos: { x: 340, y: 20 }, isVisible: true },
@@ -204,9 +204,9 @@ const LessonWorkspace = ({ lesson, onClose, onNext }) => {
                 {onNext && (
                     <button 
                         onClick={onNext}
-                        title="Mark Complete & Next Lesson"
+                        title={isCompleted ? "Move to Next Lesson" : "Mark Complete & Next Lesson"}
                         style={{
-                            background: '#39ff14',
+                            background: isCompleted ? '#39ff14' : '#fff',
                             color: '#000',
                             border: '3px solid #000',
                             borderRadius: '50%',
@@ -216,21 +216,21 @@ const LessonWorkspace = ({ lesson, onClose, onNext }) => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            boxShadow: '3px 3px 0px #000',
+                            boxShadow: isCompleted ? '4px 4px 0px #000' : '2px 2px 0px #000',
                             marginLeft: '1rem',
                             borderLeft: '4px solid #000',
-                            transition: 'all 0.1s'
+                            transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                         }}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translate(-2px, -2px)';
-                            e.currentTarget.style.boxShadow = '5px 5px 0px #000';
+                            e.currentTarget.style.transform = 'scale(1.1)';
+                            e.currentTarget.style.boxShadow = '6px 6px 0px #000';
                         }}
                         onMouseLeave={(e) => {
                             e.currentTarget.style.transform = 'none';
-                            e.currentTarget.style.boxShadow = '3px 3px 0px #000';
+                            e.currentTarget.style.boxShadow = isCompleted ? '4px 4px 0px #000' : '2px 2px 0px #000';
                         }}
                     >
-                        <ChevronRight size={24} strokeWidth={3} />
+                        {isCompleted ? <span style={{fontWeight: '900', fontSize: '1rem'}}>✓</span> : <ChevronRight size={24} strokeWidth={3} />}
                     </button>
                 )}
             </div>
@@ -364,7 +364,7 @@ const LessonWorkspace = ({ lesson, onClose, onNext }) => {
                             border: '4px solid #000'
                         }}>
                              <div style={{ fontSize: '0.7rem', fontWeight: '900', textTransform: 'uppercase', borderBottom: '2px solid #000', paddingBottom: '0.4rem', marginBottom: '0.2rem', color: '#666' }}>
-                                 Lesson Controls
+                                 Lesson Status
                              </div>
                              
                              {onNext && (
@@ -375,8 +375,8 @@ const LessonWorkspace = ({ lesson, onClose, onNext }) => {
                                          alignItems: 'center',
                                          gap: '1rem',
                                          padding: '0.8rem 1rem',
-                                         background: '#000',
-                                         color: '#39ff14',
+                                         background: isCompleted ? 'var(--primary-color)' : '#000',
+                                         color: isCompleted ? '#000' : 'var(--primary-color)',
                                          border: '3px solid #000',
                                          cursor: 'pointer',
                                          fontSize: '0.75rem',
@@ -384,22 +384,22 @@ const LessonWorkspace = ({ lesson, onClose, onNext }) => {
                                          textTransform: 'uppercase',
                                          textAlign: 'left',
                                          width: '100%',
-                                         boxShadow: '4px 4px 0 #39ff14',
+                                         boxShadow: isCompleted ? '4px 4px 0 #000' : `4px 4px 0 var(--primary-color)`,
                                          transition: 'all 0.1s'
                                      }}
                                      onMouseEnter={(e) => {
                                          e.currentTarget.style.transform = 'translate(-2px, -2px)';
-                                         e.currentTarget.style.boxShadow = '6px 6px 0 #39ff14';
+                                         e.currentTarget.style.boxShadow = isCompleted ? '6px 6px 0 #000' : `6px 6px 0 var(--primary-color)`;
                                      }}
                                      onMouseLeave={(e) => {
                                          e.currentTarget.style.transform = 'none';
-                                         e.currentTarget.style.boxShadow = '4px 4px 0 #39ff14';
+                                         e.currentTarget.style.boxShadow = isCompleted ? '4px 4px 0 #000' : `4px 4px 0 var(--primary-color)`;
                                      }}
                                  >
-                                     <div style={{ padding: '4px', background: '#39ff14', color: '#000', borderRadius: '50%' }}>
-                                         <Plus size={14} style={{ transform: 'rotate(45deg)' }} strokeWidth={4} />
+                                     <div style={{ padding: '4px', background: isCompleted ? '#000' : 'var(--primary-color)', color: isCompleted ? 'var(--primary-color)' : '#000', borderRadius: '50%' }}>
+                                         {isCompleted ? <span style={{fontSize: '10px'}}>✓</span> : <Plus size={14} style={{ transform: 'rotate(45deg)' }} strokeWidth={4} />}
                                      </div>
-                                     <span>Finish & Next</span>
+                                     <span style={{ flex: 1 }}>{isCompleted ? 'COMPLETED → NEXT' : 'FINISH & NEXT'}</span>
                                      <ChevronRight size={16} />
                                  </button>
                              )}

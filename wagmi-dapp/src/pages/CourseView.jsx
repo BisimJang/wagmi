@@ -212,6 +212,7 @@ const CourseView = ({
                 <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                     <LessonWorkspace 
                         lesson={activeLesson} 
+                        isCompleted={!!lessonProgress[activeLesson?.id]?.completed}
                         onClose={() => setActiveLesson(null)} 
                         onNext={handleNextLesson}
                     />
