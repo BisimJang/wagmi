@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DraggableWidget from './DraggableWidget';
 import BrutalistButton from '../UI/BrutalistButton';
-import { Video, Book, PenTool, Bot, Plus, X } from 'lucide-react';
+import { Video, Book, PenTool, Bot, Plus, X, ChevronRight } from 'lucide-react';
 import DesktopRecommendation from '../UI/DesktopRecommendation';
 
 const getEmbedUrl = (url) => {
@@ -15,11 +15,11 @@ const getEmbedUrl = (url) => {
     return url;
 };
 
-const LessonWorkspace = ({ lesson, onClose }) => {
+const LessonWorkspace = ({ lesson, onClose, onNext }) => {
     const defaultWidgets = [
         { id: 'widget-media', title: 'Media Viewer', type: 'media', size: { width: 300, height: 195 }, pos: { x: 20, y: 20 }, isVisible: true },
         { id: 'widget-syllabus', title: 'Curriculum & Content', type: 'content', size: { width: 195, height: 195 }, pos: { x: 340, y: 20 }, isVisible: true },
-        { id: 'widget-notes', title: 'Personal Notes', type: 'notes', size: { width: 300, height: 175 }, pos: { x: 20, y: 230 }, isVisible: true },
+        { id: 'widget-notes', title: 'Personal Notes', type: 'notes', size: { width: 300, height: 175 }, pos: { x: 20, y: 230 }, isVisible: false },
         { id: 'widget-ai', title: 'Studyverse AI', type: 'ai', size: { width: 280, height: 385 }, pos: { x: 340, y: 230 }, isVisible: false },
     ];
 
@@ -42,7 +42,7 @@ const LessonWorkspace = ({ lesson, onClose }) => {
     useEffect(() => {
         if (!lesson) return;
         
-        const storageKey = `studyverse_layout_v5_${lesson.id}`;
+        const storageKey = `studyverse_layout_v6_${lesson.id}`;
         const savedLayout = localStorage.getItem(storageKey);
         
         if (savedLayout) {
@@ -62,7 +62,7 @@ const LessonWorkspace = ({ lesson, onClose }) => {
     // Save to local storage whenever widgets change
     useEffect(() => {
         if (!lesson || widgets.length === 0) return;
-        const storageKey = `studyverse_layout_v5_${lesson.id}`;
+        const storageKey = `studyverse_layout_v6_${lesson.id}`;
         localStorage.setItem(storageKey, JSON.stringify({ widgets, stackOrder }));
     }, [widgets, stackOrder, lesson]);
 
@@ -199,6 +199,31 @@ const LessonWorkspace = ({ lesson, onClose }) => {
                         {w.type === 'ai' && <Bot size={18} />}
                     </button>
                 ))}
+                
+                {/* Desktop Next Button */}
+                {onNext && (
+                    <button 
+                        onClick={onNext}
+                        title="Next Lesson"
+                        style={{
+                            background: '#39ff14',
+                            color: '#000',
+                            border: '2px solid #000',
+                            borderRadius: '50%',
+                            width: '40px',
+                            height: '40px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '2px 2px 0px #000',
+                            marginLeft: '1rem',
+                            borderLeft: '4px solid #000'
+                        }}
+                    >
+                        <ChevronRight size={22} />
+                    </button>
+                )}
             </div>
             )}
 
@@ -309,6 +334,36 @@ const LessonWorkspace = ({ lesson, onClose }) => {
                 );
             })}
             </div>
+
+            {/* NEXT LESSON NAVIGATION */}
+            {onNext && (
+                <div style={{ padding: isMobile ? '0 1rem 6rem 1rem' : '3rem 1.5rem', display: 'flex', justifyContent: 'center' }}>
+                    <button 
+                        onClick={onNext}
+                        className="brutalist-card"
+                        style={{
+                            width: isMobile ? '100%' : 'auto',
+                            background: 'var(--primary-color)',
+                            color: '#000',
+                            border: '5px solid #000',
+                            padding: '1rem 3rem',
+                            fontSize: '1.2rem',
+                            fontWeight: '900',
+                            textTransform: 'uppercase',
+                            boxShadow: '8px 8px 0 #000',
+                            cursor: 'pointer',
+                            transition: 'all 0.1s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '1rem'
+                        }}
+                    >
+                        <span>Complete & Next Section</span>
+                        <ChevronRight size={24} strokeWidth={3} />
+                    </button>
+                </div>
+            )}
 
             {/* WIDGET HUB - MOBILE ONLY */}
             {isMobile && (

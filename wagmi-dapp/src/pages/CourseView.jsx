@@ -56,6 +56,29 @@ const CourseView = ({
 
     const [isSidebarOpen, setIsSidebarOpen] = React.useState(!isMobile);
 
+    const handleNextLesson = () => {
+        if (!activeLesson || !lessons) return;
+        
+        // 1. Mark current as complete (persistence)
+        if (onLessonComplete) onLessonComplete(activeLesson.id);
+
+        // 2. Find next lesson in the global sequence
+        const flatLessons = [...lessons]
+            .sort((a, b) => (a.order || 0) - (b.order || 0))
+            .flatMap(section => 
+                [...(section.lessons || [])].sort((a, b) => (a.order || 0) - (b.order || 0))
+            );
+            
+        const currentIndex = flatLessons.findIndex(l => l.id === activeLesson.id);
+        
+        if (currentIndex !== -1 && currentIndex < flatLessons.length - 1) {
+            setActiveLesson(flatLessons[currentIndex + 1]);
+        } else {
+            // End of course
+            setActiveLesson(null);
+        }
+    };
+
     if (activeLesson) {
         return (
             <section className="page active" style={{ padding: '0', display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#fff', position: 'relative' }}>
@@ -187,7 +210,11 @@ const CourseView = ({
 
                 {/* RIGHT CANVAS */}
                 <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                    <LessonWorkspace lesson={activeLesson} onClose={() => setActiveLesson(null)} />
+                    <LessonWorkspace 
+                        lesson={activeLesson} 
+                        onClose={() => setActiveLesson(null)} 
+                        onNext={handleNextLesson}
+                    />
                 </div>
             </section>
         );
