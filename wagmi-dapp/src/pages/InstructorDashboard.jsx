@@ -271,12 +271,12 @@ const InstructorDashboard = ({
                     <>
                         {view === 'list' ? (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                                {courses.filter(c => c.is_instructor).map(course => (
+                                {Array.isArray(courses) && courses.filter(c => c.is_instructor).map(course => (
                                     <div key={course.id} className="brutalist-card" style={{ padding: '1.5rem', background: '#fff' }}>
                                         <div style={{ fontSize: '0.7rem', fontWeight: '900', marginBottom: '0.5rem', color: course.is_minted ? 'var(--primary-color)' : '#999' }}>
                                             {course.is_minted ? '✓ PUBLISHED' : '• DRAFT'}
                                         </div>
-                                        <h3 style={{ fontSize: '1.2rem', fontWeight: '900', marginBottom: '1rem' }}>{course.name.toUpperCase()}</h3>
+                                        <h3 style={{ fontSize: '1.2rem', fontWeight: '900', marginBottom: '1rem' }}>{(course.title || 'Untitled').toUpperCase()}</h3>
                                         <div style={{ display: 'flex', gap: '1rem' }}>
                                             <button 
                                                 onClick={() => handleEditCourse(course)}
@@ -290,7 +290,7 @@ const InstructorDashboard = ({
                                         </div>
                                     </div>
                                 ))}
-                                {courses.filter(c => c.is_instructor).length === 0 && (
+                                {(!Array.isArray(courses) || courses.filter(c => c.is_instructor).length === 0) && (
                                     <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem', border: '3px dashed #ccc' }}>
                                         <p style={{ color: '#666' }}>You haven't created any courses yet.</p>
                                         <BrutalistButton onClick={handleCreateNew}>Create Your First Course</BrutalistButton>

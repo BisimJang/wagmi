@@ -93,25 +93,47 @@ export function useSchoolRegistry(showMessage) {
 
     /**
      * Fetches all school addresses owned by the current user.
+     * Prioritizes backend for reliability, with contract as secondary.
      */
     const fetchOwnedSchools = useCallback(async () => {
-        if (!publicClient || !address) return [];
-        console.log('Fetching schools for:', address, 'at Registry:', SCHOOL_REGISTRY_ADDRESS);
+        if (!address) return [];
         
+        let schoolsList = [];
+
+        // 1. Fetch from Backend (Source of Truth for Dashboard)
         try {
-            const schools = await publicClient.readContract({
-                address: SCHOOL_REGISTRY_ADDRESS,
-                abi: SCHOOL_REGISTRY_ABI,
-                functionName: 'getSchoolsByCreator',
-                args: [address],
-            });
-            console.log('Contract returned schools:', schools);
-            setOwnedSchools(schools);
-            return schools;
-        } catch (error) {
-            console.error('Error fetching schools from contract:', error);
-            return [];
+            const backendSchools = await apiCall('/schools/');
+            if (Array.isArray(backendSchools)) {
+                // Filter where current user is the instructor
+                schoolsList = backendSchools
+                    .filter(s => s.instructor_address?.toLowerCase() === address.toLowerCase())
+                    .map(s => s.address);
+            }
+        } catch (err) {
+            console.error('Error fetching schools from backend:', err);
         }
+
+        // 2. Optional: Parallel check with Contract (if available)
+        if (publicClient && SCHOOL_REGISTRY_ADDRESS && SCHOOL_REGISTRY_ADDRESS !== '0x0000000000000000000000000000000000000000') {
+            try {
+                const contractSchools = await publicClient.readContract({
+                    address: SCHOOL_REGISTRY_ADDRESS,
+                    abi: SCHOOL_REGISTRY_ABI,
+                    functionName: 'getSchoolsByCreator',
+                    args: [address],
+                });
+                
+                // Merge and deduplicate
+                const merged = [...new Set([...schoolsList, ...contractSchools])];
+                schoolsList = merged;
+            } catch (error) {
+                // Silicon error if it's just a local deployment mismatch
+                console.warn('Contract getSchoolsByCreator failed, relying on backend:', error.message);
+            }
+        }
+
+        setOwnedSchools(schoolsList);
+        return schoolsList;
     }, [publicClient, address]);
 
     /**

@@ -35,6 +35,7 @@ class CourseSerializer(serializers.ModelSerializer):
     instructor = serializers.StringRelatedField(read_only=True)
     name = serializers.CharField(source='title', read_only=True)
     imageUrl = serializers.SerializerMethodField()
+    is_instructor = serializers.SerializerMethodField()
     
     # Enable writing to these fields
     price = serializers.DecimalField(max_digits=20, decimal_places=8, required=False)
@@ -46,7 +47,8 @@ class CourseSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "name", "description", "instructor", "price", 
             "created_at", "sections", "imageUrl", "image_url", 
-            "is_minted", "tx_hash", "school_address", "school_name"
+            "is_minted", "tx_hash", "school_address", "school_name",
+            "is_instructor"
         ]
 
     def get_imageUrl(self, obj):
@@ -54,6 +56,12 @@ class CourseSerializer(serializers.ModelSerializer):
         Returns the course image_url if present, else falls back to a placeholder.
         """
         return obj.image_url if obj.image_url else f"https://picsum.photos/seed/{obj.id}/300/200"
+
+    def get_is_instructor(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.instructor == request.user
+        return False
 
 class EnrollmentSerializer(serializers.ModelSerializer):
     course_title = serializers.ReadOnlyField(source="course.title")
