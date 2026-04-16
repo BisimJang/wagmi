@@ -101,16 +101,37 @@ export function useSchoolRegistry(showMessage) {
         let schoolsList = [];
 
         // 1. Fetch from Backend (Source of Truth for Dashboard)
+        // Also fetches instructor-owned courses to derive school addresses
         try {
-            const backendSchools = await apiCall('/schools/');
+            const [backendSchools, instructorCourses] = await Promise.all([
+                apiCall('/schools/'),
+                apiCall('/courses/') // Fetch current user's courses to check for school metadata
+            ]);
+
             if (Array.isArray(backendSchools)) {
-                // Filter where current user is the instructor
                 schoolsList = backendSchools
                     .filter(s => s.instructor_address?.toLowerCase() === address.toLowerCase())
                     .map(s => s.address);
             }
+
+            if (Array.isArray(instructorCourses?.results)) {
+                const courseSchools = instructorCourses.results
+                    .filter(c => c.school_address && c.is_instructor)
+                    .map(c => c.school_address);
+                if (courseSchools.length > 0) {
+                    schoolsList = [...new Set([...schoolsList, ...courseSchools])];
+                }
+            } else if (Array.isArray(instructorCourses)) {
+                // Handle non-paginated case if applicable
+                const courseSchools = instructorCourses
+                    .filter(c => c.school_address && c.is_instructor)
+                    .map(c => c.school_address);
+                if (courseSchools.length > 0) {
+                    schoolsList = [...new Set([...schoolsList, ...courseSchools])];
+                }
+            }
         } catch (err) {
-            console.error('Error fetching schools from backend:', err);
+            console.error('Error fetching schools from backend/metadata:', err);
         }
 
         // 2. Optional: Parallel check with Contract (if available)
@@ -127,8 +148,12 @@ export function useSchoolRegistry(showMessage) {
                 const merged = [...new Set([...schoolsList, ...contractSchools])];
                 schoolsList = merged;
             } catch (error) {
-                // Silicon error if it's just a local deployment mismatch
-                console.warn('Contract getSchoolsByCreator failed, relying on backend:', error.message);
+                // Log only if no schools found elsewhere, otherwise silence
+                if (schoolsList.length === 0) {
+                    console.warn('Contract getSchoolsByCreator failed and no backend schools found:', error.message);
+                } else {
+                    console.debug('Contract registry call skipped/failed, using local/backend list');
+                }
             }
         }
 
