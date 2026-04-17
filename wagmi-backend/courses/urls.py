@@ -32,6 +32,7 @@ urlpatterns = [
     path("courses/<int:pk>/", CourseDetailView.as_view(), name="course-detail"),
     path("courses/<int:course_id>/enroll/", enroll_in_course, name="course-enroll"),
     path("courses/<int:course_id>/confirm_mint/", confirm_mint, name="course-confirm-mint"),
+    path("courses/<int:course_id>/complete/", issue_certificate, name="course-complete"),
     path("courses/<int:course_id>/certificate/", issue_certificate, name="issue-certificate"),
     path("schools/", school_list, name="school-list"),
     path("schools/register/", register_school, name="school-register"),

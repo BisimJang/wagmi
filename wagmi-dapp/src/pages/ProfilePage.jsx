@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from 'react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount, useBalance, useDisconnect, useChainId } from 'wagmi';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useAccount, useBalance, useDisconnect } from 'wagmi';
+import { Settings, BookOpen, Award, Link as LinkIcon, Globe, User, Edit3, CheckCircle, Code, MessageSquare } from 'lucide-react';
 import LoadingSpinner from '../components/Feedback/LoadingSpinner';
 import BrutalistButton from '../components/UI/BrutalistButton';
 import CourseCard from '../components/Card/CourseCard';
+import NftAvatarSelector from '../components/Profile/NftAvatarSelector';
+import { apiCall } from '../api/api';
 
 const ProfilePage = ({ 
     user, 
@@ -14,15 +16,35 @@ const ProfilePage = ({
     allCourses, 
     onViewCourse,
     syncOnChainEnrollment,
-    showMessage
+    showMessage,
+    linkWallet,
+    address: connectedAddress
 }) => {
-    const { address, isConnected } = useAccount();
-    const chainId = useChainId();
-    const { data: balanceData } = useBalance({ address });
     const { disconnect } = useDisconnect();
+    const { data: balanceData } = useBalance({ address: connectedAddress });
 
-    const [isSyncing, setIsSyncing] = useState(false);
-    const [copied, setCopied] = useState(false);
+    const [activeTab, setActiveTab] = useState('path'); // 'path', 'backpack', 'settings'
+    const [isNftSelectorOpen, setIsNftSelectorOpen] = useState(false);
+    const [isLinking, setIsLinking] = useState(false);
+    
+    // Settings form state
+    const [formData, setFormData] = useState({
+        display_name: user?.display_name || '',
+        bio: user?.bio || '',
+        twitter_handle: user?.twitter_handle || '',
+        github_handle: user?.github_handle || ''
+    });
+
+    useEffect(() => {
+        if (user) {
+            setFormData({
+                display_name: user.display_name || '',
+                bio: user.bio || '',
+                twitter_handle: user.twitter_handle || '',
+                github_handle: user.github_handle || ''
+            });
+        }
+    }, [user]);
 
     // Filter allCourses to find the ones the user is enrolled in
     const enrolledCourses = useMemo(() => {
@@ -31,55 +53,46 @@ const ProfilePage = ({
         return allCourses.filter(course => enrolledIds.includes(course.id));
     }, [user, allCourses]);
 
-    const handleSync = async () => {
-        if (!syncOnChainEnrollment || !allCourses) return;
-        setIsSyncing(true);
-        showMessage('Starting deep blockchain sync...', 'info');
-        
+    const handleUpdateProfile = async (e) => {
+        e.preventDefault();
         try {
-            // In a real app, you might iterate and check isEnrolled for each course,
-            // but for now, we'll suggest the user that it's syncing their known enrollments.
-            await new Promise(resolve => setTimeout(resolve, 1500)); // Simulating search
-            showMessage('Dashboard synced with Sepolia network.', 'success');
-        } catch (error) {
-            showMessage('Sync failed. Try again later.', 'error');
+            await apiCall('/me/', {
+                method: 'PATCH',
+                body: JSON.stringify(formData)
+            });
+            showMessage('Profile updated successfully!', 'success');
+        } catch (err) {
+            showMessage('Failed to update profile', 'error');
+        }
+    };
+
+    const handleAvatarSelect = async (imageUrl) => {
+        try {
+            await apiCall('/me/', {
+                method: 'PATCH',
+                body: JSON.stringify({ profile_image: imageUrl })
+            });
+            setIsNftSelectorOpen(false);
+            showMessage('NFT Avatar set!', 'success');
+        } catch (err) {
+            showMessage('Failed to set avatar', 'error');
+        }
+    };
+
+    const handleLinkWallet = async () => {
+        setIsLinking(true);
+        try {
+            await linkWallet();
         } finally {
-            setIsSyncing(false);
+            setIsLinking(false);
         }
     };
-
-    const handleCopyAddress = () => {
-        if (address) {
-            navigator.clipboard.writeText(address);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        }
-    };
-
-    if (!isConnected) {
-        return (
-            <div className="container" style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ 
-                    padding: '4rem', 
-                    background: '#fff', 
-                    border: '5px solid #000', 
-                    boxShadow: '15px 15px 0px #ff3e00',
-                    textAlign: 'center',
-                    maxWidth: '500px'
-                }}>
-                    <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem', textTransform: 'uppercase' }}>Identity Required</h2>
-                    <p style={{ marginBottom: '2rem', fontSize: '1.1rem', color: '#555' }}>Connect your Web3 passport to access your learning portfolio and NFT certifications.</p>
-                    <ConnectButton />
-                </div>
-            </div>
-        );
-    }
 
     if (loading || !user) {
         return (
             <div className="container" style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <LoadingSpinner />
-                <h3 style={{ marginTop: '2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>Syncing Ledger...</h3>
+                <h3 style={{ marginTop: '2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>Reading Passport...</h3>
             </div>
         );
     }
@@ -88,132 +101,231 @@ const ProfilePage = ({
         <section className="profile-page-premium" style={{ padding: '4rem 0', background: 'var(--bg-color)' }}>
             <div className="container" style={{ maxWidth: '1200px' }}>
                 
-                {/* PREMIUM HERO HEADER */}
+                {/* 1. PREMIUM HERO HEADER (The Passport) */}
                 <div style={{ 
                     position: 'relative', 
-                    background: 'linear-gradient(135deg, #ff3e00 0%, #ffbe00 100%)',
-                    padding: '4rem',
-                    border: '5px solid #000',
-                    boxShadow: '12px 12px 0px #000',
+                    background: 'linear-gradient(135deg, #000 0%, #333 100%)',
+                    padding: '3rem',
+                    border: '8px solid #000',
+                    boxShadow: '15px 15px 0px #000',
                     marginBottom: '4rem',
+                    color: '#fff',
                     overflow: 'hidden'
                 }}>
-                    {/* Decorative Elements */}
-                    <div style={{ position: 'absolute', top: '-20px', right: '-20px', fontSize: '10rem', opacity: 0.1, fontWeight: '900', fontStyle: 'italic' }}>LEARNER</div>
+                    <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '8rem', opacity: 0.05, fontWeight: '900', fontStyle: 'italic' }}>PASSPORT</div>
                     
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3rem', alignItems: 'center', position: 'relative', zIndex: 2 }}>
                         {/* Avatar Block */}
-                        <div style={{ 
-                            width: '150px', 
-                            height: '150px', 
-                            background: '#fff', 
-                            border: '5px solid #000', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            fontSize: '4rem',
-                            fontWeight: 'bold',
-                            boxShadow: '8px 8px 0px #000'
-                        }}>
-                            {user.username ? user.username[0].toUpperCase() : address[2].toUpperCase()}
+                        <div 
+                            onClick={() => user.is_wallet_linked && setIsNftSelectorOpen(true)}
+                            style={{ 
+                                width: '180px', 
+                                height: '180px', 
+                                background: '#fff', 
+                                border: '5px solid #39ff14', 
+                                position: 'relative',
+                                cursor: user.is_wallet_linked ? 'pointer' : 'default',
+                                overflow: 'hidden'
+                            }}
+                        >
+                            {user.profile_image ? (
+                                <img src={user.profile_image} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '5rem', fontWeight: 'bold', color: '#000' }}>
+                                    {user.display_name?.[0] || user.address?.[2] || '?'}
+                                </div>
+                            )}
+                            {user.is_wallet_linked && (
+                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(57, 255, 20, 0.9)', color: '#000', fontSize: '0.6rem', fontWeight: '900', textAlign: 'center', padding: '2px' }}>
+                                    CHANGE NFT
+                                </div>
+                            )}
                         </div>
 
-                        {/* Text Block */}
-                        <div style={{ color: '#000', flex: 1, minWidth: '300px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                                <h1 style={{ fontSize: '3.5rem', margin: 0, textTransform: 'uppercase', lineHeight: 1 }}>{user.username || 'Anonymous'}</h1>
-                                <span style={{ background: '#000', color: '#fff', padding: '0.2rem 1rem', fontSize: '0.8rem', fontWeight: 'bold' }}>PRO LEARNER</span>
+                        {/* Identity Block */}
+                        <div style={{ flex: 1, minWidth: '300px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.8rem' }}>
+                                <h1 style={{ fontSize: '3rem', margin: 0, textTransform: 'uppercase', lineHeight: 1 }}>{user.display_name || 'Anonymous'}</h1>
+                                {user.is_wallet_linked && <CheckCircle size={24} style={{ color: '#39ff14' }} />}
                             </div>
                             
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <div 
-                                    onClick={handleCopyAddress}
-                                    style={{ 
-                                        padding: '0.5rem 1rem', 
-                                        background: 'rgba(255,255,255,0.3)', 
-                                        backdropFilter: 'blur(10px)',
-                                        border: '2px solid #000',
-                                        cursor: 'pointer',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 'bold'
-                                    }}
-                                >
-                                    {address.slice(0, 8)}...{address.slice(-8)} {copied ? '✓ COPIED' : '⧉'}
-                                </div>
-                                <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>
-                                    Balance: {parseFloat(balanceData?.formatted || '0').toFixed(4)} {balanceData?.symbol}
+                            <p style={{ margin: '0 0 1.5rem 0', color: '#aaa', fontSize: '1.1rem', fontWeight: '500' }}>{user.bio || 'No bio provided.'}</p>
+
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>
+                                {user.address ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.1)', padding: '0.5rem 1rem', border: '1px solid #444' }}>
+                                        <LinkIcon size={16} />
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>{user.address.slice(0, 6)}...{user.address.slice(-4)}</span>
+                                    </div>
+                                ) : (
+                                    <BrutalistButton onClick={handleLinkWallet} disabled={isLinking} style={{ background: '#39ff14', color: '#000', fontSize: '0.7rem' }}>
+                                        {isLinking ? 'Linking...' : 'Connect Passport (Link Wallet)'}
+                                    </BrutalistButton>
+                                )}
+
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    {user.twitter_handle && <MessageSquare size={20} style={{ cursor: 'pointer', color: '#39ff14' }} />}
+                                    {user.github_handle && <Code size={20} style={{ cursor: 'pointer' }} />}
                                 </div>
                             </div>
                         </div>
 
                         {/* Actions */}
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                             <BrutalistButton onClick={handleSync} disabled={isSyncing} style={{ background: '#fff' }}>
-                                {isSyncing ? 'Syncing...' : '🔄 Force Sync'}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                             <BrutalistButton onClick={() => disconnect()} style={{ background: '#ff3e00', color: '#fff' }}>
+                                Sign Out
                              </BrutalistButton>
-                             <BrutalistButton onClick={() => disconnect()} style={{ background: '#000', color: '#fff' }}>
-                                Exit
+                             <BrutalistButton onClick={toggleTheme} style={{ background: '#fff', color: '#000' }}>
+                                {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
                              </BrutalistButton>
                         </div>
                     </div>
                 </div>
 
-                {/* STATS GRID */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', marginBottom: '4rem' }}>
-                    <div style={{ padding: '2rem', background: '#fff', border: '5px solid #000', boxShadow: '8px 8px 0px #000' }}>
-                        <div style={{ textTransform: 'uppercase', fontSize: '0.9rem', fontWeight: '900', color: '#888', marginBottom: '1rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>Courses Enrolled</div>
-                        <div style={{ fontSize: '3rem', fontWeight: '900' }}>{enrolledCourses.length < 10 ? `0${enrolledCourses.length}` : enrolledCourses.length}</div>
-                    </div>
-                    <div style={{ padding: '2rem', background: '#fff', border: '5px solid #000', boxShadow: '8px 8px 0px #000' }}>
-                        <div style={{ textTransform: 'uppercase', fontSize: '0.9rem', fontWeight: '900', color: '#888', marginBottom: '1rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>Verifiable Certs</div>
-                        <div style={{ fontSize: '3rem', fontWeight: '900' }}>{certificates.length < 10 ? `0${certificates.length}` : certificates.length}</div>
-                    </div>
-                    <div style={{ padding: '2rem', background: '#fff', border: '5px solid #000', boxShadow: '8px 8px 0px #000' }}>
-                        <div style={{ textTransform: 'uppercase', fontSize: '0.9rem', fontWeight: '900', color: '#888', marginBottom: '1rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>Network Health</div>
-                        <div style={{ fontSize: '3rem', fontWeight: '900', color: '#00e676' }}>100%</div>
-                    </div>
+                {/* 2. TAB NAVIGATION */}
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '6px solid #000', paddingBottom: '1rem' }}>
+                    {[
+                        { id: 'path', label: 'Learning Path', icon: <BookOpen size={20} /> },
+                        { id: 'backpack', label: 'Backpack', icon: <Award size={20} /> },
+                        { id: 'settings', label: 'Settings', icon: <Settings size={20} /> }
+                    ].map(tab => (
+                        <button 
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '1rem 2rem',
+                                border: '4px solid #000',
+                                background: activeTab === tab.id ? '#000' : '#fff',
+                                color: activeTab === tab.id ? '#39ff14' : '#000',
+                                fontWeight: '900',
+                                textTransform: 'uppercase',
+                                cursor: 'pointer',
+                                transform: activeTab === tab.id ? 'translate(-4px, -4px)' : 'none',
+                                boxShadow: activeTab === tab.id ? '4px 4px 0 #000' : 'none',
+                                transition: 'all 0.1s'
+                            }}
+                        >
+                            {tab.icon}
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
 
-                {/* ENROLLED COURSES SECTION */}
-                <div style={{ marginBottom: '5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-                        <h2 style={{ fontSize: '2.5rem', textTransform: 'uppercase', margin: 0 }}>My Learning Path</h2>
-                        <div style={{ height: '4px', background: '#000', flex: 1, margin: '0 2rem' }}></div>
-                        <BrutalistButton onClick={toggleTheme}>
-                            {theme === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}
-                        </BrutalistButton>
-                    </div>
-
-                    {enrolledCourses.length > 0 ? (
-                        <div className="course-grid">
-                            {enrolledCourses.map(course => (
-                                <CourseCard 
-                                    key={course.id} 
-                                    course={course} 
-                                    enrollmentStatus="enrolled"
-                                    onViewDetails={onViewCourse}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <div style={{ 
-                            padding: '6rem 2rem', 
-                            textAlign: 'center', 
-                            background: '#f8f8f8', 
-                            border: '4px dashed #000',
-                            borderRadius: '0'
-                        }}>
-                            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎓</div>
-                            <h3 style={{ fontSize: '1.8rem', textTransform: 'uppercase' }}>Your portfolio is empty</h3>
-                            <p style={{ color: '#666', marginBottom: '2rem' }}>Discover high-quality courses from sovereign schools worldwide.</p>
-                            <BrutalistButton onClick={() => window.location.hash = 'courses'}>
-                                Start Learning Now
-                            </BrutalistButton>
+                {/* 3. TAB CONTENT */}
+                <div style={{ minHeight: '400px' }}>
+                    
+                    {activeTab === 'path' && (
+                        <div>
+                            {enrolledCourses.length > 0 ? (
+                                <div className="course-grid">
+                                    {enrolledCourses.map(course => (
+                                        <CourseCard 
+                                            key={course.id} 
+                                            course={course} 
+                                            enrollmentStatus="enrolled"
+                                            onViewDetails={onViewCourse}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div style={{ padding: '6rem', textAlign: 'center', border: '5px dashed #000' }}>
+                                    <BookOpen size={48} style={{ margin: '0 auto 1rem autof' }} />
+                                    <h3 style={{ textTransform: 'uppercase' }}>No active courses</h3>
+                                    <BrutalistButton onClick={() => window.location.hash = 'courses'}>Explore the Grid</BrutalistButton>
+                                </div>
+                            )}
                         </div>
                     )}
-                </div>
 
+                    {activeTab === 'backpack' && (
+                        <div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '2rem' }}>
+                                {certificates.map((cert, idx) => (
+                                    <div key={idx} style={{ padding: '2rem', background: '#fff', border: '5px solid #000', boxShadow: '8px 8px 0px #000' }}>
+                                        <div style={{ width: '100%', aspectRatio: '16/9', background: '#f0f0f0', marginBottom: '1.5rem', border: '3px solid #000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Award size={64} style={{ color: '#39ff14' }} />
+                                        </div>
+                                        <h4 style={{ margin: '0 0 0.5rem 0', textTransform: 'uppercase', fontSize: '1.2rem' }}>{cert.course}</h4>
+                                        <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '1rem' }}>MINTED: {new Date(cert.issued_at).toLocaleDateString()}</p>
+                                        <BrutalistButton onClick={() => window.open(`https://sepolia.etherscan.io/tx/${cert.tx_hash}`)} style={{ width: '100%', fontSize: '0.7rem' }}>
+                                            View On Explorer
+                                        </BrutalistButton>
+                                    </div>
+                                ))}
+                                {certificates.length === 0 && (
+                                    <div style={{ gridColumn: '1/-1', padding: '6rem', textAlign: 'center', border: '5px dashed #000' }}>
+                                        <Award size={48} style={{ margin: '0 auto 1rem autof' }} />
+                                        <h3 style={{ textTransform: 'uppercase' }}>No certificates earned yet</h3>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'settings' && (
+                        <div style={{ maxWidth: '600px', background: '#fff', border: '5px solid #000', padding: '3rem', boxShadow: '10px 10px 0 #000' }}>
+                            <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontWeight: '900', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Public Display Name</label>
+                                    <input 
+                                        type="text" 
+                                        value={formData.display_name}
+                                        onChange={e => setFormData({...formData, display_name: e.target.value})}
+                                        style={{ width: '100%', padding: '1rem', border: '4px solid #000', fontSize: '1.1rem', fontWeight: '600' }} 
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontWeight: '900', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Bio / Philosophy</label>
+                                    <textarea 
+                                        rows="3" 
+                                        value={formData.bio}
+                                        onChange={e => setFormData({...formData, bio: e.target.value})}
+                                        style={{ width: '100%', padding: '1rem', border: '4px solid #000', fontSize: '1.1rem', fontWeight: '600' }} 
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontWeight: '900', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Twitter Handle</label>
+                                        <input 
+                                            type="text" 
+                                            value={formData.twitter_handle}
+                                            onChange={e => setFormData({...formData, twitter_handle: e.target.value})}
+                                            placeholder="@johndoe"
+                                            style={{ width: '100%', padding: '1rem', border: '4px solid #000', fontSize: '1.1rem', fontWeight: '600' }} 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontWeight: '900', textTransform: 'uppercase', marginBottom: '0.5rem' }}>GitHub Handle</label>
+                                        <input 
+                                            type="text" 
+                                            value={formData.github_handle}
+                                            onChange={e => setFormData({...formData, github_handle: e.target.value})}
+                                            placeholder="johndoe"
+                                            style={{ width: '100%', padding: '1rem', border: '4px solid #000', fontSize: '1.1rem', fontWeight: '600' }} 
+                                        />
+                                    </div>
+                                </div>
+                                <BrutalistButton type="submit" style={{ background: '#39ff14', width: '200px' }}>
+                                    Save Profile
+                                </BrutalistButton>
+                            </form>
+                        </div>
+                    )}
+
+                </div>
             </div>
+
+            {/* NFT SELECTOR OVERLAY */}
+            {isNftSelectorOpen && (
+                <NftAvatarSelector 
+                    address={connectedAddress || user.address} 
+                    onSelect={handleAvatarSelect} 
+                    onClose={() => setIsNftSelectorOpen(false)} 
+                />
+            )}
         </section>
     );
 };

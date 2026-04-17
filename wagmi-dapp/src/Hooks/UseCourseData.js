@@ -6,7 +6,7 @@ import { useWeb3Enrollment } from './useWeb3Enrollment';
 import { useWeb3Publish } from './useWeb3Publish';
 import { COURSE_CONTRACT_ADDRESS } from '../web3/constants';
 
-export const useCourseData = (address, showMessage) => {
+export const useCourseData = (address, showMessage, jwt) => {
     // --- State Initialization ---
     const [user, setUser] = useState(null);
     const [courses, setCourses] = useState([]);

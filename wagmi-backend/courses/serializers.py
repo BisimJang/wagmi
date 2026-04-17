@@ -95,11 +95,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "display_name",
             "email",
             "profile_image",
+            "bio",
+            "twitter_handle",
+            "github_handle",
+            "is_wallet_linked",
+            "google_id",
             "full_name",
             "enrollments",
             "certificates",
         ]
-        read_only_fields = ["id", "address", "full_name", "enrollments", "certificates"]
+        read_only_fields = ["id", "address", "full_name", "enrollments", "certificates", "google_id"]
         
     def get_enrollments(self, obj):
         return [

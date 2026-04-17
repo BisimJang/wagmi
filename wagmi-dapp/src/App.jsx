@@ -15,6 +15,8 @@ import { useSchoolRegistry } from './hooks/useSchoolRegistry';
 import Message from './components/Feedback/Message';
 import LoadingSpinner from './components/Feedback/LoadingSpinner';
 import Footer from './components/Layout/Footer';
+import LoginModal from './components/Auth/LoginModal';
+import BrutalistButton from './components/UI/BrutalistButton';
 
 // Pages
 import HomePage from './pages/HomePage.jsx';
@@ -92,17 +94,22 @@ function App() {
     }
   }, []);
 
-  const showPage = (pageId) => {
-    setCurrentPage(pageId);
-    window.history.pushState({}, '', `/${pageId === 'home' ? '' : pageId}`);
-  };
 
   const showMessage = useCallback((text, type = 'info') => {
     setMessage({ text, type });
     setTimeout(() => setMessage(null), 5000);
   }, []);
 
-  // 1. Data Logic Hook
+  // 1. Auth Logic Hook
+  const {
+    jwt,
+    authLoading,
+    loginWithWallet,
+    loginWithGoogle,
+    linkWallet
+  } = useAuth(showMessage);
+
+  // 2. Data Logic Hook
   const {
     user,
     courses,
@@ -128,9 +135,9 @@ function App() {
     pagination,
     syncEnrollmentWithBackend,
     myCourses
-  } = useCourseData(address, showMessage);
+  } = useCourseData(address, showMessage, jwt);
 
-  // 1.5. School Registry Hook
+  // 2.5. School Registry Hook
   const {
     createSchoolOnChain,
     createSchoolWithCourses,
@@ -146,14 +153,17 @@ function App() {
     }
   }, [address, fetchOwnedSchools]);
 
-  // 2. Auth Logic Hook
-  const {
-    jwt,
-    authLoading,
-    loginWithWallet
-  } = useAuth(loadUserData, showMessage);
-
   const loading = dataLoading || authLoading;
+
+  const isImmersivePage = ['course_view', 'instructor'].includes(currentPage);
+  const showGlobalFooter = !['course_view', 'instructor'].includes(currentPage);
+
+  // Trigger data load when JWT changes
+  useEffect(() => {
+    if (jwt) {
+      loadUserData(jwt);
+    }
+  }, [jwt, loadUserData]);
 
   const closeCourseModal = () => {
     setSelectedCourse(null);
@@ -193,122 +203,185 @@ function App() {
 
   // --- Router/View Render ---
 
-  const isImmersivePage = ['course_view', 'instructor'].includes(currentPage);
-  const showGlobalFooter = ['home', 'courses', 'schools'].includes(currentPage);
+    // --- Auth Handlers ---
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  const renderCurrentPage = () => {
-    switch (currentPage) {
-      case 'home':
-        return <HomePage stats={stats} user={user} certificates={certificates} showPage={showPage} />;
-      case 'courses':
-        return <CoursesPage
-          courses={courses}
-          enrollmentStatusGetter={getCourseEnrollmentStatus}
-          onEnroll={enrollInCourse}
-          onViewDetails={loadCourseDetails}
-          loadCourses={loadCourses}
-          pagination={pagination}
-          schools={schools}
-          syncEnrollment={syncEnrollmentWithBackend}
-        />;
-      case 'schools':
-        return <SchoolsPage 
-          address={address}
-          user={user}
-          schools={schools}
-          fetchSchools={fetchSchools}
-          isSchoolLoading={loading}
-          courses={courses}
-          showMessage={showMessage}
-        />;
-      case 'course_view':
-        return <CourseView
-          course={selectedCourse}
-          lessons={selectedCourseLessons}
-          lessonProgress={lessonProgress}
-          enrollmentStatus={getCourseEnrollmentStatus(selectedCourse?.id)}
-          loading={loading}
-          onComplete={completeCourse}
-          onLessonComplete={handleLessonComplete}
-          onEnroll={enrollInCourse}
-          onBack={() => showPage('courses')}
-        />;
-      case 'my_courses':
-        return <MyCoursesPage
-          user={user}
-          allCourses={myCourses}
-          loading={loading}
-          onViewCourse={loadCourseDetails}
-          showPage={showPage}
-        />;
-      case 'profile':
-        return <ProfilePage
-          user={user}
-          certificates={certificates}
-          loading={loading}
-          theme={theme}
-          toggleTheme={toggleTheme}
-          allCourses={courses}
-          onViewCourse={loadCourseDetails}
-          syncOnChainEnrollment={syncEnrollmentWithBackend}
-          showMessage={showMessage}
-        />;
-      case 'certificates':
-        return <CertificatesPage
-          isConnected={isConnected}
-          certificates={certificates}
-        />;
-      case 'instructor':
-        return <InstructorDashboard 
-          user={user}
-          createCourse={createCourse} 
-          updateCourse={updateCourse}
-          createSection={createSection} 
-          updateSection={updateSection}
-          createLesson={createLesson} 
-          updateLesson={updateLesson}
-          mintCourse={mintCourse} 
-          bulkMintCourses={bulkMintCourses}
-          courses={courses}
-          createSchoolOnChain={createSchoolOnChain}
-          ownedSchools={ownedSchools}
-          isSchoolLoading={isSchoolLoading}
-          fetchLessons={fetchLessonsAndProgress}
-        />;
-      default: return <HomePage stats={stats} user={user} certificates={certificates} showPage={showPage} />;
-    }
-  };
+    const handleGoogleLoginSuccess = async (response) => {
+        const success = await loginWithGoogle(response);
+        if (success) setIsLoginModalOpen(false);
+    };
+
+    const handleGoogleLoginError = () => {
+        showMessage('Google authentication failed', 'error');
+    };
+
+    // We override showPage to enforce login on private pages
+    const showPage = (pageId) => {
+        const privatePages = ['instructor', 'my_courses', 'profile'];
+        if (privatePages.includes(pageId) && !jwt) {
+            setIsLoginModalOpen(true);
+            return;
+        }
+        setCurrentPage(pageId);
+        window.history.pushState({}, '', `/${pageId === 'home' ? '' : pageId}`);
+    };
+
+    const renderCurrentPage = () => {
+        switch (currentPage) {
+            case 'home':
+                return <HomePage stats={stats} user={user} certificates={certificates} showPage={showPage} />;
+            case 'courses':
+                return <CoursesPage
+                    courses={courses}
+                    enrollmentStatusGetter={getCourseEnrollmentStatus}
+                    onEnroll={enrollInCourse}
+                    onViewDetails={loadCourseDetails}
+                    loadCourses={loadCourses}
+                    pagination={pagination}
+                    schools={schools}
+                    syncEnrollment={syncEnrollmentWithBackend}
+                />;
+            case 'schools':
+                return <SchoolsPage 
+                    address={address}
+                    user={user}
+                    schools={schools}
+                    fetchSchools={fetchSchools}
+                    isSchoolLoading={loading}
+                    courses={courses}
+                    showMessage={showMessage}
+                />;
+            case 'course_view':
+                return <CourseView
+                    course={selectedCourse}
+                    lessons={selectedCourseLessons}
+                    lessonProgress={lessonProgress}
+                    enrollmentStatus={getCourseEnrollmentStatus(selectedCourse?.id)}
+                    loading={loading}
+                    onComplete={completeCourse}
+                    onLessonComplete={handleLessonComplete}
+                    onEnroll={enrollInCourse}
+                    onBack={() => showPage('courses')}
+                />;
+            case 'my_courses':
+                return <MyCoursesPage
+                    user={user}
+                    allCourses={myCourses}
+                    loading={loading}
+                    onViewCourse={loadCourseDetails}
+                    showPage={showPage}
+                />;
+            case 'profile':
+                return <ProfilePage
+                    user={user}
+                    certificates={certificates}
+                    loading={loading}
+                    theme={theme}
+                    toggleTheme={toggleTheme}
+                    allCourses={courses}
+                    onViewCourse={loadCourseDetails}
+                    syncOnChainEnrollment={syncEnrollmentWithBackend}
+                    showMessage={showMessage}
+                    linkWallet={linkWallet}
+                    address={address}
+                />;
+            case 'certificates':
+                return <CertificatesPage
+                    isConnected={isConnected}
+                    certificates={certificates}
+                />;
+            case 'instructor':
+                return <InstructorDashboard 
+                    user={user}
+                    createCourse={createCourse} 
+                    updateCourse={updateCourse}
+                    createSection={createSection} 
+                    updateSection={updateSection}
+                    createLesson={createLesson} 
+                    updateLesson={updateLesson}
+                    mintCourse={mintCourse} 
+                    bulkMintCourses={bulkMintCourses}
+                    courses={courses}
+                    createSchoolOnChain={createSchoolOnChain}
+                    ownedSchools={ownedSchools}
+                    isSchoolLoading={isSchoolLoading}
+                    fetchLessons={fetchLessonsAndProgress}
+                />;
+            default: return <HomePage stats={stats} user={user} certificates={certificates} showPage={showPage} />;
+        }
+    };
 
     return (
-    <>
-      <header>
-        <nav className="container">
-          <div className="logo"><a onClick={() => showPage('home')} style={{cursor: 'pointer'}}>Studyverse</a></div>
-          <ul className="nav-links">
-            <li><a onClick={() => showPage('courses')} className={currentPage === 'courses' ? 'active' : ''}>Explore</a></li>
-            <li><a onClick={() => showPage('my_courses')} className={currentPage === 'my_courses' ? 'active' : ''}>My Courses</a></li>
-            <li><a onClick={() => showPage('schools')} className={currentPage === 'schools' ? 'active' : ''}>Institutional</a></li>
-            <li><a onClick={() => showPage('profile')} className={currentPage === 'profile' ? 'active' : ''}>Portfolio</a></li>
-            {user && (
-              <li><a onClick={() => showPage('instructor')} className={currentPage === 'instructor' ? 'active' : ''}>Studio</a></li>
-            )}
-          </ul>
-          <div className="wallet-section">
-            <ConnectButton />
-          </div>
-        </nav>
-      </header>
+        <>
+            <LoginModal 
+                isOpen={isLoginModalOpen} 
+                onClose={() => setIsLoginModalOpen(false)}
+                onGoogleSuccess={handleGoogleLoginSuccess}
+                onGoogleError={handleGoogleLoginError}
+                loginWithWallet={loginWithWallet}
+                isAuthorized={!!jwt}
+            />
 
-      <main>
-        {message && (
-          <Message
-            message={message.text}
-            type={message.type}
-            onClose={() => setMessage(null)}
-          />
-        )}
-        {renderCurrentPage()}
-      </main>
+            <header>
+                <nav className="container">
+                    <div className="logo"><a onClick={() => showPage('home')} style={{cursor: 'pointer'}}>Studyverse</a></div>
+                    <ul className="nav-links">
+                        <li><a onClick={() => showPage('courses')} className={currentPage === 'courses' ? 'active' : ''}>Explore</a></li>
+                        <li><a onClick={() => showPage('my_courses')} className={currentPage === 'my_courses' ? 'active' : ''}>My Courses</a></li>
+                        <li><a onClick={() => showPage('schools')} className={currentPage === 'schools' ? 'active' : ''}>Institutional</a></li>
+                        <li><a onClick={() => showPage('profile')} className={currentPage === 'profile' ? 'active' : ''}>Portfolio</a></li>
+                        {user && (
+                            <li><a onClick={() => showPage('instructor')} className={currentPage === 'instructor' ? 'active' : ''}>Studio</a></li>
+                        )}
+                    </ul>
+                    <div className="wallet-section">
+                        {!jwt ? (
+                            <BrutalistButton onClick={() => setIsLoginModalOpen(true)} style={{ background: '#39ff14', fontSize: '0.8rem', padding: '0.5rem 1rem' }}>
+                                Sign In
+                            </BrutalistButton>
+                        ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div 
+                                    onClick={() => showPage('profile')}
+                                    style={{ 
+                                        width: '40px', 
+                                        height: '40px', 
+                                        background: '#000', 
+                                        border: '3px solid #000', 
+                                        cursor: 'pointer',
+                                        overflow: 'hidden',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#fff',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    {user?.profile_image ? (
+                                        <img src={user.profile_image} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        (user?.display_name?.[0] || user?.address?.[2] || '?').toUpperCase()
+                                    )}
+                                </div>
+                                <div style={{ display: 'none' }}>
+                                    <ConnectButton />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </nav>
+            </header>
+
+            <main>
+                {message && (
+                    <Message
+                        message={message.text}
+                        type={message.type}
+                        onClose={() => setMessage(null)}
+                    />
+                )}
+                {renderCurrentPage()}
+            </main>
 
       {/* Global Footer - Only on static/marketing pages */}
       {showGlobalFooter && <Footer showPage={showPage} />}

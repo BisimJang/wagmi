@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { apiCall } from '../api/api'; // Assuming api.js exists
 
-export const useAuth = (loadUserData, showMessage) => {
+export const useAuth = (showMessage) => {
   const { address, isConnected, status } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const [jwt, setJwt] = useState(null);
@@ -25,17 +25,14 @@ export const useAuth = (loadUserData, showMessage) => {
       if (!address) return;
       try {
           setAuthLoading(true);
-          // 1. Get nonce
           const { nonce } = await apiCall('/auth/nonce/', {
               method: 'POST',
               body: JSON.stringify({ address }),
           });
 
-          // 2. Sign message
           const message = `Sign in to Studyverse\n\nNonce: ${nonce}`;
           const signature = await signMessageAsync({ message });
 
-          // 3. Verify signature and get JWT
           const data = await apiCall('/auth/wallet/', {
               method: 'POST',
               body: JSON.stringify({ address, signature }),
@@ -43,10 +40,9 @@ export const useAuth = (loadUserData, showMessage) => {
 
           setJwt(data.access);
           localStorage.setItem('jwt', data.access);
+          localStorage.setItem('auth_type', 'wallet');
 
-          // 4. Load user data 
-          await loadUserData(data.access);
-          showMessage('Successfully logged in!', 'success');
+          showMessage('Successfully logged in with wallet!', 'success');
       } catch (error) {
           console.error('Login error:', error);
           showMessage(`Login failed: ${error.message || 'Check console.'}`, 'error');
@@ -55,43 +51,90 @@ export const useAuth = (loadUserData, showMessage) => {
       } finally {
           setAuthLoading(false);
       }
-  }, [address, signMessageAsync, loadUserData, showMessage]);
+  }, [address, signMessageAsync, showMessage]);
+
+  const loginWithGoogle = useCallback(async (googleResponse) => {
+      try {
+          setAuthLoading(true);
+          const data = await apiCall('/auth/google/', {
+              method: 'POST',
+              body: JSON.stringify({ token: googleResponse.credential }),
+          });
+
+          setJwt(data.access);
+          localStorage.setItem('jwt', data.access);
+          localStorage.setItem('auth_type', 'google');
+
+          showMessage('Successfully logged in with Google!', 'success');
+          return true;
+      } catch (error) {
+          console.error('Google login error:', error);
+          showMessage(`Google login failed: ${error.message}`, 'error');
+          return false;
+      } finally {
+          setAuthLoading(false);
+      }
+  }, [showMessage]);
+
+  const linkWallet = useCallback(async () => {
+      if (!address) {
+          showMessage('Please connect your wallet first', 'warning');
+          return;
+      }
+      try {
+          setAuthLoading(true);
+          const { nonce } = await apiCall('/auth/nonce/', {
+              method: 'POST',
+              body: JSON.stringify({ address }),
+          });
+
+          const message = `Link wallet to Studyverse account\n\nNonce: ${nonce}`;
+          const signature = await signMessageAsync({ message });
+
+          await apiCall('/auth/link-wallet/', {
+              method: 'POST',
+              body: JSON.stringify({ address, signature, nonce }),
+          });
+
+          showMessage('Wallet linked successfully!', 'success');
+          return true;
+      } catch (error) {
+          console.error('Wallet link error:', error);
+          showMessage(`Linking failed: ${error.message}`, 'error');
+          return false;
+      } finally {
+          setAuthLoading(false);
+      }
+  }, [address, signMessageAsync, showMessage]);
 
   useEffect(() => {
       const initAuth = async () => {
-          // ⛔ DONT clear JWT if we are still waiting for the wallet to reconnect
           if (status === 'connecting' || status === 'reconnecting') return;
 
-          if (!isConnected || !address) {
+          const storedToken = localStorage.getItem('jwt');
+          const authType = localStorage.getItem('auth_type');
+
+          if (!storedToken) {
               setJwt(null);
-              hasAttemptedAutoLogin.current = false;
-              // localStorage.removeItem('jwt'); // Optional: cleanup on explicit logout
               return;
           }
 
-          const storedToken = localStorage.getItem('jwt');
-
-          if (storedToken) {
-              const valid = await verifyJWT(storedToken);
-              if (valid) {
-                  setJwt(storedToken);
-                  await loadUserData(storedToken);
-                  return;
-              } else {
-                  localStorage.removeItem('jwt');
-                  setJwt(null);
+          const valid = await verifyJWT(storedToken);
+          if (valid) {
+              setJwt(storedToken);
+              
+              if (authType === 'wallet' && !isConnected) {
+                  // Option: keep logged in, but some actions will require re-connect
               }
-          }
-          
-          // Only auto-login if we're connected but have no valid token
-          if (!hasAttemptedAutoLogin.current && !authLoading) {
-              hasAttemptedAutoLogin.current = true;
-              loginWithWallet();
+          } else {
+              localStorage.removeItem('jwt');
+              localStorage.removeItem('auth_type');
+              setJwt(null);
           }
       };
 
       initAuth();
-  }, [isConnected, address, status, verifyJWT, loadUserData, loginWithWallet, authLoading]);
+  }, [isConnected, status, verifyJWT]);
 
-  return { jwt, authLoading, loginWithWallet };
-};
+  return { jwt, authLoading, loginWithWallet, loginWithGoogle, linkWallet };
+};
