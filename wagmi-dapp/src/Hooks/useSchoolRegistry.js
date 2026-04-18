@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useWalletClient, usePublicClient, useAccount } from 'wagmi';
 import { parseUnits, decodeEventLog } from 'viem';
+import { sepolia } from 'viem/chains';
 import { waitForTransactionReceipt } from 'viem/actions';
 import { SCHOOL_REGISTRY_ADDRESS, SCHOOL_REGISTRY_ABI } from '../web3/constants';
 import { apiCall } from '../api/api';
@@ -11,7 +12,7 @@ import { apiCall } from '../api/api';
 export function useSchoolRegistry(showMessage) {
     const { address } = useAccount();
     const { data: walletClient } = useWalletClient();
-    const publicClient = usePublicClient();
+    const publicClient = usePublicClient({ chainId: sepolia.id });
     
     const [isLoading, setIsLoading] = useState(false);
     const [ownedSchools, setOwnedSchools] = useState([]);

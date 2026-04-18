@@ -51,7 +51,6 @@ export const useCourseData = (address, showMessage, jwt) => {
     // --- Core Data Fetching Functions ---
 
     const loadUserData = useCallback(async (token) => {
-        if (!address) return;
         try {
             setLoading(true);
             const user_data = await apiCall(`/me/`);
@@ -295,6 +294,11 @@ export const useCourseData = (address, showMessage, jwt) => {
         setCourseToEnroll(course); // Keep it strictly for tracking the background API sync effect
         showMessage('Preparing wallet transaction...', 'info');
         
+        console.log('--- ENROLLMENT DEBUG ---');
+        console.log('Course ID:', course.id);
+        console.log('Course Price:', course.price);
+        console.log('School Address:', course.school_address);
+
         try {
             if (typeof writeEnroll === 'function') {
                 // Pass the sovereign school address if it exists, otherwise it defaults to legacy in the hook

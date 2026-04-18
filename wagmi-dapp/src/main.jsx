@@ -23,7 +23,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 const queryClient = new QueryClient();
 
 // 2. Define chains
-const chains = [mainnet, sepolia, base, polygon, arbitrum, optimism];
+const chains = [sepolia, mainnet, base, polygon, arbitrum, optimism];
 
 // 3. Wallet connectors
 const { connectors } = getDefaultWallets({
@@ -33,12 +33,21 @@ const { connectors } = getDefaultWallets({
 });
 
 // 4. Wagmi config
+import { fallback } from "viem";
+
+// ... (existing code)
+
 const config = createConfig({
   connectors,
   chains,
   transports: {
     [mainnet.id]: http('https://cloudflare-eth.com'),
-    [sepolia.id]: http(),
+    [sepolia.id]: fallback([
+      http(import.meta.env.VITE_SEPOLIA_RPC_URL),
+      http('https://rpc.ankr.com/eth_sepolia'),
+      http('https://ethereum-sepolia-rpc.publicnode.com'),
+      http('https://1rpc.io/sepolia')
+    ]),
     [base.id]: http(),
     [polygon.id]: http(),
     [arbitrum.id]: http(),

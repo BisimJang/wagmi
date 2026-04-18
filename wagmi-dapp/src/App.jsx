@@ -106,7 +106,8 @@ function App() {
     authLoading,
     loginWithWallet,
     loginWithGoogle,
-    linkWallet
+    linkWallet,
+    logout
   } = useAuth(showMessage);
 
   // 2. Data Logic Hook
@@ -215,6 +216,13 @@ function App() {
         showMessage('Google authentication failed', 'error');
     };
 
+    const handleLogout = () => {
+        logout();
+        setCurrentPage('home');
+        window.history.pushState({}, '', '/');
+        showMessage('Logged out successfully', 'info');
+    };
+
     // We override showPage to enforce login on private pages
     const showPage = (pageId) => {
         const privatePages = ['instructor', 'my_courses', 'profile'];
@@ -284,6 +292,7 @@ function App() {
                     showMessage={showMessage}
                     linkWallet={linkWallet}
                     address={address}
+                    onLogout={handleLogout}
                 />;
             case 'certificates':
                 return <CertificatesPage

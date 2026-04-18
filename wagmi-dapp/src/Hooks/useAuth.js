@@ -136,5 +136,11 @@ export const useAuth = (showMessage) => {
       initAuth();
   }, [isConnected, status, verifyJWT]);
 
-  return { jwt, authLoading, loginWithWallet, loginWithGoogle, linkWallet };
+  const logout = useCallback(() => {
+    setJwt(null);
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('auth_type');
+  }, []);
+
+  return { jwt, authLoading, loginWithWallet, loginWithGoogle, linkWallet, logout };
 };

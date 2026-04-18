@@ -18,10 +18,16 @@ const ProfilePage = ({
     syncOnChainEnrollment,
     showMessage,
     linkWallet,
-    address: connectedAddress
+    address: connectedAddress,
+    onLogout
 }) => {
     const { disconnect } = useDisconnect();
     const { data: balanceData } = useBalance({ address: connectedAddress });
+
+    const handleSignOut = () => {
+        disconnect();
+        if (onLogout) onLogout();
+    };
 
     const [activeTab, setActiveTab] = useState('path'); // 'path', 'backpack', 'settings'
     const [isNftSelectorOpen, setIsNftSelectorOpen] = useState(false);
@@ -172,7 +178,7 @@ const ProfilePage = ({
 
                         {/* Actions */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                             <BrutalistButton onClick={() => disconnect()} style={{ background: '#ff3e00', color: '#fff' }}>
+                             <BrutalistButton onClick={handleSignOut} style={{ background: '#ff3e00', color: '#fff' }}>
                                 Sign Out
                              </BrutalistButton>
                              <BrutalistButton onClick={toggleTheme} style={{ background: '#fff', color: '#000' }}>

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useWalletClient, usePublicClient, useAccount } from 'wagmi';
 import { parseUnits, formatEther } from 'viem';
+import { sepolia } from 'viem/chains';
 import { waitForTransactionReceipt } from 'viem/actions';
 import { SCHOOL_ABI } from '../web3/constants';
 import { apiCall } from '../api/api';
@@ -12,7 +13,7 @@ import { apiCall } from '../api/api';
 export function useSovereignManagement(showMessage) {
     const { address } = useAccount();
     const { data: walletClient } = useWalletClient();
-    const publicClient = usePublicClient();
+    const publicClient = usePublicClient({ chainId: sepolia.id });
     
     const [isActionLoading, setIsActionLoading] = useState(false);
 
@@ -56,7 +57,13 @@ export function useSovereignManagement(showMessage) {
             }
         } catch (error) {
             console.error('Withdrawal error:', error);
-            showMessage(`Withdrawal failed: ${error.message}`, 'error');
+            if (error.message?.includes('Failed to fetch') || error.message?.includes('network')) {
+                showMessage('Network Error: Wallet cannot reach the blockchain provider. Checking your RPC connection and internet speed is recommended.', 'error');
+            } else if (error?.name === 'UserRejectedRequestError') {
+                showMessage('Transaction cancelled by user.', 'info');
+            } else {
+                showMessage(`Withdrawal failed: ${error.message}`, 'error');
+            }
         } finally {
             setIsActionLoading(false);
         }

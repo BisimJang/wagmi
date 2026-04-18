@@ -1,12 +1,13 @@
 import { useState, useCallback } from 'react';
 import { useWalletClient, usePublicClient } from 'wagmi';
 import { parseUnits } from 'viem';
+import { sepolia } from 'viem/chains';
 import { waitForTransactionReceipt } from 'viem/actions';
 import { COURSE_CONTRACT_ADDRESS, SCHOOL_ABI } from '../web3/constants';
 
 export function useWeb3Publish() {
     const { data: walletClient } = useWalletClient();
-    const publicClient = usePublicClient();
+    const publicClient = usePublicClient({ chainId: sepolia.id });
     
     const [isLoading, setIsLoading] = useState(false);
     const [isError, setIsError] = useState(false);
