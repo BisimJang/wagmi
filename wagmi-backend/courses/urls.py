@@ -10,6 +10,10 @@ from .views import (
     LessonProgressViewSet,
     enroll_in_course, 
     issue_certificate,
+    get_certificate_image,
+    get_certificate_metadata,
+    get_claim_signature,
+    sync_claimed_cert,
     me,
     LessonsAndProgressView, 
     complete_lesson,
@@ -27,6 +31,13 @@ router = DefaultRouter()
 urlpatterns = [
     path('', include(router.urls)),
     path("courses/<int:course_id>/lessons_and_progress/", LessonsAndProgressView.as_view(), name="course-lessons-progress"),
+    
+    # NFT Certificates
+    path("certificates/<int:cert_id>/image/", get_certificate_image, name="cert-image"),
+    path("certificates/<int:cert_id>/metadata/", get_certificate_metadata, name="cert-metadata"),
+    path("certificates/<int:cert_id>/claim_signature/", get_claim_signature, name="cert-claim-sig"),
+    path("certificates/<int:cert_id>/sync_claim/", sync_claimed_cert, name="cert-sync-claim"),
+
     # Courses
     path("courses/", CourseListCreateView.as_view(), name="course-list"),
     path("courses/<int:pk>/", CourseDetailView.as_view(), name="course-detail"),

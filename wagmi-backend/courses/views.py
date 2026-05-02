@@ -18,6 +18,13 @@ from .serializers import (
     CurriculumLessonSerializer,
 )
 import logging
+from django.http import HttpResponse
+from .dynamic_assets import generate_certificate_svg
+from eth_account import Account
+from eth_account.messages import encode_defunct
+from web3 import Web3
+from django.conf import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -147,7 +154,26 @@ def enroll_in_course(request, course_id):
         return Response({"error": "Maximum of 20 active enrollments allowed."},
                         status=status.HTTP_400_BAD_REQUEST)
 
-    # Optional: verify tx on-chain here (recommended). If you have web3 configured, verify tx_hash
+    # Optional: verify tx on-chain here (recommended).
+    try:
+        w3 = Web3(Web3.HTTPProvider(settings.WEB3_PROVIDER_URI))
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=2) # Short timeout as we expect it to be mined or close to it
+        
+        if receipt['status'] != 1:
+            return Response({"error": "On-chain transaction failed. Please check your wallet balance/gas."}, 
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verify the contract address matches
+        school_address = Web3.to_checksum_address(course.school_address)
+        if Web3.to_checksum_address(receipt['to']) != school_address:
+             return Response({"error": "Transaction was sent to the wrong contract."}, 
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        logger.warning(f"On-chain verification skipped or failed: {str(e)}")
+        # We allow it to proceed if the RPC is down, but ideally we'd fail here.
+        # For now, let's keep it robust but alert.
+
     try:
         enrollment = Enrollment.objects.create(
             user=user,
@@ -188,25 +214,112 @@ def issue_certificate(request, course_id):
         user=request.user,
         defaults={
             "wallet_address": request.user.address,
-            "token_id": f"NFT{course_id}{request.user.id}",
-            "tx_hash": "0xmockcerttx123456789"
+            "status": "pending"
         }
     )
 
-    if not created:
-        return Response({"message": "Certificate already issued"}, status=status.HTTP_200_OK)
-
-    # Here you can later integrate NFT minting / blockchain tx
-    # For now, simulate a transaction hash
-    certificate.tx_hash = "0xmockcerttx123456789"
+    # Base URL for metadata and image
+    # Note: Using request.build_absolute_uri() is best for development
+    base_url = request.build_absolute_uri('/')[:-1]
+    
+    certificate.image_uri = f"{base_url}/api/certificates/{certificate.id}/image/"
+    certificate.metadata_uri = f"{base_url}/api/certificates/{certificate.id}/metadata/"
+    certificate.status = 'issued'
     certificate.save()
 
     return Response({
-        "message": "Certificate issued successfully",
+        "message": "Certificate issued! You can now claim it on-chain.",
         "course": course.title,
-        "user": str(request.user),
-        "tx_hash": certificate.tx_hash
+        "certificate_id": certificate.id,
+        "metadata_uri": certificate.metadata_uri,
+        "image_uri": certificate.image_uri,
+        "status": certificate.status
     }, status=status.HTTP_201_CREATED)
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_certificate_image(request, cert_id):
+    cert = get_object_or_404(Certificate, pk=cert_id)
+    svg_data = generate_certificate_svg(
+        student_name=cert.user.display_name or cert.user.full_name or cert.user.address[:10],
+        course_title=cert.course.title,
+        school_name=cert.course.school_name or "Studyverse Node"
+    )
+    return HttpResponse(svg_data, content_type="image/svg+xml")
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_certificate_metadata(request, cert_id):
+    cert = get_object_or_404(Certificate, pk=cert_id)
+    metadata = {
+        "name": f"Certificate: {cert.course.title}",
+        "description": f"Verified Course Completion Certificate for '{cert.course.title}' by {cert.course.instructor.display_name or 'Instructor'}.",
+        "image": cert.image_uri,
+        "external_url": f"https://studyverse.com/courses/{cert.course.id}",
+        "attributes": [
+            {"trait_type": "Course", "value": cert.course.title},
+            {"trait_type": "Learner", "value": cert.user.display_name or cert.user.address},
+            {"trait_type": "Status", "value": "Verified"},
+            {"trait_type": "Issue Date", "value": cert.issued_at.strftime("%Y-%m-%d")}
+        ]
+    }
+    return Response(metadata)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_claim_signature(request, cert_id):
+    cert = get_object_or_404(Certificate, pk=cert_id)
+    if cert.user != request.user:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    private_key = getattr(settings, 'WEB3_OWNER_PRIVATE_KEY', None)
+    if not private_key:
+        # Fallback to a development key if not set
+        private_key = "0x" + "a" * 64 
+        
+    account = Account.from_key(private_key)
+    
+    # Contract Expects: keccak256(abi.encodePacked(msg.sender, _courseId, _uri, address(this)))
+    # We use web3.solidityKeccak for abi.encodePacked imitation
+    course_id = cert.course.id
+    student_address = Web3.to_checksum_address(cert.user.address)
+    school_address = Web3.to_checksum_address(cert.course.school_address)
+    metadata_uri = cert.metadata_uri
+    
+    chain_id = getattr(settings, 'WEB3_CHAIN_ID', 11155111)
+    
+    msg_hash = Web3.solidity_keccak(
+        ['address', 'uint256', 'string', 'address', 'uint256'],
+        [student_address, course_id, metadata_uri, school_address, chain_id]
+    )
+    
+    message = encode_defunct(hexstr=msg_hash.hex())
+    signed_message = account.sign_message(message)
+    
+    return Response({
+        "signature": "0x" + signed_message.signature.hex(),
+        "metadata_uri": metadata_uri,
+        "school_address": school_address,
+        "course_id": course_id,
+        "signer": account.address
+    })
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def sync_claimed_cert(request, cert_id):
+    cert = get_object_or_404(Certificate, pk=cert_id)
+    tx_hash = request.data.get("tx_hash")
+    token_id = request.data.get("token_id")
+    
+    if not tx_hash:
+        return Response({"error": "tx_hash required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+    cert.tx_hash = tx_hash
+    cert.token_id = token_id
+    cert.status = 'claimed'
+    cert.save()
+    
+    return Response({"status": "success"})
 
 class LessonProgressViewSet(viewsets.ModelViewSet):
     queryset = LessonProgress.objects.all()

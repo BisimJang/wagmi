@@ -16,6 +16,13 @@ class SovereignSchool(models.Model):
 
 
 class Course(models.Model):
+    DIVISION_CHOICES = [
+        ('builders', 'Builders Division'),
+        ('creatives', 'Creatives Division'),
+        ('both', 'Both (Builders & Creatives)'),
+        ('neither', 'Neither (General/Core)'),
+    ]
+
     title = models.CharField(max_length=200)
     description = models.TextField()
     instructor = models.ForeignKey(
@@ -25,6 +32,8 @@ class Course(models.Model):
     )
     price = models.DecimalField(max_digits=20, decimal_places=8, default=0.00)
     image_url = models.URLField(blank=True, null=True)
+    division = models.CharField(max_length=20, choices=DIVISION_CHOICES, default='neither')
+    category = models.CharField(max_length=100, blank=True, null=True) # e.g. "Software Architecture", "Generative Art"
     is_minted = models.BooleanField(default=False)
     tx_hash = models.CharField(max_length=66, blank=True, null=True)
     school = models.ForeignKey(SovereignSchool, on_delete=models.SET_NULL, null=True, blank=True, related_name="courses")
@@ -97,6 +106,12 @@ class Enrollment(models.Model):
 
 
 class Certificate(models.Model):
+    CLAIM_STATUS = [
+        ('pending', 'Pending'),
+        ('issued', 'Issued'),
+        ('claimed', 'Claimed On-Chain'),
+    ]
+
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="certificates")
     user = models.ForeignKey(
         User,
@@ -104,9 +119,15 @@ class Certificate(models.Model):
         related_name="certificates"
     )
     wallet_address = models.CharField(max_length=255)
-    token_id = models.CharField(max_length=200, unique=True)
-    tx_hash = models.CharField(max_length=200, unique=True)
+    token_id = models.CharField(max_length=200, blank=True, null=True)
+    tx_hash = models.CharField(max_length=200, blank=True, null=True)
+    
+    # NFT Metadata fields
+    metadata_uri = models.TextField(blank=True, null=True)
+    image_uri = models.TextField(blank=True, null=True)
+    
+    status = models.CharField(max_length=20, choices=CLAIM_STATUS, default='pending')
     issued_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"NFT #{self.token_id} for {self.user} - {self.course.title}"
+        return f"Certificate for {self.user} - {self.course.title} ({self.status})"

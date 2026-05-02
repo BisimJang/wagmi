@@ -120,11 +120,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def get_certificates(self, obj):
         return [
             {
+                "id": c.id,
                 "course": c.course.title,
                 "course_id": c.course.id,
                 "issued_at": c.issued_at,
                 "token_id": c.token_id,
                 "tx_hash": c.tx_hash,
+                "status": c.status,
             }
             for c in Certificate.objects.filter(user=obj)
         ]

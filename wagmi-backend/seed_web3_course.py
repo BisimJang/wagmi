@@ -35,6 +35,8 @@ def run():
             "description": "Understand the core architecture of the decentralized web. This course strips away the hype and focuses entirely on the technical realities of Wallets, Smart Contracts, Consensus Mechanisms, and Web3 frontend integration.",
             "instructor": instructor,
             "price": 0.05,
+            "division": "builders",
+            "category": "Blockchain Engineering",
             "image_url": "https://images.unsplash.com/photo-1639322537231-2f206e06af84?auto=format&fit=crop&q=80&w=1600"
         }
     )
@@ -131,7 +133,7 @@ def run():
             print(f"  -> Added Lesson: {lesson_data['title']}")
 
     print("========================================")
-    print("✅ WEB3 FUNDAMENTALS COURSE SEEDED.")
+    print("SUCCESS: WEB3 FUNDAMENTALS COURSE SEEDED.")
     print("========================================")
 
 if __name__ == "__main__":
