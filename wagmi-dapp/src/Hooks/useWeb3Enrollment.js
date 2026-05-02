@@ -155,8 +155,112 @@ export default function useWeb3Enrollment() {
         }
     }, [walletClient, publicClient]);
 
+    const claimCertificate = useCallback(async (certificateId) => {
+        console.log('--- CLAIM CERTIFICATE DEBUG ---');
+        console.log('Certificate ID:', certificateId);
+        console.log('Wallet Client:', walletClient);
+
+        if (!walletClient || !certificateId) {
+            const err = new Error('Wallet not connected or invalid certificate.');
+            console.error(err.message, { walletClient, certificateId });
+            setPrepareError(err);
+            setIsError(true);
+            throw err;
+        }
+
+        setIsLoading(true);
+        setIsError(false);
+        setIsSuccess(false);
+        setPrepareError(null);
+
+        try {
+            // 1. Get Signature and Metadata from Backend
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/certificates/${certificateId}/claim_signature/`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+                }
+            });
+            
+            if (!response.ok) throw new Error('Failed to get claim authorization from server.');
+            let { signature, metadata_uri, school_address, course_id, signer: expectedSigner } = await response.json();
+
+            // 🎯 Ensure 0x prefix for viem (prevents SizeExceedsPaddingSizeError)
+            const cleanSignature = signature.startsWith('0x') ? signature : `0x${signature}`;
+
+            // 🎯 Signer Verification (Pre-flight check)
+            // This prevents "Ordinary People" (students) from hitting a cryptic revert
+            // and tells them exactly what to do.
+            try {
+                const currentContractSigner = await publicClient.readContract({
+                    address: school_address,
+                    abi: SCHOOL_ABI,
+                    functionName: 'signer',
+                });
+                
+                if (currentContractSigner?.toLowerCase() !== expectedSigner?.toLowerCase()) {
+                    console.error('Signer mismatch:', { onChain: currentContractSigner, expected: expectedSigner });
+                    throw new Error(`NFT Authorization Mismatch: The instructor hasn't authorized platform signatures for this school. Please ask them to "Sync Certificates" in their dashboard.`);
+                }
+            } catch (err) {
+                console.error('Signer verification failed:', err);
+                if (err.message.includes('Sync Certificates')) throw err;
+                
+                // If it's a revert or function not found, it's likely an old school contract
+                if (err.message.includes('reverted') || err.message.includes('not found') || err.message.includes('execution reverted')) {
+                    throw new Error("Outdated School Contract: This school was created with an older version of the protocol that doesn't support NFT certificates. Please contact the instructor.");
+                }
+                console.warn('Could not verify signer on-chain, proceeding anyway...', err);
+            }
+
+            // 2. Call Contract: claimCertificate(courseId, uri, signature)
+            console.log('Claiming NFT Certificate on-chain...');
+            const { request } = await publicClient.simulateContract({
+                account: walletClient.account,
+                address: school_address,
+                abi: SCHOOL_ABI,
+                functionName: 'claimCertificate',
+                args: [BigInt(course_id), metadata_uri, cleanSignature],
+            });
+
+            const hash = await walletClient.writeContract(request);
+            setTxHash(hash);
+
+            const receipt = await waitForTransactionReceipt(publicClient, { hash });
+            
+            if (receipt?.status === 'success') {
+                // 3. Sync with Backend
+                // extract tokenId from receipt logs if possible, or let backend handle it
+                const tokenId = receipt.logs?.[0]?.topics?.[3] ? BigInt(receipt.logs[0].topics[3]).toString() : null;
+                
+                await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/certificates/${certificateId}/sync_claim/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+                    },
+                    body: JSON.stringify({ tx_hash: hash, token_id: tokenId })
+                });
+                
+                setIsSuccess(true);
+            } else {
+                setIsError(true);
+            }
+
+            setIsLoading(false);
+            return { hash, receipt };
+        } catch (err) {
+            console.error('Certificate claim failure:', err);
+            const revertReason = err.walk?.(e => e.reason)?.reason || err.reason || err.shortMessage || err.message;
+            setPrepareError(new Error(`Claim Failed: ${revertReason}`));
+            setIsError(true);
+            setIsLoading(false);
+            throw err;
+        }
+    }, [walletClient, publicClient]);
+
     return {
         writeEnroll,
+        claimCertificate,
         isLoading,
         isError,
         isSuccess,

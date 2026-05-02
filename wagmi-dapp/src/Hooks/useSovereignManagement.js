@@ -18,6 +18,25 @@ export function useSovereignManagement(showMessage) {
     const [isActionLoading, setIsActionLoading] = useState(false);
 
     /**
+     * Fetches the actual on-chain price for a specific course in a school.
+     */
+    const getOnChainPrice = useCallback(async (schoolAddress, courseId) => {
+        if (!publicClient || !schoolAddress) return '0';
+        try {
+            const price = await publicClient.readContract({
+                address: schoolAddress,
+                abi: SCHOOL_ABI,
+                functionName: 'coursePrices',
+                args: [BigInt(courseId)],
+            });
+            return formatEther(price);
+        } catch (error) {
+            console.error(`Error fetching price for course ${courseId}:`, error);
+            return '0';
+        }
+    }, [publicClient]);
+
+    /**
      * Fetches the ETH balance of a school contract.
      */
     const getSchoolBalance = useCallback(async (schoolAddress) => {
@@ -121,10 +140,66 @@ export function useSovereignManagement(showMessage) {
         return null;
     }, [walletClient, address, publicClient, showMessage]);
 
+    /**
+     * Fetches the current authorized certificate signer for a school.
+     */
+    const getContractSigner = useCallback(async (schoolAddress) => {
+        if (!publicClient || !schoolAddress) return null;
+        try {
+            return await publicClient.readContract({
+                address: schoolAddress,
+                abi: SCHOOL_ABI,
+                functionName: 'signer',
+            });
+        } catch (error) {
+            // 🎯 Detect missing function (Legacy Contract)
+            if (error.message.includes('not found') || error.message.includes('reverted')) {
+                console.warn(`Signer check skipped: School at ${schoolAddress} appears to be a Legacy Contract.`);
+                return 'LEGACY_CONTRACT';
+            }
+            console.error('Error fetching signer:', error);
+            return null;
+        }
+    }, [publicClient]);
+
+    /**
+     * Updates the authorized signer for certificates.
+     */
+    const updateOnChainSigner = useCallback(async (schoolAddress, newSigner) => {
+        if (!walletClient || !address) {
+            showMessage('Wallet not connected', 'error');
+            return null;
+        }
+
+        setIsActionLoading(true);
+        try {
+            const hash = await walletClient.writeContract({
+                address: schoolAddress,
+                abi: SCHOOL_ABI,
+                functionName: 'setSigner',
+                args: [newSigner],
+            });
+
+            showMessage('Updating authorized signer...', 'info');
+            const receipt = await waitForTransactionReceipt(publicClient, { hash });
+            showMessage('Signer updated successfully!', 'success');
+            return receipt;
+        } catch (error) {
+            console.error('Error updating signer:', error);
+            showMessage('Failed to update signer', 'error');
+            return null;
+        } finally {
+            setIsActionLoading(false);
+        }
+    }, [walletClient, address, publicClient, showMessage]);
+
     return {
+        getOnChainPrice,
         getSchoolBalance,
+        getContractSigner,
         withdrawFunds,
         updateOnChainPrice,
+        updateOnChainSigner,
         isActionLoading
     };
 }

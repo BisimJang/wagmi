@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import CourseCard from '../components/Card/CourseCard.jsx';
-import BrutalistButton from '../components/UI/BrutalistButton';
 
 const CoursesPage = ({ 
     courses, 
@@ -15,9 +14,9 @@ const CoursesPage = ({
     syncEnrollment
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedSchool, setSelectedSchool] = useState(null); // null = All Schools
+    const [selectedSchool, setSelectedSchool] = useState(null);
+    const [selectedDivision, setSelectedDivision] = useState(null);
 
-    // Debounced backend search (title / description)
     useEffect(() => {
         const handler = setTimeout(() => {
             loadCourses(searchQuery, 1);
@@ -32,7 +31,6 @@ const CoursesPage = ({
         }
     };
 
-    // Build unique school list from loaded courses (preserves real names)
     const availableSchools = useMemo(() => {
         const seen = new Set();
         const list = [];
@@ -46,105 +44,127 @@ const CoursesPage = ({
         return list.sort();
     }, [courses]);
 
-    // Client-side school filter
     const filteredCourses = useMemo(() => {
-        if (!selectedSchool) return courses;
-        return courses.filter(c => c.school_name === selectedSchool);
-    }, [courses, selectedSchool]);
+        let result = courses;
+        
+        if (selectedSchool) {
+            result = result.filter(c => c.school_name === selectedSchool);
+        }
+        
+        if (selectedDivision) {
+            if (selectedDivision === 'builders') {
+                result = result.filter(c => c.division === 'builders' || c.division === 'both');
+            } else if (selectedDivision === 'creatives') {
+                result = result.filter(c => c.division === 'creatives' || c.division === 'both');
+            } else if (selectedDivision === 'neither') {
+                result = result.filter(c => c.division === 'neither');
+            }
+        }
+        
+        return result;
+    }, [courses, selectedSchool, selectedDivision]);
 
-    const hasFilters = searchQuery || selectedSchool;
+    const hasFilters = searchQuery || selectedSchool || selectedDivision;
 
     return (
-        <section className="page active">
+        <section className="page">
             <div className="container">
-                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <h2 style={{ fontSize: '3rem', textTransform: 'uppercase', marginBottom: '1.5rem' }}>
-                        Browse Courses
-                    </h2>
+                <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+                    <h1 className="gradient-text" style={{ fontSize: '4rem', fontWeight: '900', marginBottom: '1.5rem', letterSpacing: '-1px' }}>
+                        Curriculum Grid
+                    </h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', marginBottom: '3rem' }}>
+                        Access high-performance modules deployed across the network.
+                    </p>
 
                     {/* SEARCH BAR */}
-                    <div style={{ maxWidth: '700px', margin: '0 auto', position: 'relative' }}>
+                    <div style={{ maxWidth: '600px', margin: '0 auto', position: 'relative' }}>
                         <input
                             type="text"
-                            placeholder="Search by title or description..."
+                            placeholder="Search by module name or instructor..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             style={{
                                 width: '100%',
-                                padding: 'clamp(0.8rem, 3vw, 1.2rem) clamp(1rem, 4vw, 1.5rem)',
-                                fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
-                                border: '4px solid #000',
+                                padding: '1.2rem 2rem',
+                                fontSize: '1rem',
+                                background: 'rgba(255,255,255,0.03)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '100px',
+                                color: '#fff',
                                 outline: 'none',
-                                boxShadow: 'clamp(3px, 1vw, 5px) clamp(3px, 1vw, 5px) 0px #000',
-                                boxSizing: 'border-box',
+                                backdropFilter: 'blur(10px)',
+                                textAlign: 'center',
+                                transition: 'all 0.3s'
                             }}
                         />
-                        {searchQuery && (
-                            <button
-                                onClick={() => setSearchQuery('')}
-                                style={{
-                                    position: 'absolute',
-                                    right: '15px',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    background: 'none',
-                                    border: 'none',
-                                    fontSize: '1.5rem',
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                ✕
-                            </button>
-                        )}
                     </div>
+                </div>
+
+                {/* DIVISION FILTER */}
+                <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'center', marginBottom: '3rem', flexWrap: 'wrap' }}>
+                    {[
+                        { id: null, label: 'ALL MODULES' },
+                        { id: 'builders', label: 'BUILDERS' },
+                        { id: 'creatives', label: 'CREATIVES' },
+                        { id: 'neither', label: 'CORE' }
+                    ].map(div => (
+                        <button
+                            key={div.id}
+                            onClick={() => setSelectedDivision(div.id)}
+                            style={{
+                                padding: '0.6rem 1.5rem',
+                                fontSize: '0.75rem',
+                                fontWeight: '800',
+                                border: '1px solid',
+                                borderColor: selectedDivision === div.id ? 'var(--primary-color)' : 'rgba(255,255,255,0.1)',
+                                background: selectedDivision === div.id ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                                color: selectedDivision === div.id ? 'var(--primary-color)' : 'var(--text-secondary)',
+                                borderRadius: '100px',
+                            }}
+                        >
+                            {div.label}
+                        </button>
+                    ))}
                 </div>
 
                 {/* SCHOOL FILTER CHIPS */}
                 {availableSchools.length > 0 && (
-                    <div className="filter-scroll-container" style={{
+                    <div style={{
                         display: 'flex',
                         flexWrap: 'nowrap',
                         overflowX: 'auto',
                         gap: '0.6rem',
                         alignItems: 'center',
-                        marginBottom: '2.5rem',
+                        marginBottom: '4rem',
                         paddingBottom: '1rem',
-                        WebkitOverflowScrolling: 'touch',
-                        msOverflowStyle: 'none',
                         scrollbarWidth: 'none'
                     }}>
-                        <style>{`
-                            .filter-scroll-container::-webkit-scrollbar { display: none; }
-                        `}</style>
                         <span style={{ 
-                            fontSize: '0.75rem', 
-                            fontWeight: '900', 
-                            textTransform: 'uppercase', 
-                            letterSpacing: '1px',
-                            color: 'var(--text-secondary)',
-                            marginRight: '0.4rem',
+                            fontSize: '0.7rem', 
+                            fontWeight: '800', 
+                            color: '#444',
+                            marginRight: '0.5rem',
                             flexShrink: 0
                         }}>
-                            Filter by School:
+                            ISSUERS:
                         </span>
 
-                        {/* "All" chip */}
                         <button
                             onClick={() => setSelectedSchool(null)}
                             style={{
-                                padding: '0.4rem 1rem',
-                                fontSize: '0.85rem',
+                                padding: '0.4rem 1.2rem',
+                                fontSize: '0.75rem',
                                 fontWeight: '700',
-                                border: '3px solid #000',
-                                cursor: 'pointer',
-                                background: selectedSchool === null ? '#000' : 'transparent',
-                                color: selectedSchool === null ? '#fff' : '#000',
-                                transition: 'background 0.15s, color 0.15s',
-                                boxShadow: selectedSchool === null ? '3px 3px 0 var(--primary-color)' : 'none',
+                                border: '1px solid',
+                                borderColor: selectedSchool === null ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+                                background: selectedSchool === null ? 'rgba(255,255,255,0.05)' : 'transparent',
+                                color: selectedSchool === null ? '#fff' : '#444',
+                                borderRadius: '100px',
                                 flexShrink: 0
                             }}
                         >
-                            All Schools
+                            Global
                         </button>
 
                         {availableSchools.map(name => (
@@ -152,76 +172,28 @@ const CoursesPage = ({
                                 key={name}
                                 onClick={() => setSelectedSchool(prev => prev === name ? null : name)}
                                 style={{
-                                    padding: '0.4rem 1rem',
-                                    fontSize: '0.85rem',
+                                    padding: '0.4rem 1.2rem',
+                                    fontSize: '0.75rem',
                                     fontWeight: '700',
-                                    border: '3px solid #000',
-                                    cursor: 'pointer',
-                                    background: selectedSchool === name ? '#000' : 'transparent',
-                                    color: selectedSchool === name ? '#fff' : '#000',
-                                    transition: 'background 0.15s, color 0.15s',
-                                    boxShadow: selectedSchool === name ? '3px 3px 0 var(--primary-color)' : 'none',
-                                    maxWidth: '220px',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
+                                    border: '1px solid',
+                                    borderColor: selectedSchool === name ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+                                    background: selectedSchool === name ? 'rgba(255,255,255,0.05)' : 'transparent',
+                                    color: selectedSchool === name ? '#fff' : '#444',
+                                    borderRadius: '100px',
                                     flexShrink: 0
                                 }}
-                                title={name}
                             >
-                                🏫 {name}
+                                {name}
                             </button>
                         ))}
-
-                        {selectedSchool && (
-                            <button
-                                onClick={() => setSelectedSchool(null)}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    fontSize: '0.8rem',
-                                    color: 'var(--text-secondary)',
-                                    cursor: 'pointer',
-                                    textDecoration: 'underline',
-                                    marginLeft: '0.25rem',
-                                    flexShrink: 0
-                                }}
-                            >
-                                Clear filter
-                            </button>
-                        )}
                     </div>
                 )}
 
-                {/* ACTIVE FILTER SUMMARY */}
-                {selectedSchool && (
-                    <div style={{
-                        marginBottom: '1.5rem',
-                        fontSize: '0.9rem',
-                        color: 'var(--text-secondary)',
-                    }}>
-                        Showing <strong>{filteredCourses.length}</strong> course{filteredCourses.length !== 1 ? 's' : ''} from <strong>{selectedSchool}</strong>
-                    </div>
-                )}
-
-                {/* COURSE GRID */}
+                {/* GRID */}
                 {filteredCourses.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '5rem 0' }}>
-                        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔎</div>
-                        <h3>No courses found</h3>
-                        <p style={{ color: 'var(--text-secondary)' }}>
-                            {selectedSchool
-                                ? `No courses from "${selectedSchool}" match your search.`
-                                : 'Try adjusting your search terms.'}
-                        </p>
-                        {hasFilters && (
-                            <BrutalistButton
-                                onClick={() => { setSearchQuery(''); setSelectedSchool(null); }}
-                                style={{ marginTop: '2rem' }}
-                            >
-                                Clear All Filters
-                            </BrutalistButton>
-                        )}
+                    <div className="glass-panel" style={{ textAlign: 'center', padding: '6rem' }}>
+                        <h2 style={{ marginBottom: '1rem' }}>No modules detected.</h2>
+                        <p style={{ color: 'var(--text-secondary)' }}>Try adjusting your search query or filters.</p>
                     </div>
                 ) : (
                     <>
@@ -238,34 +210,30 @@ const CoursesPage = ({
                             ))}
                         </div>
 
-                        {/* PAGINATION — only when no school filter active (filter is client-side) */}
+                        {/* PAGINATION */}
                         {!selectedSchool && (
                             <div style={{
                                 display: 'flex',
                                 justifyContent: 'center',
                                 alignItems: 'center',
-                                gap: '1.5rem',
-                                margin: '4rem 0',
+                                gap: '2rem',
+                                margin: '6rem 0',
                             }}>
-                                <BrutalistButton
+                                <button
                                     onClick={() => handlePageChange(pagination.currentPage - 1)}
                                     disabled={!pagination.previous}
-                                    style={{ opacity: pagination.previous ? 1 : 0.5 }}
+                                    style={{ opacity: pagination.previous ? 1 : 0.3 }}
                                 >
-                                    ← Previous
-                                </BrutalistButton>
-
-                                <div style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>
-                                    Page {pagination.currentPage}
-                                </div>
-
-                                <BrutalistButton
+                                    Previous
+                                </button>
+                                <span style={{ fontWeight: '800', color: 'var(--primary-color)' }}>{pagination.currentPage}</span>
+                                <button
                                     onClick={() => handlePageChange(pagination.currentPage + 1)}
                                     disabled={!pagination.next}
-                                    style={{ opacity: pagination.next ? 1 : 0.5 }}
+                                    style={{ opacity: pagination.next ? 1 : 0.3 }}
                                 >
-                                    Next →
-                                </BrutalistButton>
+                                    Next
+                                </button>
                             </div>
                         )}
                     </>

@@ -32,67 +32,66 @@ const CourseCard = ({ course, onEnroll, onViewDetails, enrollmentStatus, onSync 
     }
   }, [isOnChainEnrolled, enrollmentStatus, address, onSync, course.id]);
 
+  // Premium: Irregular Shard Shapes
+  const shardShape = useMemo(() => {
+    const shapes = [
+      'polygon(0% 2%, 100% 0%, 95% 95%, 5% 100%)',
+      'polygon(5% 0%, 95% 5%, 100% 100%, 0% 92%)',
+      'polygon(0% 0%, 98% 8%, 92% 100%, 5% 85%)',
+      'polygon(10% 0%, 100% 0%, 88% 95%, 0% 100%)',
+    ];
+    return shapes[course.id % shapes.length];
+  }, [course.id]);
+
   return (
-    <div className="course-card" onClick={() => onViewDetails(course)}> 
+    <div 
+      className="course-card" 
+      onClick={() => onViewDetails(course)}
+      style={{ clipPath: shardShape }}
+    > 
       <div className="course-image" style={{ backgroundImage: `url('${course.imageUrl}')` }}></div>
       <div className="course-content">
         <h3 className="course-title">{course.name}</h3>
         <p className="course-description">{course.description}</p>
         
-        <div className="course-price">
+        <div style={{ marginBottom: '1.5rem' }}>
           {(course.is_minted || isOnChainEnrolled) && (
             <div style={{ marginBottom: '0.8rem' }}>
               <span style={{ 
                 display: 'block', 
                 fontSize: '0.7rem', 
                 color: 'var(--primary-color)', 
-                fontWeight: '900', 
+                fontWeight: '800', 
+                textTransform: 'uppercase',
                 letterSpacing: '1px',
                 marginBottom: '0.2rem' 
               }}>
-                ✓ {course.school_name ? course.school_name.toUpperCase() : 'STUDYVERSE VERIFIED'}
+                ✓ {course.school_name || 'STUDY VERSE VERIFIED'}
               </span>
-              {targetContract && (
-                <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', display: 'block', wordBreak: 'break-all' }}>
-                  Issuer: {course.school_name || 'Global Catalog'} 
-                </span>
-              )}
             </div>
           )}
-          {course.price} ETH
+          <div className="course-price">{course.price} ETH</div>
         </div>
 
-        <div className="course-stats"><span>Active Course</span></div>
-        
-        {isCompleted ? (
-          <BrutalistButton 
-            style={{ width: '100%', opacity: 0.7, background: 'var(--primary-color)', color: '#000', border: '3px solid #000' }} 
-            arcColor="#000"
-            glowColor="rgba(0,0,0,0.4)"
-            disabled
-          >
-            Completed
-          </BrutalistButton>
-        ) : isEnrolled ? (
-          <BrutalistButton 
-            style={{ width: '100%', opacity: 0.7, background: 'var(--primary-color)', color: '#000', border: '3px solid #000' }} 
-            arcColor="#000"
-            glowColor="rgba(0,0,0,0.4)"
-            disabled
-          >
-            Enrolled
-          </BrutalistButton>
-        ) : (
-          <BrutalistButton 
-            style={{ width: '100%', background: 'var(--primary-color)', color: '#000', border: '3px solid #000' }} 
-            arcColor="#000" 
-            glowColor="rgba(0,0,0,0.4)"
-            disabled={isCheckingStatus}
-            onClick={(e) => { e.stopPropagation(); onEnroll(course); }}
-          >
-            {isCheckingStatus ? 'Checking...' : 'Enroll Now'}
-          </BrutalistButton>
-        )}
+        <div className="course-footer">
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
+            {course.division === 'builders' ? '⚡ BUILDERS' : course.division === 'creatives' ? '🎨 CREATIVES' : '◎ CORE'}
+          </span>
+          
+          {isCompleted ? (
+            <button style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', opacity: 0.5 }} disabled>Completed</button>
+          ) : isEnrolled ? (
+            <button style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', background: 'var(--primary-color)', color: '#fff' }} onClick={(e) => { e.stopPropagation(); onViewDetails(course); }}>Learn</button>
+          ) : (
+            <button 
+              style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', background: 'var(--primary-color)', color: '#fff' }}
+              disabled={isCheckingStatus}
+              onClick={(e) => { e.stopPropagation(); onEnroll(course); }}
+            >
+              {isCheckingStatus ? '...' : 'Enroll'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

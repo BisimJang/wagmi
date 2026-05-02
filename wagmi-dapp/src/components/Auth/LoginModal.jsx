@@ -1,8 +1,7 @@
 import React from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { X, Shield, Globe, Zap } from 'lucide-react';
-import BrutalistButton from '../UI/BrutalistButton';
+import { X, Shield, Globe, Zap, ArrowRight } from 'lucide-react';
 
 const LoginModal = ({ isOpen, onClose, onGoogleSuccess, onGoogleError, loginWithWallet, isAuthorized }) => {
     if (!isOpen) return null;
@@ -14,88 +13,100 @@ const LoginModal = ({ isOpen, onClose, onGoogleSuccess, onGoogleError, loginWith
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.8)',
+            backgroundColor: 'rgba(0,0,0,0.85)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 1000,
-            backdropFilter: 'blur(8px)'
+            zIndex: 3000,
+            backdropFilter: 'blur(20px)'
         }} onClick={onClose}>
             <div style={{
-                background: '#fff',
-                border: '8px solid #000',
-                boxShadow: '20px 20px 0px #ff3e00',
-                padding: '3rem',
-                maxWidth: '900px', // Wider for horizontal layout
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(40px)',
+                borderRadius: '40px',
+                padding: '4rem',
+                maxWidth: '1000px',
                 width: '95%',
                 position: 'relative',
-                animation: 'modalSlide 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                animation: 'modalFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                boxShadow: '0 40px 100px rgba(0,0,0,0.6)'
             }} onClick={e => e.stopPropagation()}>
                 
                 <button 
                     onClick={onClose}
                     style={{
                         position: 'absolute',
-                        top: '1rem',
-                        right: '1rem',
-                        background: 'none',
+                        top: '2rem',
+                        right: '2rem',
+                        background: 'rgba(255,255,255,0.05)',
                         border: 'none',
                         cursor: 'pointer',
-                        padding: '0.5rem',
-                        zIndex: 10
+                        padding: '0.8rem',
+                        borderRadius: '50%',
+                        color: '#666',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                     }}
                 >
-                    <X size={32} />
+                    <X size={20} />
                 </button>
 
-                <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
                     <div style={{ 
-                        background: '#000', 
-                        color: '#39ff14', 
                         display: 'inline-block', 
-                        padding: '0.4rem 1rem', 
-                        fontSize: '0.7rem', 
-                        fontWeight: '900', 
-                        textTransform: 'uppercase',
-                        marginBottom: '1rem'
+                        padding: '0.4rem 1.2rem', 
+                        background: 'rgba(79, 70, 229, 0.1)', 
+                        border: '1px solid rgba(79, 70, 229, 0.2)', 
+                        borderRadius: '100px',
+                        color: '#a5b4fc',
+                        fontSize: '0.7rem',
+                        fontWeight: '800',
+                        marginBottom: '1.5rem',
+                        letterSpacing: '1px'
                     }}>
-                        Identity Protocol v2.5
+                        IDENTITY PROTOCOL v3.0
                     </div>
                     <h2 style={{ 
-                        fontSize: '3rem', 
-                        textTransform: 'uppercase', 
+                        fontSize: '3.5rem', 
+                        fontWeight: '900',
                         margin: 0, 
                         letterSpacing: '-2px',
-                        lineHeight: 1
+                        lineHeight: 1,
+                        background: 'linear-gradient(135deg, #fff 0%, #a5b4fc 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
                     }}>
-                        Sign into Studyverse
+                        Establish Connectivity
                     </h2>
+                    <p style={{ color: '#666', marginTop: '1.5rem', fontSize: '1.1rem' }}>Access the sovereign learning network through secure authentication layers.</p>
                 </div>
 
-                <div className="login-options-container" style={{ 
-                    display: 'flex', 
-                    flexDirection: 'row', 
-                    gap: '2rem',
-                    alignItems: 'stretch'
+                <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: '1fr 1fr', 
+                    gap: '2.5rem'
                 }}>
                     
                     {/* WEB3 OPTION */}
                     <div style={{ 
-                        flex: 1,
-                        padding: '2rem', 
-                        border: '4px solid #000', 
-                        background: '#f0f0f0',
+                        padding: '3rem', 
+                        background: 'rgba(255,255,255,0.02)', 
+                        border: '1px solid rgba(255,255,255,0.05)', 
+                        borderRadius: '32px',
                         display: 'flex',
                         flexDirection: 'column',
-                        justifyContent: 'space-between'
+                        justifyContent: 'space-between',
+                        transition: 'all 0.3s'
                     }}>
                         <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                                <Shield size={24} />
-                                <span style={{ fontWeight: '900', textTransform: 'uppercase' }}>On-Chain Identity</span>
+                            <div style={{ width: '40px', height: '40px', background: 'rgba(79, 70, 229, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '2rem' }}>
+                                <Shield size={20} color="#a5b4fc" />
                             </div>
-                            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '2rem' }}>
-                                Connect your Ethereum wallet to verify ownership and access on-chain assets.
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '1rem', color: '#fff' }}>On-Chain Node</h3>
+                            <p style={{ fontSize: '0.95rem', color: '#666', lineHeight: '1.6', marginBottom: '2rem' }}>
+                                Connect your Ethereum wallet to verify institutional ownership and manage cryptographic signatures.
                             </p>
                         </div>
                         
@@ -109,59 +120,56 @@ const LoginModal = ({ isOpen, onClose, onGoogleSuccess, onGoogleError, loginWith
                                     if (!connected) {
                                         if (openConnectModal) openConnectModal();
                                     } else if (!isAuthorized) {
-                                        // Wallet is connected but no JWT, trigger signature flow
                                         const success = await loginWithWallet();
                                         if (success) onClose();
                                     }
                                 };
 
                                 return (
-                                    <div style={{ width: '100%' }}>
-                                        <BrutalistButton 
-                                            onClick={handleAction}
-                                            style={{ 
-                                                width: '100%', 
-                                                background: isAuthorized ? '#fff' : (connected ? '#ff3e00' : '#39ff14'),
-                                                border: '4px solid #000',
-                                                color: isAuthorized ? '#000' : (connected ? '#fff' : '#000'),
-                                                opacity: ready ? 1 : 0.5,
-                                                cursor: ready ? 'pointer' : 'wait'
-                                            }}
-                                        >
-                                            {ready ? (
-                                                isAuthorized ? 'Authenticated ✓' : 
-                                                (connected ? 'Finalize Auth (Sign Message)' : 'Connect Wallet')
-                                            ) : 'Preparing...'}
-                                        </BrutalistButton>
-                                    </div>
+                                    <button 
+                                        onClick={handleAction}
+                                        style={{ 
+                                            width: '100%', 
+                                            background: connected && !isAuthorized ? '#fff' : 'var(--primary-color)',
+                                            color: connected && !isAuthorized ? '#000' : '#fff',
+                                            padding: '1.2rem',
+                                            borderRadius: '16px',
+                                            fontWeight: '800',
+                                            fontSize: '1rem',
+                                            border: 'none',
+                                            cursor: ready ? 'pointer' : 'wait',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '1rem',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {isAuthorized ? 'IDENTIFIED ✓' : (connected ? 'SIGN PROTOCOL' : 'CONNECT WALLET')}
+                                        <ArrowRight size={18} />
+                                    </button>
                                 );
                             }}
                         </ConnectButton.Custom>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                        <div style={{ width: '4px', flex: 1, background: '#000' }}></div>
-                        <span style={{ fontWeight: '900', margin: '1rem 0' }}>OR</span>
-                        <div style={{ width: '4px', flex: 1, background: '#000' }}></div>
-                    </div>
-
                     {/* WEB2 OPTION */}
                     <div style={{ 
-                        flex: 1,
-                        padding: '2rem', 
-                        border: '4px solid #000', 
-                        background: '#fff',
+                        padding: '3rem', 
+                        background: 'rgba(255,255,255,0.02)', 
+                        border: '1px solid rgba(255,255,255,0.05)', 
+                        borderRadius: '32px',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'space-between'
                     }}>
                         <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                                <Globe size={24} />
-                                <span style={{ fontWeight: '900', textTransform: 'uppercase' }}>Social Passport</span>
+                            <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '2rem' }}>
+                                <Globe size={20} color="#fff" />
                             </div>
-                            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '2rem' }}>
-                                Use your Google account for a fast, gasless entry into the Studyverse.
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '1rem', color: '#fff' }}>Social Gateway</h3>
+                            <p style={{ fontSize: '0.95rem', color: '#666', lineHeight: '1.6', marginBottom: '2rem' }}>
+                                Access the network through standard social identity providers for a fast, gasless experience.
                             </p>
                         </div>
                         <div style={{ width: '100%' }}>
@@ -169,34 +177,29 @@ const LoginModal = ({ isOpen, onClose, onGoogleSuccess, onGoogleError, loginWith
                                 onSuccess={onGoogleSuccess}
                                 onError={onGoogleError}
                                 useOneTap
-                                theme="filled_blue"
-                                size="large"
-                                text="continue_with"
-                                shape="square"
-                                width="300px" // Fixed width for better look in row
+                                theme="filled_black"
+                                shape="pill"
+                                width="100%"
                             />
                         </div>
                     </div>
                 </div>
 
                 <div style={{ 
-                    marginTop: '2rem', 
-                    fontSize: '0.7rem', 
+                    marginTop: '3rem', 
+                    fontSize: '0.75rem', 
                     textAlign: 'center', 
-                    fontWeight: '600',
-                    color: '#888'
+                    color: '#444',
+                    letterSpacing: '0.5px'
                 }}>
-                    By signing in, you agree to the decentralized protocol standards.
+                    BY AUTHENTICATING, YOU AGREE TO THE SOVEREIGN EDUCATION MANIFESTO.
                 </div>
             </div>
 
             <style>{`
-                @keyframes modalSlide {
-                    from { transform: translateY(40px) scale(0.95); opacity: 0; }
-                    to { transform: translateY(0) scale(1); opacity: 1; }
-                }
-                .custom-rainbow-btn button {
-                    width: 100% !important;
+                @keyframes modalFadeIn {
+                    from { transform: translateY(20px); opacity: 0; filter: blur(10px); }
+                    to { transform: translateY(0); opacity: 1; filter: blur(0); }
                 }
             `}</style>
         </div>

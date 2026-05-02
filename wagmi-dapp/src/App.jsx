@@ -16,10 +16,9 @@ import Message from './components/Feedback/Message';
 import LoadingSpinner from './components/Feedback/LoadingSpinner';
 import Footer from './components/Layout/Footer';
 import LoginModal from './components/Auth/LoginModal';
-import BrutalistButton from './components/UI/BrutalistButton';
 
 // Pages
-import HomePage from './pages/HomePage.jsx';
+import HomePage from './pages/HomePage_Premium.jsx';
 import CoursesPage from './pages/CoursesPage.jsx';
 import CourseModal from './components/Course/CourseModal.jsx';
 import CourseView from './pages/CourseView.jsx';
@@ -31,14 +30,11 @@ import MyCoursesPage from './pages/MyCoursesPage.jsx';
 
 // Helper function to convert flat lessons into nested sections
 const groupLessonsBySection = (flatLessons) => {
-  // 1. Create a map to hold sections temporarily
   const sectionsMap = new Map();
 
   flatLessons.forEach(lesson => {
-    // Assuming the flat lesson data contains section_id, section_title, and section_order
     const sectionId = lesson.section_id;
 
-    // If the section hasn't been added to the map yet, create it.
     if (!sectionsMap.has(sectionId)) {
       sectionsMap.set(sectionId, {
         id: sectionId,
@@ -48,40 +44,32 @@ const groupLessonsBySection = (flatLessons) => {
       });
     }
 
-    // 2. Add the lesson to the corresponding section's lessons array
-    // NOTE: We strip the redundant section_id/title here to keep the final lesson object clean.
     const { section_id, section_title, section_order, ...lessonData } = lesson;
     sectionsMap.get(sectionId).lessons.push(lessonData);
   });
 
-  // 3. Convert the map values back to an array and sort by section order
   const nestedSections = Array.from(sectionsMap.values()).sort((a, b) => a.order - b.order);
-
   return nestedSections;
 };
-
 
 function App() {
   const { address, isConnected } = useAccount();
 
-  // --- Local Theme State ---
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  // --- Theme ---
+  const [theme, setTheme] = useState('dark'); // Default to dark for Premium
 
   useEffect(() => {
-    document.body.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+    document.body.setAttribute('data-theme', 'dark');
+  }, []);
 
   const toggleTheme = () => {
-    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+    // Keep it dark for premium look, but allow logic if needed
   };
 
   // --- Local State ---
   const [currentPage, setCurrentPage] = useState('home');
   const [message, setMessage] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
-
-  // NEW STATE FOR LESSONS
   const [selectedCourseLessons, setSelectedCourseLessons] = useState(null);
   const [lessonProgress, setLessonProgress] = useState({});
 
@@ -94,13 +82,11 @@ function App() {
     }
   }, []);
 
-
   const showMessage = useCallback((text, type = 'info') => {
     setMessage({ text, type });
     setTimeout(() => setMessage(null), 5000);
   }, []);
 
-  // 1. Auth Logic Hook
   const {
     jwt,
     authLoading,
@@ -110,8 +96,7 @@ function App() {
     logout
   } = useAuth(showMessage);
 
-  // 2. Data Logic Hook
-  const {
+    const {
     user,
     courses,
     certificates,
@@ -120,6 +105,7 @@ function App() {
     loadUserData,
     enrollInCourse,
     completeCourse,
+    claimCertificate,
     fetchLessonsAndProgress,
     markLessonCompleted,
     loadCourses,
@@ -138,7 +124,6 @@ function App() {
     myCourses
   } = useCourseData(address, showMessage, jwt);
 
-  // 2.5. School Registry Hook
   const {
     createSchoolOnChain,
     createSchoolWithCourses,
@@ -147,7 +132,6 @@ function App() {
     isLoading: isSchoolLoading
   } = useSchoolRegistry(showMessage);
 
-  // Auto-fetch schools when address changes
   useEffect(() => {
     if (address) {
       fetchOwnedSchools();
@@ -155,22 +139,14 @@ function App() {
   }, [address, fetchOwnedSchools]);
 
   const loading = dataLoading || authLoading;
-
-  const isImmersivePage = ['course_view', 'instructor'].includes(currentPage);
+  const isImmersivePage = ['course_view'].includes(currentPage);
   const showGlobalFooter = !['course_view', 'instructor'].includes(currentPage);
 
-  // Trigger data load when JWT changes
   useEffect(() => {
     if (jwt) {
       loadUserData(jwt);
     }
   }, [jwt, loadUserData]);
-
-  const closeCourseModal = () => {
-    setSelectedCourse(null);
-    setSelectedCourseLessons(null);
-    setLessonProgress({});
-  };
 
   const loadCourseDetails = async (course) => {
     setSelectedCourse(course);
@@ -202,9 +178,6 @@ function App() {
     return null;
   };
 
-  // --- Router/View Render ---
-
-    // --- Auth Handlers ---
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
     const handleGoogleLoginSuccess = async (response) => {
@@ -223,7 +196,6 @@ function App() {
         showMessage('Logged out successfully', 'info');
     };
 
-    // We override showPage to enforce login on private pages
     const showPage = (pageId) => {
         const privatePages = ['instructor', 'my_courses', 'profile'];
         if (privatePages.includes(pageId) && !jwt) {
@@ -256,17 +228,23 @@ function App() {
                     schools={schools}
                     fetchSchools={fetchSchools}
                     isSchoolLoading={loading}
+                    isRegistryLoading={isSchoolLoading}
+                    createSchoolOnChain={createSchoolOnChain}
+                    createSchoolWithCourses={createSchoolWithCourses}
                     courses={courses}
                     showMessage={showMessage}
                 />;
             case 'course_view':
+                const userCert = user?.certificates?.find(c => c.course_id === selectedCourse?.id);
                 return <CourseView
                     course={selectedCourse}
                     lessons={selectedCourseLessons}
                     lessonProgress={lessonProgress}
                     enrollmentStatus={getCourseEnrollmentStatus(selectedCourse?.id)}
+                    certificate={userCert}
                     loading={loading}
                     onComplete={completeCourse}
+                    onClaim={claimCertificate}
                     onLessonComplete={handleLessonComplete}
                     onEnroll={enrollInCourse}
                     onBack={() => showPage('courses')}
@@ -294,11 +272,6 @@ function App() {
                     address={address}
                     onLogout={handleLogout}
                 />;
-            case 'certificates':
-                return <CertificatesPage
-                    isConnected={isConnected}
-                    certificates={certificates}
-                />;
             case 'instructor':
                 return <InstructorDashboard 
                     user={user}
@@ -315,6 +288,7 @@ function App() {
                     ownedSchools={ownedSchools}
                     isSchoolLoading={isSchoolLoading}
                     fetchLessons={fetchLessonsAndProgress}
+                    showMessage={showMessage}
                 />;
             default: return <HomePage stats={stats} user={user} certificates={certificates} showPage={showPage} />;
         }
@@ -331,55 +305,55 @@ function App() {
                 isAuthorized={!!jwt}
             />
 
-            <header>
-                <nav className="container">
-                    <div className="logo"><a onClick={() => showPage('home')} style={{cursor: 'pointer'}}>Studyverse</a></div>
-                    <ul className="nav-links">
-                        <li><a onClick={() => showPage('courses')} className={currentPage === 'courses' ? 'active' : ''}>Explore</a></li>
-                        <li><a onClick={() => showPage('my_courses')} className={currentPage === 'my_courses' ? 'active' : ''}>My Courses</a></li>
-                        <li><a onClick={() => showPage('schools')} className={currentPage === 'schools' ? 'active' : ''}>Institutional</a></li>
-                        <li><a onClick={() => showPage('profile')} className={currentPage === 'profile' ? 'active' : ''}>Portfolio</a></li>
-                        {user && (
-                            <li><a onClick={() => showPage('instructor')} className={currentPage === 'instructor' ? 'active' : ''}>Studio</a></li>
-                        )}
-                    </ul>
-                    <div className="wallet-section">
-                        {!jwt ? (
-                            <BrutalistButton onClick={() => setIsLoginModalOpen(true)} style={{ background: '#39ff14', fontSize: '0.8rem', padding: '0.5rem 1rem' }}>
-                                Sign In
-                            </BrutalistButton>
-                        ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <div 
-                                    onClick={() => showPage('profile')}
-                                    style={{ 
-                                        width: '40px', 
-                                        height: '40px', 
-                                        background: '#000', 
-                                        border: '3px solid #000', 
-                                        cursor: 'pointer',
-                                        overflow: 'hidden',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: '#fff',
-                                        fontWeight: 'bold'
-                                    }}
-                                >
-                                    {user?.profile_image ? (
-                                        <img src={user.profile_image} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    ) : (
-                                        (user?.display_name?.[0] || user?.address?.[2] || '?').toUpperCase()
-                                    )}
-                                </div>
-                                <div style={{ display: 'none' }}>
-                                    <ConnectButton />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </nav>
-            </header>
+            {!isImmersivePage && (
+              <header>
+                  <div className="logo nav-module"><a onClick={() => showPage('home')}>Study Verse</a></div>
+                  
+                  <ul className="nav-links nav-module">
+                      <li><a onClick={() => showPage('courses')} className={currentPage === 'courses' ? 'active' : ''}>Explore</a></li>
+                      <li><a onClick={() => showPage('my_courses')} className={currentPage === 'my_courses' ? 'active' : ''}>My Courses</a></li>
+                      <li><a onClick={() => showPage('schools')} className={currentPage === 'schools' ? 'active' : ''}>Learning Engine</a></li>
+                      <li><a onClick={() => showPage('profile')} className={currentPage === 'profile' ? 'active' : ''}>Portfolio</a></li>
+                      {user && (
+                          <li><a onClick={() => showPage('instructor')} className={currentPage === 'instructor' ? 'active' : ''}>Studio</a></li>
+                      )}
+                  </ul>
+
+                  <div className="wallet-section nav-module">
+                          {!jwt ? (
+                              <button onClick={() => setIsLoginModalOpen(true)} style={{ background: 'var(--primary-color)', color: '#fff' }}>
+                                  Sign In
+                              </button>
+                          ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                  <div 
+                                      onClick={() => showPage('profile')}
+                                      style={{ 
+                                          width: '42px', 
+                                          height: '42px', 
+                                          background: 'var(--surface)', 
+                                          border: '1px solid var(--glass-border)', 
+                                          borderRadius: '50%',
+                                          cursor: 'pointer',
+                                          overflow: 'hidden',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center'
+                                      }}
+                                  >
+                                      {user?.profile_image ? (
+                                          <img src={user.profile_image} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                      ) : (
+                                          <span style={{ fontSize: '1rem', fontWeight: '800' }}>
+                                              {(user?.display_name?.[0] || user?.address?.[2] || '?').toUpperCase()}
+                                          </span>
+                                      )}
+                                  </div>
+                              </div>
+                          )}
+                      </div>
+              </header>
+            )}
 
             <main>
                 {message && (
@@ -392,54 +366,36 @@ function App() {
                 {renderCurrentPage()}
             </main>
 
-      {/* Global Footer - Only on static/marketing pages */}
-      {showGlobalFooter && <Footer showPage={showPage} />}
+            {showGlobalFooter && <Footer showPage={showPage} />}
 
-      {/* Mobile Fixed Navigation - Hide on Immersive Pages */}
-      {!isImmersivePage && (
-      <nav className="bottom-nav">
-        <a 
-          className={`bottom-nav-link ${currentPage === 'courses' ? 'active' : ''}`} 
-          onClick={() => showPage('courses')}
-        >
-          <Compass size={20} />
-          <span>Explore</span>
-        </a>
-        <a 
-          className={`bottom-nav-link ${currentPage === 'my_courses' ? 'active' : ''}`} 
-          onClick={() => showPage('my_courses')}
-        >
-          <BookOpen size={20} />
-          <span>My Courses</span>
-        </a>
-        <a 
-          className={`bottom-nav-link ${currentPage === 'schools' ? 'active' : ''}`} 
-          onClick={() => showPage('schools')}
-        >
-          <SchoolIcon size={20} />
-          <span>Institutional</span>
-        </a>
-        <a 
-          className={`bottom-nav-link ${currentPage === 'profile' ? 'active' : ''}`} 
-          onClick={() => showPage('profile')}
-        >
-          <User size={20} />
-          <span>Portfolio</span>
-        </a>
-        {user && (
-          <a 
-            className={`bottom-nav-link ${currentPage === 'instructor' ? 'active' : ''}`} 
-            onClick={() => showPage('instructor')}
-          >
-            <Layout size={20} />
-            <span>Studio</span>
-          </a>
-        )}
-      </nav>
-      )}
-
-    </>
-  );
+            {!isImmersivePage && (
+              <nav className="bottom-nav">
+                <a className={`bottom-nav-link ${currentPage === 'courses' ? 'active' : ''}`} onClick={() => showPage('courses')}>
+                  <Compass size={22} />
+                  <span>Explore</span>
+                </a>
+                <a className={`bottom-nav-link ${currentPage === 'my_courses' ? 'active' : ''}`} onClick={() => showPage('my_courses')}>
+                  <BookOpen size={22} />
+                  <span>My Courses</span>
+                </a>
+                <a className={`bottom-nav-link ${currentPage === 'schools' ? 'active' : ''}`} onClick={() => showPage('schools')}>
+                  <SchoolIcon size={22} />
+                  <span>Engine</span>
+                </a>
+                <a className={`bottom-nav-link ${currentPage === 'profile' ? 'active' : ''}`} onClick={() => showPage('profile')}>
+                  <User size={22} />
+                  <span>Profile</span>
+                </a>
+                {user && (
+                  <a className={`bottom-nav-link ${currentPage === 'instructor' ? 'active' : ''}`} onClick={() => showPage('instructor')}>
+                    <Layout size={22} />
+                    <span>Studio</span>
+                  </a>
+                )}
+              </nav>
+            )}
+        </>
+    );
 }
 
 export default App;

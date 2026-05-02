@@ -1,68 +1,69 @@
+// src/pages/CourseView.jsx
+
 import React from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import LoadingSpinner from '../components/Feedback/LoadingSpinner';
-import BrutalistButton from '../components/UI/BrutalistButton';
 import LessonWorkspace from '../components/Course/LessonWorkspace';
 import { SCHOOL_ABI, COURSE_CONTRACT_ADDRESS } from '../web3/constants';
-
-const getEmbedUrl = (url) => {
-    if (!url) return null;
-    if (url.includes('youtube.com/watch?v=')) {
-        return url.replace('watch?v=', 'embed/');
-    }
-    if (url.includes('youtu.be/')) {
-        return url.replace('youtu.be/', 'youtube.com/embed/');
-    }
-    return url;
-};
+import { ArrowLeft, BookOpen, CheckCircle, Play, Shield, Award, ChevronRight, X } from 'lucide-react';
 
 const CourseView = ({ 
     course, 
     lessons,              
     lessonProgress,       
     enrollmentStatus, 
+    certificate,
     loading, 
     onComplete, 
+    onClaim,
     onLessonComplete,
     onBack,
-    onEnroll // Pass down enroll from parent if needed
+    onEnroll 
 }) => {
     const { address } = useAccount();
     const targetContract = course?.school_address || COURSE_CONTRACT_ADDRESS;
     const [activeLesson, setActiveLesson] = React.useState(null);
 
-    // On-chain fallback
-    const { data: isOnChainEnrolled } = useReadContract({
+    const { data: isOnChainEnrolled, error: enrollmentError, isLoading: isEnrollmentLoading } = useReadContract({
         address: targetContract,
         abi: SCHOOL_ABI,
         functionName: 'isEnrolled',
         args: [address, BigInt(course?.id ?? 0)],
         query: {
-            enabled: !!address && !!course?.id,
+            enabled: !!address && !!course?.id && !!targetContract,
             staleTime: 60000,
         }
     });
 
-    if (!course) return null;
-
-    const isEnrolled = enrollmentStatus === 'enrolled' || enrollmentStatus === 'completed' || isOnChainEnrolled;
-
     const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 768);
+    const [isSidebarOpen, setIsSidebarOpen] = React.useState(window.innerWidth > 768);
+
     React.useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const [isSidebarOpen, setIsSidebarOpen] = React.useState(!isMobile);
+    const totalLessons = React.useMemo(() => {
+        if (!lessons) return 0;
+        return lessons.reduce((acc, section) => acc + (section.lessons?.length || 0), 0);
+    }, [lessons]);
+
+    const completedCount = React.useMemo(() => {
+        if (!lessonProgress) return 0;
+        return Object.values(lessonProgress).filter(p => p.completed).length;
+    }, [lessonProgress]);
+
+    const isFullyCompleted = totalLessons > 0 && completedCount >= totalLessons;
+
+    if (!course) return null;
+
+    const isEnrolled = enrollmentStatus === 'enrolled' || enrollmentStatus === 'completed' || isOnChainEnrolled;
 
     const handleNextLesson = () => {
         if (!activeLesson || !lessons) return;
-        
-        // 1. Mark current as complete (persistence)
         if (onLessonComplete) onLessonComplete(activeLesson.id);
 
-        // 2. Find next lesson in the global sequence
         const flatLessons = [...lessons]
             .sort((a, b) => (a.order || 0) - (b.order || 0))
             .flatMap(section => 
@@ -74,142 +75,75 @@ const CourseView = ({
         if (currentIndex !== -1 && currentIndex < flatLessons.length - 1) {
             setActiveLesson(flatLessons[currentIndex + 1]);
         } else {
-            // End of course
             setActiveLesson(null);
         }
     };
 
     if (activeLesson) {
         return (
-            <section className="page active" style={{ padding: '0', display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#fff', position: 'relative' }}>
-                {/* Mobile Toggle Button (when sidebar is closed) */}
-                {isMobile && !isSidebarOpen && (
-                    <div 
-                        onClick={() => setIsSidebarOpen(true)}
-                        style={{
-                            position: 'absolute',
-                            top: '1rem',
-                            left: '1rem',
-                            cursor: 'pointer',
-                            zIndex: 60,
-                            background: '#000',
-                            color: '#39ff14',
-                            padding: '0.4rem 0.6rem',
-                            border: '3px solid #000',
-                            fontWeight: '900',
-                            fontSize: '0.7rem'
-                        }}
-                    >
-                        ☰ CURRICULUM
-                    </div>
-                )}
-
-                {/* LEFT SIDEBAR - COMPACT CURRICULUM */}
+            <section className="page" style={{ padding: '0', display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#000', position: 'relative' }}>
+                {/* SIDEBAR */}
                 <div style={{ 
-                    width: isSidebarOpen ? (isMobile ? '100vw' : '350px') : (isMobile ? '0px' : '60px'), 
-                    background: '#000', 
-                    color: '#fff', 
-                    borderRight: isMobile && !isSidebarOpen ? 'none' : '4px solid #000', 
+                    width: isSidebarOpen ? (isMobile ? '100vw' : '400px') : '0px', 
+                    background: 'rgba(255,255,255,0.02)', 
+                    backdropFilter: 'blur(20px)',
+                    borderRight: isSidebarOpen ? '1px solid rgba(255,255,255,0.05)' : 'none', 
                     display: 'flex', 
                     flexDirection: 'column',
-                    transition: 'width 0.2s',
+                    transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                     position: isMobile ? 'absolute' : 'relative',
                     zIndex: 50,
                     height: '100%',
-                    left: 0,
-                    top: 0,
-                    overflow: isSidebarOpen || !isMobile ? 'visible' : 'hidden'
+                    overflow: 'hidden'
                 }}>
-                    {/* Desktop/Open Toggle */}
-                    {(!isMobile || isSidebarOpen) && (
-                    <div 
-                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        style={{
-                            position: 'absolute',
-                            top: '1rem',
-                            right: isSidebarOpen ? '1rem' : 'auto',
-                            left: isSidebarOpen ? 'auto' : '50%',
-                            transform: isSidebarOpen ? 'none' : 'translateX(-50%)',
-                            cursor: 'pointer',
-                            zIndex: 20
-                        }}
-                    >
-                        {isSidebarOpen ? '◀' : '▶'}
-                    </div>
-                    )}
-
-                    {isSidebarOpen ? (
-                        <>
-                            <div style={{ padding: '1.5rem', borderBottom: '2px solid #333', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-                                <div>
-                                    <h2 style={{ fontSize: '1rem', color: '#ccc', marginBottom: '0.2rem', lineHeight: 1.1 }}>{course.name.toUpperCase()}</h2>
-                                    <h3 style={{ fontSize: '0.9rem', color: '#39ff14', margin: 0, fontWeight: '900' }}>STUDIO: {activeLesson.title.toUpperCase()}</h3>
-                                </div>
-                                <button 
-                                    style={{ background: '#ff0000', color: '#fff', padding: '0.4rem 0.6rem', fontSize: '0.7rem', border: '2px solid #000', cursor: 'pointer', fontWeight: '900', flexShrink: 0 }} 
-                                    onClick={() => setActiveLesson(null)}
-                                >
-                                    CLOSE [X]
-                                </button>
-                            </div>
-                            
-                            <div style={{ flex: 1, overflowY: 'auto', padding: '0 2rem 2rem 2rem' }} className="sidebar-scroll">
-                                {lessons?.sort((a, b) => a.order - b.order).map((section, sIdx) => (
-                                    <div key={section.id} style={{ marginBottom: '2rem' }}>
-                                        <div style={{ fontSize: '0.8rem', color: '#39ff14', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                                            MODULE {String(sIdx + 1).padStart(2, '0')}: {section.title.toUpperCase()}
-                                        </div>
-                                        <div>
-                                            {section.lessons?.sort((a, b) => a.order - b.order).map((lesson, lIdx) => {
-                                                const isActive = activeLesson.id === lesson.id;
-                                                const isCompleted = lessonProgress?.[lesson.id]?.completed;
-                                                return (
-                                                    <div 
-                                                        key={lesson.id} 
-                                                        onClick={() => setActiveLesson(lesson)}
-                                                        style={{ 
-                                                            padding: '0.6rem', 
-                                                            marginBottom: '0.5rem',
-                                                            border: '2px solid #fff',
-                                                            background: isActive ? '#39ff14' : 'transparent',
-                                                            color: isActive ? '#000' : '#fff',
-                                                            cursor: 'pointer',
-                                                            display: 'flex',
-                                                            justifyContent: 'space-between',
-                                                            alignItems: 'center',
-                                                            transition: 'all 0.1s'
-                                                        }}
-                                                    >
-                                                        <span style={{ fontSize: '0.7rem', fontWeight: '900' }}>{lesson.title}</span>
-                                                        {isCompleted && <span style={{ fontSize: '0.7rem' }}>✓</span>}
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            
-                        </>
-                    ) : (
-                        // Collapsed State
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 0 1rem 0' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
-                                <div style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '0.8rem', color: '#39ff14', fontWeight: 'bold', letterSpacing: '2px' }}>
-                                    {activeLesson.title.toUpperCase()}
-                                </div>
-                            </div>
-                            <div style={{ marginTop: 'auto' }}>
-                                <div style={{ fontSize: '1.2rem', cursor: 'pointer', color: '#ff0000' }} onClick={() => setActiveLesson(null)}>
-                                    ✖
-                                </div>
-                            </div>
+                    <div style={{ padding: '3rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <span style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--primary-color)', letterSpacing: '2px' }}>LEARNING NODE</span>
+                            <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginTop: '0.5rem' }}>{course.title}</h2>
                         </div>
-                    )}
+                        <button onClick={() => setActiveLesson(null)} style={{ background: 'none', border: 'none', color: '#444' }}><X size={20} /></button>
+                    </div>
+                    
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
+                        {(lessons || []).sort((a, b) => a.order - b.order).map((section, sIdx) => (
+                            <div key={section.id} style={{ marginBottom: '3rem' }}>
+                                <div style={{ fontSize: '0.7rem', fontWeight: '900', color: '#444', marginBottom: '1.5rem', letterSpacing: '1px' }}>
+                                    SECTION {sIdx + 1}: {section.title.toUpperCase()}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    {(section.lessons || []).sort((a, b) => a.order - b.order).map((lesson) => {
+                                        const isActive = activeLesson.id === lesson.id;
+                                        const isCompleted = lessonProgress?.[lesson.id]?.completed;
+                                        return (
+                                            <div 
+                                                key={lesson.id} 
+                                                onClick={() => setActiveLesson(lesson)}
+                                                style={{ 
+                                                    padding: '1.2rem 1.5rem', 
+                                                    background: isActive ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                                                    border: isActive ? '1px solid var(--primary-color)' : '1px solid transparent',
+                                                    borderRadius: '12px',
+                                                    color: isActive ? '#fff' : '#444',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{lesson.title}</span>
+                                                {isCompleted && <CheckCircle size={14} color="var(--primary-color)" />}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
-                {/* RIGHT CANVAS */}
-                <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                {/* WORKSPACE */}
+                <div style={{ flex: 1, position: 'relative' }}>
                     <LessonWorkspace 
                         lesson={activeLesson} 
                         isCompleted={!!lessonProgress[activeLesson?.id]?.completed}
@@ -222,167 +156,168 @@ const CourseView = ({
     }
 
     return (
-        <section className="page active" style={{ padding: '0', background: 'var(--background)', position: 'relative' }}>
-            
-            {/* BACK BUTTON */}
-            <button 
-                onClick={onBack}
-                style={{ 
-                    position: 'absolute', 
-                    top: '1.5rem', 
-                    left: '1.5rem', 
-                    background: 'transparent',
-                    border: 'none',
-                    fontWeight: '900',
-                    fontSize: '0.8rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    textTransform: 'uppercase',
-                    color: '#666',
-                    zIndex: 10
-                }}
-            >
-                &larr; BACK TO CATALOG
-            </button>
+        <section className="page">
+            <div className="container" style={{ position: 'relative' }}>
+                <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '3rem', cursor: 'pointer' }}>
+                    <ArrowLeft size={16} /> Library
+                </button>
 
-            {/* 1. TOP HEADER / BADGES */}
-            <div style={{ padding: '4rem 1.5rem 0 1.5rem', textAlign: 'center' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                    <span className="neon-block" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem' }}>INSTRUCTOR: {course.instructor_name || 'STUDYVERSE OWNER'}</span>
-                    <span className="neon-block" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem', background: '#fff' }}>DURATION: 8 WEEKS</span>
-                    <span className="neon-block" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem' }}>LEVEL: ADVANCED</span>
-                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '6rem', alignItems: 'start' }}>
+                    {/* INFO */}
+                    <div>
+                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+                            <span style={{ fontSize: '0.7rem', fontWeight: '900', color: 'var(--primary-color)', background: 'rgba(79, 70, 229, 0.1)', padding: '6px 12px', borderRadius: '4px' }}>BY {course.instructor_name?.toUpperCase() || 'STUDY VERSE'}</span>
+                            <span style={{ fontSize: '0.7rem', fontWeight: '900', color: '#444', background: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: '4px' }}>VERIFIED NODE</span>
+                        </div>
+                        
+                        <h1 style={{ fontSize: '5rem', fontWeight: '900', letterSpacing: '-2px', marginBottom: '2rem', lineHeight: 1 }}>{course.title}</h1>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '1.3rem', lineHeight: 1.6, marginBottom: '4rem', maxWidth: '800px' }}>{course.description}</p>
 
-                <div className="container" style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between', 
-                    gap: '2rem', 
-                    flexWrap: 'wrap', 
-                    marginBottom: '2rem',
-                    textAlign: 'left'
-                }}>
-                    <div style={{ flex: '1 1 500px' }}>
-                        <h1 style={{ 
-                            fontSize: 'clamp(2rem, 5vw, 4rem)', 
-                            fontWeight: '900', 
-                            letterSpacing: '-2px', 
-                            marginBottom: '1rem',
-                            lineHeight: '1'
-                        }}>
-                            {course.name.toUpperCase()}
-                        </h1>
-                        <p style={{ color: '#666', fontSize: '1.2rem', margin: 0, lineHeight: 1.5 }}>
-                            {course.description || "A deep dive into structural anarchy, deconstructionism, and the ethics of permanent structures in an impermanent world."}
-                        </p>
+                        <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '3rem' }}>Syllabus</h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                            {(lessons || []).sort((a, b) => a.order - b.order).map((section, idx) => (
+                                <div key={section.id} className="glass-panel" style={{ padding: '3rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                        <h3 style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                                            <span style={{ color: 'var(--primary-color)', marginRight: '1rem' }}>{String(idx + 1).padStart(2, '0')}</span>
+                                            {section.title}
+                                        </h3>
+                                    </div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                                        {(section.lessons || []).map(l => (
+                                            <span key={l.id} style={{ padding: '0.6rem 1.2rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '100px', fontSize: '0.85rem', color: '#666' }}>
+                                                {l.title}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
-                    <div style={{ flexShrink: 0 }}>
-                        {!isEnrolled ? (
-                            <BrutalistButton onClick={() => onEnroll(course)} style={{ background: '#fff', fontSize: '1.2rem', padding: '1rem 2rem' }}>
-                                ENROLL NOW
-                            </BrutalistButton>
-                        ) : (
-                            <BrutalistButton 
-                                onClick={() => {
-                                    const firstLesson = lessons?.[0]?.lessons?.[0];
-                                    if (firstLesson) setActiveLesson(firstLesson);
-                                }} 
-                                style={{ background: '#fff', fontSize: '1.2rem', padding: '1rem 2rem' }}
-                            >
-                                START COURSE
-                            </BrutalistButton>
+                    {/* ACTIONS */}
+                    <div style={{ position: 'sticky', top: '120px' }}>
+                        <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
+                            <div style={{ width: '100%', aspectRatio: '1', background: 'rgba(255,255,255,0.02)', borderRadius: '40px', marginBottom: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Award size={120} color="var(--primary-color)" style={{ opacity: 0.5 }} />
+                            </div>
+                            
+                            {!isEnrolled ? (
+                                <>
+                                    <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#fff', marginBottom: '1rem' }}>{course.price} ETH</div>
+                                    <button 
+                                        disabled={loading}
+                                        onClick={() => onEnroll(course)} 
+                                        style={{ 
+                                            width: '100%', 
+                                            background: loading ? '#333' : 'var(--primary-color)', 
+                                            padding: '1.2rem', 
+                                            fontSize: '1.1rem',
+                                            cursor: loading ? 'not-allowed' : 'pointer'
+                                        }}
+                                    >
+                                        {loading ? 'Processing...' : 'Enroll Now'}
+                                    </button>
+                                </>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {/* Primary Action Button */}
+                                    {enrollmentError ? (
+                                        <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '12px', color: '#ef4444', fontSize: '0.8rem' }}>
+                                            <strong>Incompatible School:</strong> This course belongs to an outdated school contract that doesn't support blockchain syncing or NFTs.
+                                        </div>
+                                    ) : !isEnrollmentLoading && !isOnChainEnrolled && course.school_address ? (
+                                        <button 
+                                            disabled={loading}
+                                            onClick={() => onEnroll(course)} 
+                                            style={{ 
+                                                width: '100%', 
+                                                background: loading ? '#333' : 'var(--primary-color)', 
+                                                padding: '1.2rem', 
+                                                fontSize: '1.1rem', 
+                                                fontWeight: '900',
+                                                cursor: loading ? 'not-allowed' : 'pointer'
+                                            }}
+                                        >
+                                            {loading ? 'Syncing...' : 'Sync to Blockchain (Required for NFT)'}
+                                        </button>
+                                    ) : isFullyCompleted && !certificate ? (
+                                        <button 
+                                            disabled={loading}
+                                            onClick={() => onComplete(course.id)} 
+                                            style={{ 
+                                                width: '100%', 
+                                                background: loading ? '#333' : '#39ff14', 
+                                                color: '#000', 
+                                                padding: '1.2rem', 
+                                                fontSize: '1.1rem', 
+                                                fontWeight: '900',
+                                                cursor: loading ? 'not-allowed' : 'pointer'
+                                            }}
+                                        >
+                                            {loading ? 'Confirming...' : 'Complete Course & Get Certificate'}
+                                        </button>
+                                    ) : isFullyCompleted && certificate && certificate.status !== 'claimed' ? (
+                                        <button 
+                                            disabled={loading}
+                                            onClick={() => {
+                                                if (!address) {
+                                                    alert("Please connect your wallet to claim your NFT certificate.");
+                                                    return;
+                                                }
+                                                if (!certificate.id) {
+                                                    alert("Certificate ID is missing. Please refresh the page to update your data.");
+                                                    return;
+                                                }
+                                                onClaim(certificate.id);
+                                            }} 
+                                            style={{ 
+                                                width: '100%', 
+                                                background: loading ? '#333' : 'var(--primary-color)', 
+                                                padding: '1.2rem', 
+                                                fontSize: '1.1rem', 
+                                                fontWeight: '900',
+                                                cursor: loading ? 'not-allowed' : 'pointer'
+                                            }}
+                                        >
+                                            {loading ? 'Claiming NFT...' : (address ? 'Claim NFT Certificate' : 'Connect Wallet to Claim')}
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={() => {
+                                                const first = lessons?.[0]?.lessons?.[0];
+                                                if (first) setActiveLesson(first);
+                                            }} 
+                                            style={{ width: '100%', background: 'var(--primary-color)', padding: '1.2rem', fontSize: '1.1rem' }}
+                                        >
+                                            {isFullyCompleted ? 'Review Lessons' : 'Resume Course'}
+                                        </button>
+                                    )}
+
+                                    {/* Proof of Skill Link */}
+                                    {certificate?.status === 'claimed' && (
+                                        <div style={{ padding: '1rem', background: 'rgba(57, 255, 20, 0.1)', border: '1px solid #39ff14', borderRadius: '12px', color: '#39ff14', fontSize: '0.9rem', fontWeight: '700' }}>
+                                            ✓ Certificate Claimed on Sepolia
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {isEnrolled && (
+                            <div className="glass-panel" style={{ marginTop: '2rem', padding: '2rem', textAlign: 'center' }}>
+                                <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#444', marginBottom: '1rem' }}>COMPLETION STATUS</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: '900', color: 'var(--primary-color)' }}>{completedCount} / {totalLessons}</div>
+                                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginTop: '1rem', overflow: 'hidden' }}>
+                                    <div style={{ width: `${(completedCount / totalLessons) * 100}%`, height: '100%', background: 'var(--primary-color)' }}></div>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>
-
-                <div className="handwritten" style={{ marginTop: '2rem' }}>
-                    "DESTROY THE BOX BEFORE YOU TRY TO THINK OUTSIDE OF IT."
-                </div>
             </div>
-
-            {/* 3. COMPACT SYLLABUS */}
-            <div style={{ marginTop: '4rem', paddingBottom: '6rem' }}>
-                <div className="container">
-                    <h2 style={{ fontSize: '3rem', marginBottom: '3rem', borderBottom: '6px solid #000', paddingBottom: '1rem' }}>COURSE SYLLABUS</h2>
-                    
-                    {lessons?.sort((a, b) => a.order - b.order).map((section, sIdx) => {
-                        const moduleCompleted = isEnrolled && section.lessons?.every(l => lessonProgress?.[l.id]?.completed);
-                        
-                        return (
-                            <div key={section.id} className="brutalist-card" style={{ marginBottom: '2rem', padding: '2rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                    <h3 style={{ fontSize: '1.5rem', margin: 0 }}>
-                                        <span style={{ color: 'var(--primary-color)', marginRight: '1rem' }}>{String(sIdx + 1).padStart(2, '0')}</span>
-                                        {section.title.toUpperCase()}
-                                    </h3>
-                                    {moduleCompleted && <span className="neon-block" style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem' }}>✓</span>}
-                                </div>
-                                <p style={{ color: '#666', fontSize: '1rem', marginBottom: '1.5rem', paddingLeft: '2.5rem' }}>
-                                    {section.description || `Explore the foundational concepts of "${section.title}" through aggressive, uncompromising architectural learning nodes.`}
-                                </p>
-                                <div style={{ paddingLeft: '2.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                    {section.lessons?.sort((a, b) => a.order - b.order).map((lesson, lIdx) => (
-                                        <span key={lesson.id} style={{ 
-                                            background: '#f0f0f0', 
-                                            padding: '0.4rem 0.8rem', 
-                                            fontSize: '0.75rem', 
-                                            fontWeight: 'bold',
-                                            border: '2px solid #000'
-                                        }}>
-                                            {lessonProgress?.[lesson.id]?.completed && '✓ '}{lesson.title}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* 4. READY TO GRADUATE SECTION */}
-            {isEnrolled && (
-                <div style={{ background: '#222', color: '#fff', padding: '6rem 1.5rem', textAlign: 'center', borderTop: '6px solid #000' }}>
-                    <div className="container">
-                        <h2 style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>READY TO GRADUATE?</h2>
-                        <p style={{ color: 'var(--primary-color)', fontWeight: '900', fontSize: '1.1rem', marginBottom: '3rem' }}>
-                            VALIDATE YOUR ARCHITECTURAL REBELLION ON THE BLOCKCHAIN
-                        </p>
-
-                        <div style={{ 
-                            border: '2px dashed var(--primary-color)', 
-                            padding: '2rem', 
-                            maxWidth: '500px', 
-                            margin: '0 auto 3rem auto',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '1.5rem',
-                            textAlign: 'left'
-                        }}>
-                            <div className="neon-block" style={{ padding: '1rem', borderRadius: '50%' }}>🛡️</div>
-                            <div>
-                                <h4 style={{ color: '#fff', fontSize: '1rem' }}>V. KANE SIGNATURE NFT</h4>
-                                <p style={{ color: 'var(--primary-color)', fontSize: '0.7rem', fontWeight: 'bold' }}>OFFICIAL COMPLETION CERTIFICATE</p>
-                                <p style={{ fontSize: '0.6rem', color: '#999', marginTop: '0.5rem' }}>Minting requires 100% curriculum completion and final project submission approved by the Studio Board.</p>
-                            </div>
-                        </div>
-
-                        <BrutalistButton 
-                            onClick={() => onComplete(course.id)}
-                            style={{ background: 'var(--primary-color)', fontSize: '1.5rem', width: '100%', maxWidth: '500px' }}
-                            disabled={loading}
-                        >
-                            {loading ? <LoadingSpinner /> : 'FINALIZE & MINT CERTIFICATE →'}
-                        </BrutalistButton>
-                    </div>
-                </div>
-            )}
-
         </section>
     );
 };
 
 export default CourseView;
-

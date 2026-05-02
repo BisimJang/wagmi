@@ -15,7 +15,17 @@ export const SCHOOL_REGISTRY_ABI = [
     },
     { "inputs": [{ "internalType": "address", "name": "_implementation", "type": "address" }], "name": "setImplementation", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
     { "inputs": [], "name": "implementation", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
-    { "inputs": [{ "internalType": "address", "name": "_creator", "type": "address" }], "name": "getSchoolsByCreator", "outputs": [{ "internalType": "address[]", "name": "", "type": "address[]" }], "stateMutability": "view", "type": "function" }
+    { "inputs": [{ "internalType": "address", "name": "_creator", "type": "address" }], "name": "getSchoolsByCreator", "outputs": [{ "internalType": "address[]", "name": "", "type": "address[]" }], "stateMutability": "view", "type": "function" },
+    {
+        "anonymous": false,
+        "inputs": [
+            { "indexed": false, "internalType": "string", "name": "name", "type": "string" },
+            { "indexed": true, "internalType": "address", "name": "creator", "type": "address" },
+            { "indexed": true, "internalType": "address", "name": "schoolAddress", "type": "address" }
+        ],
+        "name": "SchoolCreated",
+        "type": "event"
+    }
 ];
 
 // 🎯 Sovereign School ABI (Instance / Clone)
@@ -29,9 +39,13 @@ export const SCHOOL_ABI = [
         ], "name": "bulkPublishCourses", "outputs": [], "stateMutability": "nonpayable", "type": "function"
     },
     { "inputs": [{ "internalType": "uint256", "name": "_courseId", "type": "uint256" }], "name": "enroll", "outputs": [], "stateMutability": "payable", "type": "function" },
+    { "inputs": [{ "internalType": "uint256", "name": "_courseId", "type": "uint256" }, { "internalType": "string", "name": "_uri", "type": "string" }, { "internalType": "bytes", "name": "_signature", "type": "bytes" }], "name": "claimCertificate", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
     { "inputs": [], "name": "withdraw", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+    { "inputs": [{ "internalType": "address", "name": "_signer", "type": "address" }], "name": "setSigner", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
     { "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "name": "coursePrices", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
     { "inputs": [{ "internalType": "address", "name": "", "type": "address" }, { "internalType": "uint256", "name": "", "type": "uint256" }], "name": "isEnrolled", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
+    { "inputs": [{ "internalType": "address", "name": "", "type": "address" }, { "internalType": "uint256", "name": "", "type": "uint256" }], "name": "hasCertificate", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
+    { "inputs": [], "name": "signer", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
     { "inputs": [], "name": "owner", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }
 ];
 

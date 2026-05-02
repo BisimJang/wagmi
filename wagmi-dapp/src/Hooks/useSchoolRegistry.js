@@ -41,6 +41,8 @@ export function useSchoolRegistry(showMessage) {
             if (receipt.status === 'success') {
                 // Find school address from logs
                 let schoolAddress = null;
+                console.log('Transaction receipt logs:', receipt.logs);
+                
                 try {
                     for (const log of receipt.logs) {
                         try {
@@ -49,19 +51,29 @@ export function useSchoolRegistry(showMessage) {
                                 data: log.data,
                                 topics: log.topics,
                             });
+                            
+                            console.log('Decoded log:', decoded);
+                            
                             if (decoded.eventName === 'SchoolCreated') {
                                 schoolAddress = decoded.args.schoolAddress;
+                                console.log('Successfully found schoolAddress in logs:', schoolAddress);
                                 break;
                             }
-                        } catch (e) { /* ignore other events */ }
+                        } catch (e) { 
+                            // This might be an event from a different contract (e.g. proxy or ERC20)
+                            console.debug('Failed to decode a log entry (expected for non-registry events):', e.message);
+                        }
                     }
                     
                     if (schoolAddress) {
+                        console.log('Syncing new school to backend...', { schoolAddress, schoolName });
                         await apiCall('/schools/register/', {
                             method: 'POST',
                             body: JSON.stringify({ address: schoolAddress, name: schoolName })
                         });
                         console.log('School registered in backend:', schoolAddress);
+                    } else {
+                        console.warn('SchoolCreated event log NOT found in receipt. Backend sync skipped.');
                     }
                 } catch (syncErr) {
                     console.error('Failed to sync school to backend:', syncErr);
@@ -106,36 +118,35 @@ export function useSchoolRegistry(showMessage) {
         try {
             const [backendSchools, instructorCourses] = await Promise.all([
                 apiCall('/schools/'),
-                apiCall('/courses/') // Fetch current user's courses to check for school metadata
+                apiCall('/courses/')
             ]);
 
             if (Array.isArray(backendSchools)) {
                 schoolsList = backendSchools
                     .filter(s => s.instructor_address?.toLowerCase() === address.toLowerCase())
-                    .map(s => s.address);
+                    .map(s => ({ address: s.address, name: s.name }));
             }
 
+            // Fallback/enrich with courses
             if (Array.isArray(instructorCourses?.results)) {
                 const courseSchools = instructorCourses.results
                     .filter(c => c.school_address && c.is_instructor)
-                    .map(c => c.school_address);
-                if (courseSchools.length > 0) {
-                    schoolsList = [...new Set([...schoolsList, ...courseSchools])];
-                }
-            } else if (Array.isArray(instructorCourses)) {
-                // Handle non-paginated case if applicable
-                const courseSchools = instructorCourses
-                    .filter(c => c.school_address && c.is_instructor)
-                    .map(c => c.school_address);
-                if (courseSchools.length > 0) {
-                    schoolsList = [...new Set([...schoolsList, ...courseSchools])];
-                }
+                    .map(c => ({ address: c.school_address, name: c.school_name || 'Legacy School' }));
+                
+                // Merge and deduplicate by address
+                const existingAddresses = new Set(schoolsList.map(s => s.address.toLowerCase()));
+                courseSchools.forEach(cs => {
+                    if (!existingAddresses.has(cs.address.toLowerCase())) {
+                        schoolsList.push(cs);
+                        existingAddresses.add(cs.address.toLowerCase());
+                    }
+                });
             }
         } catch (err) {
             console.error('Error fetching schools from backend/metadata:', err);
         }
 
-        // 2. Optional: Parallel check with Contract (if available)
+        // 2. Optional: Parallel check with Contract (only for missing names/addresses)
         if (publicClient && SCHOOL_REGISTRY_ADDRESS && SCHOOL_REGISTRY_ADDRESS !== '0x0000000000000000000000000000000000000000') {
             try {
                 const contractSchools = await publicClient.readContract({
@@ -145,16 +156,14 @@ export function useSchoolRegistry(showMessage) {
                     args: [address],
                 });
                 
-                // Merge and deduplicate
-                const merged = [...new Set([...schoolsList, ...contractSchools])];
-                schoolsList = merged;
+                const existingAddresses = new Set(schoolsList.map(s => s.address.toLowerCase()));
+                contractSchools.forEach(addr => {
+                    if (!existingAddresses.has(addr.toLowerCase())) {
+                        schoolsList.push({ address: addr, name: `Node ${addr.slice(0, 6)}` });
+                    }
+                });
             } catch (error) {
-                // Log only if no schools found elsewhere, otherwise silence
-                if (schoolsList.length === 0) {
-                    console.warn('Contract getSchoolsByCreator failed and no backend schools found:', error.message);
-                } else {
-                    console.debug('Contract registry call skipped/failed, using local/backend list');
-                }
+                console.debug('Contract registry call skipped/failed');
             }
         }
 

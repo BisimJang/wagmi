@@ -102,7 +102,7 @@ const HomePage = ({ stats, user, certificates, showPage }) => {
                                 display: 'inline-block',
                                 lineHeight: '1.4'
                             }}>
-                                Own Your Education.<br/>Cryptographic Validation.
+                                Own Your Education.<br/>Modular Learning Engine.
                             </div>
 
                             <p style={{
@@ -111,7 +111,7 @@ const HomePage = ({ stats, user, certificates, showPage }) => {
                                 maxWidth: '350px',
                                 lineHeight: '1.6'
                             }}>
-                                The decentralized network for creators and students. Reject linear paths. Embrace concentric learning.
+                                The Study Verse API Learning Engine. A modular platform for schools and creators to host high-performance curriculum.
                             </p>
                         </div>
 
@@ -220,88 +220,81 @@ const HomePage = ({ stats, user, certificates, showPage }) => {
                     </div>
                 </div>
 
-                {/* THE STREET - Informative Signboards */}
-                {/* SIGNBOARD 1 */}
+                {/* THE THREE-PILLAR MODEL */}
                 <div style={{
-                    background: '#ff00ff',
-                    padding: 'clamp(3rem, 10vw, 7rem) 1.5rem',
-                    borderBottom: '6px solid #000',
-                    position: 'relative',
-                    overflow: 'hidden'
+                    background: '#000',
+                    padding: '6rem 1.5rem',
+                    borderBottom: '6px solid #000'
                 }}>
-                    <div className="container" style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', justifyContent: 'flex-start' }}>
-                        <div style={{
-                            background: '#fff',
-                            color: '#000',
-                            border: '6px solid #000',
-                            boxShadow: 'clamp(8px, 4vw, 18px) clamp(8px, 4vw, 18px) 0 #000',
-                            padding: 'clamp(1.5rem, 5vw, 3rem)',
-                            maxWidth: '525px',
-                            transform: 'rotate(-1deg)'
-                        }}>
-                             <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 3rem)', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1.5rem', lineHeight: '1' }}>
-                                 NOTICE 01:<br/>THE GENESIS
-                             </h2>
-                             <p style={{ fontSize: 'clamp(0.85rem, 3vw, 1.15rem)', fontWeight: '600', lineHeight: '1.6' }}>
-                                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                             </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* SIGNBOARD 2 */}
-                <div style={{
-                    background: '#e0e0e0',
-                    padding: 'clamp(3rem, 10vw, 7rem) 1.5rem',
-                    borderBottom: '6px solid #000',
-                    position: 'relative',
-                    overflow: 'hidden'
-                }}>
-                    <div className="container" style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', justifyContent: 'flex-end' }}>
-                        <div style={{
-                            background: '#000',
+                    <div className="container" style={{ maxWidth: '900px' }}>
+                        <h2 style={{
+                            fontSize: '3rem',
+                            fontWeight: '900',
+                            textTransform: 'uppercase',
                             color: 'var(--primary-color)',
-                            border: '6px solid var(--primary-color)',
-                            boxShadow: 'clamp(-18px, -4vw, -8px) clamp(8px, 4vw, 18px) 0 var(--primary-color)',
-                            padding: 'clamp(1.5rem, 5vw, 3rem)',
-                            maxWidth: '525px',
-                            transform: 'rotate(1deg)'
-                        }}>
-                             <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 3rem)', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1.5rem', lineHeight: '1' }}>
-                                 NOTICE 02:<br/>THE PROTOCOL
-                             </h2>
-                             <p style={{ fontSize: 'clamp(0.85rem, 3vw, 1.15rem)', fontWeight: '600', lineHeight: '1.6' }}>
-                                 Massa tempor nec feugiat nisl. Dictumst quisque sagittis purus sit. Ultricies integer quis auctor elit sed vulputate mi sit. Et malesuada fames ac turpis egestas integer eget aliquet nibh.
-                             </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* SIGNBOARD 3 */}
-                <div style={{
-                    background: 'var(--primary-color)',
-                    padding: 'clamp(3rem, 10vw, 7rem) 1.5rem',
-                    borderBottom: '6px solid #000',
-                    position: 'relative',
-                    overflow: 'hidden'
-                }}>
-                    <div className="container" style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', justifyContent: 'center' }}>
-                        <div style={{
-                            background: '#fff',
-                            color: '#000',
-                            border: '6px solid #000',
-                            boxShadow: 'clamp(8px, 4vw, 18px) clamp(8px, 4vw, 18px) 0 #000',
-                            padding: 'clamp(1.5rem, 5vw, 3rem)',
-                            maxWidth: '600px',
-                            transform: 'rotate(0deg)',
+                            marginBottom: '4rem',
                             textAlign: 'center'
                         }}>
-                             <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 3rem)', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1.5rem', lineHeight: '1' }}>
-                                 NOTICE 03:<br/>THE FRONTIER
-                             </h2>
-                             <p style={{ fontSize: 'clamp(0.85rem, 3vw, 1.15rem)', fontWeight: '600', lineHeight: '1.6' }}>
-                                 Volutpat diam ut venenatis tellus in metus vulputate eu. Condimentum lacinia quis vel eros donec. Eleifend mi in nulla posuere sollicitudin aliquam ultrices. Faucibus purus in massa tempor nec feugiat.
-                             </p>
+                            THE THREE-PILLAR MODEL
+                        </h2>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
+                            {/* PILLAR 1 */}
+                            <div style={{ border: '4px solid var(--primary-color)', padding: '2rem', background: '#000' }}>
+                                <h3 style={{ color: 'var(--primary-color)', fontSize: '1.5rem', fontWeight: '900', marginBottom: '1rem' }}>THE CORE</h3>
+                                <p style={{ color: '#fff', fontSize: '0.9rem', fontWeight: '500', marginBottom: '1.5rem' }}>Watch → Complete → Advance. A self-paced curriculum loop designed for momentum.</p>
+                                <div style={{ background: 'var(--primary-color)', color: '#000', padding: '0.5rem', fontWeight: '900', fontSize: '0.7rem', display: 'inline-block' }}>PERSONALIZATION</div>
+                            </div>
+                            {/* PILLAR 2 */}
+                            <div style={{ border: '4px solid #ff00ff', padding: '2rem', background: '#000' }}>
+                                <h3 style={{ color: '#ff00ff', fontSize: '1.5rem', fontWeight: '900', marginBottom: '1rem' }}>THE ENGINE</h3>
+                                <p style={{ color: '#fff', fontSize: '0.9rem', fontWeight: '500', marginBottom: '1.5rem' }}>Study Verse API. Separate content from logic to host any project with high-performance tracking.</p>
+                                <div style={{ background: '#ff00ff', color: '#000', padding: '0.5rem', fontWeight: '900', fontSize: '0.7rem', display: 'inline-block' }}>APPLICATION</div>
+                            </div>
+                            {/* PILLAR 3 */}
+                            <div style={{ border: '4px solid #fff', padding: '2rem', background: '#000' }}>
+                                <h3 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: '900', marginBottom: '1rem' }}>THE RECORD</h3>
+                                <p style={{ color: '#fff', fontSize: '0.9rem', fontWeight: '500', marginBottom: '1.5rem' }}>Web3 Registry. Verifiable, immutable proof of competency stored directly on-chain.</p>
+                                <div style={{ background: '#fff', color: '#000', padding: '0.5rem', fontWeight: '900', fontSize: '0.7rem', display: 'inline-block' }}>TRANSPARENCY</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* SPECIALIZED DIVISIONS */}
+                <div style={{
+                    background: '#fff',
+                    padding: '6rem 1.5rem',
+                    borderBottom: '6px solid #000'
+                }}>
+                    <div className="container" style={{ maxWidth: '900px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1rem' }}>
+                            <h2 style={{ fontSize: '3rem', fontWeight: '900', textTransform: 'uppercase', lineHeight: '0.9', margin: 0 }}>SPECIALIZED<br/>DIVISIONS</h2>
+                            <p style={{ maxWidth: '300px', fontSize: '0.9rem', fontWeight: '600', margin: 0 }}>Bridge the gap between digital theory and real-world skills.</p>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+                            {/* BUILDERS */}
+                            <div className="division-card" style={{ border: '6px solid #000', padding: '2rem' }}>
+                                <h3 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '1rem' }}>BUILDERS</h3>
+                                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', fontWeight: '600' }}>
+                                    <li style={{ marginBottom: '0.5rem' }}>• HARDWARE & ROBOTICS</li>
+                                    <li style={{ marginBottom: '0.5rem' }}>• SOFTWARE SCALING</li>
+                                    <li style={{ marginBottom: '0.5rem' }}>• SMART CONTRACT ARCHITECTURE</li>
+                                </ul>
+                                <button onClick={() => showPage('courses')} style={{ background: '#000', color: '#fff', padding: '0.8rem 1.5rem', border: 'none', fontWeight: '900', cursor: 'pointer' }}>ENTER DIVISION</button>
+                            </div>
+
+                            {/* CREATIVES */}
+                            <div className="division-card" style={{ border: '6px solid #000', padding: '2rem', background: '#39ff14' }}>
+                                <h3 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '1rem' }}>CREATIVES</h3>
+                                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', fontWeight: '600' }}>
+                                    <li style={{ marginBottom: '0.5rem' }}>• UI/UX DESIGN</li>
+                                    <li style={{ marginBottom: '0.5rem' }}>• GENERATIVE ART</li>
+                                    <li style={{ marginBottom: '0.5rem' }}>• VISUAL ARCHITECTURE</li>
+                                </ul>
+                                <button onClick={() => showPage('courses')} style={{ background: '#000', color: '#fff', padding: '0.8rem 1.5rem', border: 'none', fontWeight: '900', cursor: 'pointer' }}>ENTER DIVISION</button>
+                            </div>
                         </div>
                     </div>
                 </div>

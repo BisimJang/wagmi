@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Permanent+Marker&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
 
 :root {
   font-family: 'Inter', Helvetica, Arial, sans-serif;
@@ -6,16 +6,17 @@
   font-weight: 400;
   font-size: 75%; /* Global 25% scale reduction */
 
-  color-scheme: light;
-  color: #000000;
-  background-color: #ffffff;
+  color-scheme: dark;
+  color: #ffffff;
+  background-color: #08080a;
 
-  --primary-color: #39ff14;
-  --secondary-color: #000;
-  --accent-color: #ff0000;
-  --surface: #f9f9f9;
-  --border-width: 4px;
-  --shadow-offset: 6px;
+  --primary-color: #4f46e5;
+  --secondary-color: #a855f7;
+  --accent-color: #3b82f6;
+  --background: #08080a;
+  --surface: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --text-secondary: #94a3b8;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -23,112 +24,138 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 600;
-  color: #000000;
-  text-decoration: underline;
-  transition: all 0.2s;
-}
-a:hover {
-  background-color: #39ff14;
-  color: #000;
-  text-decoration: none;
-}
-
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
   overflow-x: hidden;
-  background-color: var(--background, #ffffff);
+  background-color: var(--background);
+}
+
+a {
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+a:hover {
+  color: var(--primary-color);
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Inter', sans-serif;
-  font-weight: 900;
+  font-weight: 800;
   line-height: 1.1;
   margin: 0;
-  text-transform: uppercase;
+  text-transform: none; /* Premium look is cleaner without forced caps */
 }
 
 button {
-  border: 4px solid #000;
+  border: 1px solid var(--glass-border);
   padding: 0.8em 1.6em;
   font-size: 1rem;
-  font-weight: 900;
+  font-weight: 700;
   font-family: inherit;
-  background-color: #fff;
-  color: #000;
+  background-color: var(--surface);
+  backdrop-filter: blur(8px);
+  color: #fff;
   cursor: pointer;
-  text-transform: uppercase;
-  box-shadow: 6px 6px 0px #000;
-  transition: transform 0.1s, box-shadow 0.1s;
-  border-radius: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 100px; /* Modern pill shape */
 }
 button:hover {
-  transform: translate(2px, 2px);
-  box-shadow: 4px 4px 0px #000;
-  background-color: #39ff14;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
 }
 button:active {
-  transform: translate(6px, 6px);
-  box-shadow: 0px 0px 0px #000;
+  transform: translateY(0);
+}
+
+/* --- Premium Utilities --- */
+.glass-panel {
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #fff 0%, var(--primary-color) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 ::-webkit-scrollbar {
-  width: 12px;
+  width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #ffffff;
-  border-left: 3px solid #000;
+  background: var(--background);
 }
 ::-webkit-scrollbar-thumb {
-  background: #000;
+  background: #333;
+  border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #39ff14;
+  background: var(--primary-color);
 }
 
-/* --- Neo-Brutalist Utilities --- */
-.hard-shadow {
-  box-shadow: 8px 8px 0px #000;
-  border: 4px solid #000;
+.page {
+  animation: fadeIn 0.4s ease-out;
 }
 
-.brutalist-card {
-  background: #fff;
-  border: 6px solid #000;
-  box-shadow: 12px 12px 0px #000;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.locked-block {
-  background: #000;
-  color: #ff0000;
-  border: 6px solid #ff0000;
-  box-shadow: 12px 12px 0px #000;
+/* --- Feedback & Loading --- */
+.message {
+  position: fixed;
+  top: 6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem 2rem;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-weight: 700;
+  z-index: 5000;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  animation: messageSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (max-width: 768px) {
-  .hard-shadow {
-    box-shadow: 4px 4px 0px #000;
-    border-width: 3px;
-  }
-  .brutalist-card, .locked-block {
-    box-shadow: 6px 6px 0px #000;
-    border-width: 4px;
-  }
+.message.error { border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; }
+.message.success { border-color: rgba(16, 185, 129, 0.3); color: #6ee7b7; }
+
+@keyframes messageSlideIn {
+  from { transform: translate(-50%, -20px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
 }
 
-.marquee-container {
-  max-width: 100vw;
-  overflow: hidden;
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  gap: 1.5rem;
+  color: var(--text-secondary);
+  font-weight: 700;
 }
 
-.handwritten {
-  font-family: 'Permanent Marker', cursive;
-  color: #ff0000;
-  text-align: center;
-  font-size: 1.25rem;
-  margin-top: 1rem;
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.05);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: rotate 1s linear infinite;
 }
 

@@ -1,8 +1,9 @@
+// src/pages/ProfilePage.jsx
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAccount, useBalance, useDisconnect } from 'wagmi';
-import { Settings, BookOpen, Award, Link as LinkIcon, Globe, User, Edit3, CheckCircle, Code, MessageSquare } from 'lucide-react';
+import { Settings, BookOpen, Award, Link as LinkIcon, Globe, User, Edit3, CheckCircle, Code, MessageSquare, LogOut } from 'lucide-react';
 import LoadingSpinner from '../components/Feedback/LoadingSpinner';
-import BrutalistButton from '../components/UI/BrutalistButton';
 import CourseCard from '../components/Card/CourseCard';
 import NftAvatarSelector from '../components/Profile/NftAvatarSelector';
 import { apiCall } from '../api/api';
@@ -11,29 +12,24 @@ const ProfilePage = ({
     user, 
     certificates, 
     loading, 
-    theme, 
-    toggleTheme, 
     allCourses, 
     onViewCourse,
-    syncOnChainEnrollment,
     showMessage,
     linkWallet,
     address: connectedAddress,
     onLogout
 }) => {
     const { disconnect } = useDisconnect();
-    const { data: balanceData } = useBalance({ address: connectedAddress });
 
     const handleSignOut = () => {
         disconnect();
         if (onLogout) onLogout();
     };
 
-    const [activeTab, setActiveTab] = useState('path'); // 'path', 'backpack', 'settings'
+    const [activeTab, setActiveTab] = useState('path'); 
     const [isNftSelectorOpen, setIsNftSelectorOpen] = useState(false);
     const [isLinking, setIsLinking] = useState(false);
     
-    // Settings form state
     const [formData, setFormData] = useState({
         display_name: user?.display_name || '',
         bio: user?.bio || '',
@@ -52,7 +48,6 @@ const ProfilePage = ({
         }
     }, [user]);
 
-    // Filter allCourses to find the ones the user is enrolled in
     const enrolledCourses = useMemo(() => {
         if (!user || !allCourses) return [];
         const enrolledIds = user.enrollments?.map(enr => enr.course_id) || [];
@@ -98,102 +93,79 @@ const ProfilePage = ({
         return (
             <div className="container" style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <LoadingSpinner />
-                <h3 style={{ marginTop: '2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>Reading Passport...</h3>
+                <p style={{ marginTop: '2rem', color: 'var(--text-secondary)' }}>Decrypting ID...</p>
             </div>
         );
     }
 
     return (
-        <section className="profile-page-premium" style={{ padding: '4rem 0', background: 'var(--bg-color)' }}>
-            <div className="container" style={{ maxWidth: '1200px' }}>
+        <section className="page">
+            <div className="container">
                 
-                {/* 1. PREMIUM HERO HEADER (The Passport) */}
-                <div style={{ 
-                    position: 'relative', 
-                    background: 'linear-gradient(135deg, #000 0%, #333 100%)',
-                    padding: '3rem',
-                    border: '8px solid #000',
-                    boxShadow: '15px 15px 0px #000',
-                    marginBottom: '4rem',
-                    color: '#fff',
-                    overflow: 'hidden'
-                }}>
-                    <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '8rem', opacity: 0.05, fontWeight: '900', fontStyle: 'italic' }}>PASSPORT</div>
+                {/* PROFILE HEADER */}
+                <div className="glass-panel" style={{ marginBottom: '4rem', padding: '4rem', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', top: '-20px', right: '-20px', fontSize: '10rem', opacity: 0.02, fontWeight: '900' }}>PORTFOLIO</div>
                     
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3rem', alignItems: 'center', position: 'relative', zIndex: 2 }}>
-                        {/* Avatar Block */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4rem', alignItems: 'center' }}>
+                        {/* Avatar */}
                         <div 
                             onClick={() => user.is_wallet_linked && setIsNftSelectorOpen(true)}
                             style={{ 
-                                width: '180px', 
-                                height: '180px', 
-                                background: '#fff', 
-                                border: '5px solid #39ff14', 
-                                position: 'relative',
+                                width: '200px', 
+                                height: '200px', 
+                                background: 'var(--surface)', 
+                                border: '1px solid var(--glass-border)', 
+                                borderRadius: '40px',
                                 cursor: user.is_wallet_linked ? 'pointer' : 'default',
-                                overflow: 'hidden'
+                                overflow: 'hidden',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
                             }}
                         >
                             {user.profile_image ? (
                                 <img src={user.profile_image} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
-                                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '5rem', fontWeight: 'bold', color: '#000' }}>
-                                    {user.display_name?.[0] || user.address?.[2] || '?'}
-                                </div>
-                            )}
-                            {user.is_wallet_linked && (
-                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(57, 255, 20, 0.9)', color: '#000', fontSize: '0.6rem', fontWeight: '900', textAlign: 'center', padding: '2px' }}>
-                                    CHANGE NFT
-                                </div>
+                                <span style={{ fontSize: '4rem', fontWeight: '900' }}>{user.display_name?.[0] || '?'}</span>
                             )}
                         </div>
 
-                        {/* Identity Block */}
-                        <div style={{ flex: 1, minWidth: '300px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.8rem' }}>
-                                <h1 style={{ fontSize: '3rem', margin: 0, textTransform: 'uppercase', lineHeight: 1 }}>{user.display_name || 'Anonymous'}</h1>
-                                {user.is_wallet_linked && <CheckCircle size={24} style={{ color: '#39ff14' }} />}
+                        {/* Details */}
+                        <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                                <h1 style={{ fontSize: '3.5rem', fontWeight: '900', letterSpacing: '-1px' }}>{user.display_name || 'Anonymous Creator'}</h1>
+                                {user.is_wallet_linked && <CheckCircle size={28} style={{ color: 'var(--primary-color)' }} />}
                             </div>
                             
-                            <p style={{ margin: '0 0 1.5rem 0', color: '#aaa', fontSize: '1.1rem', fontWeight: '500' }}>{user.bio || 'No bio provided.'}</p>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', marginBottom: '2.5rem', maxWidth: '600px' }}>{user.bio || 'Architecting decentralized futures.'}</p>
 
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
                                 {user.address ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.1)', padding: '0.5rem 1rem', border: '1px solid #444' }}>
-                                        <LinkIcon size={16} />
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>{user.address.slice(0, 6)}...{user.address.slice(-4)}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'rgba(255,255,255,0.03)', padding: '0.8rem 1.2rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '100px' }}>
+                                        <LinkIcon size={16} color="var(--primary-color)" />
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '700' }}>{user.address.slice(0, 6)}...{user.address.slice(-4)}</span>
                                     </div>
                                 ) : (
-                                    <BrutalistButton onClick={handleLinkWallet} disabled={isLinking} style={{ background: '#39ff14', color: '#000', fontSize: '0.7rem' }}>
-                                        {isLinking ? 'Linking...' : 'Connect Passport (Link Wallet)'}
-                                    </BrutalistButton>
+                                    <button onClick={handleLinkWallet} disabled={isLinking} style={{ background: 'var(--primary-color)', color: '#fff' }}>
+                                        {isLinking ? 'Linking...' : 'Connect Wallet'}
+                                    </button>
                                 )}
-
-                                <div style={{ display: 'flex', gap: '1rem' }}>
-                                    {user.twitter_handle && <MessageSquare size={20} style={{ cursor: 'pointer', color: '#39ff14' }} />}
-                                    {user.github_handle && <Code size={20} style={{ cursor: 'pointer' }} />}
-                                </div>
+                                
+                                <button onClick={handleSignOut} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#ef4444' }}>
+                                    <LogOut size={18} />
+                                </button>
                             </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                             <BrutalistButton onClick={handleSignOut} style={{ background: '#ff3e00', color: '#fff' }}>
-                                Sign Out
-                             </BrutalistButton>
-                             <BrutalistButton onClick={toggleTheme} style={{ background: '#fff', color: '#000' }}>
-                                {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-                             </BrutalistButton>
                         </div>
                     </div>
                 </div>
 
-                {/* 2. TAB NAVIGATION */}
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '6px solid #000', paddingBottom: '1rem' }}>
+                {/* TABS */}
+                <div style={{ display: 'flex', gap: '2rem', marginBottom: '4rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '1.5rem' }}>
                     {[
-                        { id: 'path', label: 'Learning Path', icon: <BookOpen size={20} /> },
-                        { id: 'backpack', label: 'Backpack', icon: <Award size={20} /> },
-                        { id: 'settings', label: 'Settings', icon: <Settings size={20} /> }
+                        { id: 'path', label: 'Learning Path', icon: <BookOpen size={18} /> },
+                        { id: 'backpack', label: 'Backpack', icon: <Award size={18} /> },
+                        { id: 'settings', label: 'Identity', icon: <Settings size={18} /> }
                     ].map(tab => (
                         <button 
                             key={tab.id}
@@ -201,17 +173,17 @@ const ProfilePage = ({
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '0.5rem',
-                                padding: '1rem 2rem',
-                                border: '4px solid #000',
-                                background: activeTab === tab.id ? '#000' : '#fff',
-                                color: activeTab === tab.id ? '#39ff14' : '#000',
-                                fontWeight: '900',
-                                textTransform: 'uppercase',
-                                cursor: 'pointer',
-                                transform: activeTab === tab.id ? 'translate(-4px, -4px)' : 'none',
-                                boxShadow: activeTab === tab.id ? '4px 4px 0 #000' : 'none',
-                                transition: 'all 0.1s'
+                                gap: '0.8rem',
+                                background: 'none',
+                                border: 'none',
+                                color: activeTab === tab.id ? '#fff' : '#444',
+                                fontWeight: '700',
+                                fontSize: '1rem',
+                                padding: '0.5rem 1rem',
+                                borderBottom: activeTab === tab.id ? '2px solid var(--primary-color)' : '2px solid transparent',
+                                borderRadius: 0,
+                                transform: 'none',
+                                boxShadow: 'none'
                             }}
                         >
                             {tab.icon}
@@ -220,8 +192,8 @@ const ProfilePage = ({
                     ))}
                 </div>
 
-                {/* 3. TAB CONTENT */}
-                <div style={{ minHeight: '400px' }}>
+                {/* CONTENT */}
+                <div style={{ minHeight: '50vh' }}>
                     
                     {activeTab === 'path' && (
                         <div>
@@ -237,86 +209,84 @@ const ProfilePage = ({
                                     ))}
                                 </div>
                             ) : (
-                                <div style={{ padding: '6rem', textAlign: 'center', border: '5px dashed #000' }}>
-                                    <BookOpen size={48} style={{ margin: '0 auto 1rem autof' }} />
-                                    <h3 style={{ textTransform: 'uppercase' }}>No active courses</h3>
-                                    <BrutalistButton onClick={() => window.location.hash = 'courses'}>Explore the Grid</BrutalistButton>
+                                <div className="glass-panel" style={{ textAlign: 'center', padding: '6rem' }}>
+                                    <h3 style={{ marginBottom: '1.5rem' }}>The grid is empty.</h3>
+                                    <button onClick={() => window.location.hash = 'courses'}>Explore Curriculum</button>
                                 </div>
                             )}
                         </div>
                     )}
 
                     {activeTab === 'backpack' && (
-                        <div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '2rem' }}>
-                                {certificates.map((cert, idx) => (
-                                    <div key={idx} style={{ padding: '2rem', background: '#fff', border: '5px solid #000', boxShadow: '8px 8px 0px #000' }}>
-                                        <div style={{ width: '100%', aspectRatio: '16/9', background: '#f0f0f0', marginBottom: '1.5rem', border: '3px solid #000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Award size={64} style={{ color: '#39ff14' }} />
-                                        </div>
-                                        <h4 style={{ margin: '0 0 0.5rem 0', textTransform: 'uppercase', fontSize: '1.2rem' }}>{cert.course}</h4>
-                                        <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '1rem' }}>MINTED: {new Date(cert.issued_at).toLocaleDateString()}</p>
-                                        <BrutalistButton onClick={() => window.open(`https://sepolia.etherscan.io/tx/${cert.tx_hash}`)} style={{ width: '100%', fontSize: '0.7rem' }}>
-                                            View On Explorer
-                                        </BrutalistButton>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '3rem' }}>
+                            {certificates.map((cert, idx) => (
+                                <div key={idx} className="glass-panel" style={{ padding: '2.5rem', textAlign: 'center' }}>
+                                    <div style={{ width: '100%', aspectRatio: '1', background: 'rgba(255,255,255,0.02)', marginBottom: '2rem', borderRadius: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Award size={80} style={{ color: 'var(--primary-color)', opacity: 0.8 }} />
                                     </div>
-                                ))}
-                                {certificates.length === 0 && (
-                                    <div style={{ gridColumn: '1/-1', padding: '6rem', textAlign: 'center', border: '5px dashed #000' }}>
-                                        <Award size={48} style={{ margin: '0 auto 1rem autof' }} />
-                                        <h3 style={{ textTransform: 'uppercase' }}>No certificates earned yet</h3>
-                                    </div>
-                                )}
-                            </div>
+                                    <h4 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.5rem' }}>{cert.course}</h4>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '2rem' }}>Verified: {new Date(cert.issued_at).toLocaleDateString()}</p>
+                                    {cert.tx_hash ? (
+                                        <button 
+                                            onClick={() => window.open(`https://sepolia.etherscan.io/tx/${cert.tx_hash}`)} 
+                                            style={{ width: '100%', background: 'rgba(255,255,255,0.05)', fontSize: '0.8rem' }}
+                                        >
+                                            View Proof
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={() => onViewCourse(allCourses.find(c => c.id === cert.course_id))}
+                                            style={{ width: '100%', background: 'var(--primary-color)', fontSize: '0.8rem' }}
+                                        >
+                                            Claim NFT
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            {certificates.length === 0 && (
+                                <div className="glass-panel" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '6rem' }}>
+                                    <h3>No Proof of Skill detected.</h3>
+                                    <p style={{ color: 'var(--text-secondary)' }}>Complete modules to mint your certificates.</p>
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {activeTab === 'settings' && (
-                        <div style={{ maxWidth: '600px', background: '#fff', border: '5px solid #000', padding: '3rem', boxShadow: '10px 10px 0 #000' }}>
-                            <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontWeight: '900', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Public Display Name</label>
-                                    <input 
-                                        type="text" 
-                                        value={formData.display_name}
-                                        onChange={e => setFormData({...formData, display_name: e.target.value})}
-                                        style={{ width: '100%', padding: '1rem', border: '4px solid #000', fontSize: '1.1rem', fontWeight: '600' }} 
-                                    />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontWeight: '900', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Bio / Philosophy</label>
-                                    <textarea 
-                                        rows="3" 
-                                        value={formData.bio}
-                                        onChange={e => setFormData({...formData, bio: e.target.value})}
-                                        style={{ width: '100%', padding: '1rem', border: '4px solid #000', fontSize: '1.1rem', fontWeight: '600' }} 
-                                    />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div className="glass-panel" style={{ maxWidth: '800px', margin: '0 auto' }}>
+                            <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                                     <div>
-                                        <label style={{ display: 'block', fontWeight: '900', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Twitter Handle</label>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>DISPLAY NAME</label>
                                         <input 
                                             type="text" 
-                                            value={formData.twitter_handle}
-                                            onChange={e => setFormData({...formData, twitter_handle: e.target.value})}
-                                            placeholder="@johndoe"
-                                            style={{ width: '100%', padding: '1rem', border: '4px solid #000', fontSize: '1.1rem', fontWeight: '600' }} 
+                                            value={formData.display_name}
+                                            onChange={e => setFormData({...formData, display_name: e.target.value})}
+                                            style={{ width: '100%', padding: '1rem 1.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff' }} 
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', fontWeight: '900', textTransform: 'uppercase', marginBottom: '0.5rem' }}>GitHub Handle</label>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>GITHUB</label>
                                         <input 
                                             type="text" 
                                             value={formData.github_handle}
                                             onChange={e => setFormData({...formData, github_handle: e.target.value})}
-                                            placeholder="johndoe"
-                                            style={{ width: '100%', padding: '1rem', border: '4px solid #000', fontSize: '1.1rem', fontWeight: '600' }} 
+                                            style={{ width: '100%', padding: '1rem 1.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff' }} 
                                         />
                                     </div>
                                 </div>
-                                <BrutalistButton type="submit" style={{ background: '#39ff14', width: '200px' }}>
-                                    Save Profile
-                                </BrutalistButton>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>PHILOSOPHY / BIO</label>
+                                    <textarea 
+                                        rows="4" 
+                                        value={formData.bio}
+                                        onChange={e => setFormData({...formData, bio: e.target.value})}
+                                        style={{ width: '100%', padding: '1rem 1.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff' }} 
+                                    />
+                                </div>
+                                <button type="submit" style={{ background: 'var(--primary-color)', alignSelf: 'flex-start', padding: '1rem 3rem' }}>
+                                    Update Identity
+                                </button>
                             </form>
                         </div>
                     )}
@@ -324,7 +294,6 @@ const ProfilePage = ({
                 </div>
             </div>
 
-            {/* NFT SELECTOR OVERLAY */}
             {isNftSelectorOpen && (
                 <NftAvatarSelector 
                     address={connectedAddress || user.address} 

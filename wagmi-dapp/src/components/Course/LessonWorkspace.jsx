@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import DraggableWidget from './DraggableWidget';
 import BrutalistButton from '../UI/BrutalistButton';
-import { Video, Book, PenTool, Bot, Plus, X, ChevronRight } from 'lucide-react';
+import { Video, Book, PenTool, Bot, Plus, X, ChevronRight, Send } from 'lucide-react';
+import { useStudyVerseAI } from '../../hooks/useStudyVerseAI';
 import DesktopRecommendation from '../UI/DesktopRecommendation';
 
 const getEmbedUrl = (url) => {
@@ -20,8 +21,14 @@ const LessonWorkspace = ({ lesson, isCompleted, onClose, onNext }) => {
         { id: 'widget-media', title: 'Media Viewer', type: 'media', size: { width: 300, height: 195 }, pos: { x: 20, y: 20 }, isVisible: true },
         { id: 'widget-syllabus', title: 'Curriculum & Content', type: 'content', size: { width: 195, height: 195 }, pos: { x: 340, y: 20 }, isVisible: true },
         { id: 'widget-notes', title: 'Personal Notes', type: 'notes', size: { width: 300, height: 175 }, pos: { x: 20, y: 230 }, isVisible: false },
-        { id: 'widget-ai', title: 'Studyverse AI', type: 'ai', size: { width: 280, height: 385 }, pos: { x: 340, y: 230 }, isVisible: false },
+        { id: 'widget-ai', title: 'Study Verse AI', type: 'ai', size: { width: 280, height: 385 }, pos: { x: 340, y: 230 }, isVisible: false },
     ];
+
+    const { askVera, isLoading: aiLoading } = useStudyVerseAI();
+    const [chatHistory, setChatHistory] = useState([
+        { role: 'vera', content: `[AI SYSTEM READY]\nI am Vera, your Study Verse mentor. How can I assist you with your mastery of **${lesson?.title}** today?` }
+    ]);
+    const [aiInput, setAiInput] = useState("");
 
     const [widgets, setWidgets] = useState([]);
     const [notesText, setNotesText] = useState("");
@@ -130,6 +137,22 @@ const LessonWorkspace = ({ lesson, isCompleted, onClose, onNext }) => {
                 const filtered = prev.filter(wId => wId !== id);
                 return [...filtered, id];
             });
+        }
+    };
+
+    const handleSendAI = async () => {
+        if (!aiInput.trim() || aiLoading) return;
+
+        const userMessage = aiInput;
+        setAiInput("");
+        setChatHistory(prev => [...prev, { role: 'user', content: userMessage }]);
+
+        const response = await askVera(userMessage, lesson.title);
+        
+        if (response && response.response_text) {
+            setChatHistory(prev => [...prev, { role: 'vera', content: response.response_text }]);
+        } else {
+            setChatHistory(prev => [...prev, { role: 'vera', content: "I encountered an error connecting to the intelligence engine. Please ensure the backend is running." }]);
         }
     };
 
@@ -320,21 +343,71 @@ const LessonWorkspace = ({ lesson, isCompleted, onClose, onNext }) => {
                         )}
 
                         {widget.type === 'ai' && (
-                            <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>
-                                <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem', fontSize: '0.7rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    <div style={{ alignSelf: 'flex-start', background: '#333', padding: '0.4rem 0.6rem', border: '1px solid #555' }}>
-                                        <p style={{ margin: 0, color: '#39ff14', fontWeight: 'bold' }}>[AI SYSTEM READY]</p>
-                                        <p style={{ margin: '0.3rem 0 0 0' }}>I am your Studyverse assistant. How can I help you with <strong>{lesson.title}</strong>?</p>
-                                    </div>
+                            <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#08080a', color: '#fff', border: '4px solid #000' }}>
+                                {/* Header / Status */}
+                                <div style={{ background: '#39ff14', color: '#000', padding: '0.4rem 1rem', fontSize: '0.6rem', fontWeight: '900', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>CORE INTELLIGENCE: ACTIVE</span>
+                                    <span style={{ opacity: aiLoading ? 1 : 0 }}>THINKING...</span>
                                 </div>
-                                <div style={{ display: 'flex', borderTop: '2px solid #555', padding: '0.4rem', background: '#111' }}>
+
+                                {/* Chat Feed */}
+                                <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {chatHistory.map((msg, i) => (
+                                        <div key={i} style={{ 
+                                            alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                                            maxWidth: '85%',
+                                            background: msg.role === 'user' ? '#1a1a1a' : '#222',
+                                            padding: '0.8rem',
+                                            border: msg.role === 'user' ? '1px solid #444' : '1px solid #39ff14',
+                                            color: msg.role === 'user' ? '#fff' : '#39ff14',
+                                            lineHeight: '1.4',
+                                            whiteSpace: 'pre-wrap'
+                                        }}>
+                                            {msg.content}
+                                        </div>
+                                    ))}
+                                    {aiLoading && (
+                                        <div style={{ alignSelf: 'flex-start', color: '#39ff14', opacity: 0.5, fontSize: '0.6rem' }}>
+                                            VERA IS ANALYZING...
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Input Area */}
+                                <div style={{ display: 'flex', borderTop: '4px solid #000', padding: '0.5rem', background: '#000' }}>
                                     <input 
                                         type="text" 
-                                        placeholder="Ask AI..." 
-                                        style={{ flex: 1, background: '#000', color: '#fff', border: '1px solid #333', padding: '0.4rem', fontSize: '0.7rem', outline: 'none' }}
+                                        value={aiInput}
+                                        onChange={(e) => setAiInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleSendAI()}
+                                        placeholder="Command Vera..." 
+                                        style={{ 
+                                            flex: 1, 
+                                            background: '#000', 
+                                            color: '#39ff14', 
+                                            border: '2px solid #333', 
+                                            padding: '0.6rem', 
+                                            fontSize: '0.7rem', 
+                                            outline: 'none',
+                                            fontFamily: 'monospace'
+                                        }}
                                     />
-                                    <button style={{ background: '#39ff14', color: '#000', border: 'none', padding: '0.4rem 0.8rem', fontSize: '0.7rem', fontWeight: '900', cursor: 'pointer', marginLeft: '0.4rem' }}>
-                                        ASK
+                                    <button 
+                                        onClick={handleSendAI}
+                                        disabled={aiLoading}
+                                        style={{ 
+                                            background: '#39ff14', 
+                                            color: '#000', 
+                                            border: 'none', 
+                                            padding: '0 1.2rem', 
+                                            fontSize: '0.7rem', 
+                                            fontWeight: '900', 
+                                            cursor: 'pointer', 
+                                            marginLeft: '0.4rem',
+                                            opacity: aiLoading ? 0.5 : 1
+                                        }}
+                                    >
+                                        <Send size={14} />
                                     </button>
                                 </div>
                             </div>

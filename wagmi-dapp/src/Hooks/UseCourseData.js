@@ -34,6 +34,7 @@ export const useCourseData = (address, showMessage, jwt) => {
     // Wagmi hooks
     const {
         writeEnroll, 
+        claimCertificate,
         isLoading: isWeb3Loading, 
         isSuccess: isWeb3Success,
         isReady,
@@ -378,9 +379,10 @@ export const useCourseData = (address, showMessage, jwt) => {
         try {
             setLoading(true);
             showMessage('Processing completion...', 'warning');
-            await apiCall(`/courses/${courseId}/complete/`, { method: 'POST' });
+            const result = await apiCall(`/courses/${courseId}/complete/`, { method: 'POST' });
             showMessage('Course completed! Certificate issued.', 'success');
             await loadUserData(token);
+            return result;
         } catch (error) {
             console.error('Completion error:', error);
             showMessage(`Failed to complete course: ${error.message || 'Check console.'}`, 'error');
@@ -490,6 +492,7 @@ export const useCourseData = (address, showMessage, jwt) => {
         loadUserData, 
         enrollInCourse, 
         completeCourse,
+        claimCertificate,
         fetchLessonsAndProgress,
         markLessonCompleted,
         loadCourses,
