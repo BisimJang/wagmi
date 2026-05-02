@@ -160,4 +160,5 @@ environ.Env.read_env(BASE_DIR / '.env')
 
 WEB3_PROVIDER_URI = env('SEPOLIA_RPC_URL', default='https://eth-sepolia.g.alchemy.com/v2/rTJTDkjJ0l8pHbi1tIDCp')
 WEB3_CONTRACT_ADDRESS = env('CONTRACT_ADDRESS', default='0xee905bF7719F83968A4B6287AF1651f7EF47b084')
-WEB3_OWNER_PRIVATE_KEY = env('OWNER_PRIVATE_KEY', default='')
+WEB3_OWNER_PRIVATE_KEY = env('OWNER_PRIVATE_KEY', default='')
+WEB3_CHAIN_ID = int(env('WEB3_CHAIN_ID', default=11155111)) # Sepolia default
