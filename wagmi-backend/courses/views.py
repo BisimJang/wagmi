@@ -202,10 +202,13 @@ def issue_certificate(request, course_id):
     except Course.DoesNotExist:
         return Response({"error": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
     
-    if not Enrollment.objects.filter(course=course, user=request.user).exists():
+    is_instructor = course.instructor == request.user
+    is_enrolled = Enrollment.objects.filter(course=course, user=request.user).exists()
+    
+    if not (is_instructor or is_enrolled):
         return Response(
-        {"error": "You must be enrolled in the course to get a certificate"},
-        status=status.HTTP_403_FORBIDDEN
+            {"error": "You must be enrolled or be the instructor to get a certificate"},
+            status=status.HTTP_403_FORBIDDEN
         )
 
     # Check if the user already has a certificate for this course
@@ -532,3 +535,25 @@ def school_list(request):
         } for s in schools
     ], status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_image(request):
+    """
+    Handles image uploads and returns the URL.
+    """
+    if 'image' not in request.FILES:
+        return Response({"error": "No image provided."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    image = request.FILES['image']
+    
+    # Save the file
+    from django.core.files.storage import default_storage
+    import uuid
+    
+    ext = image.name.split('.')[-1]
+    filename = f"uploads/{uuid.uuid4()}.{ext}"
+    
+    path = default_storage.save(filename, image)
+    url = request.build_absolute_uri(settings.MEDIA_URL + path)
+    
+    return Response({"url": url}, status=status.HTTP_201_CREATED)

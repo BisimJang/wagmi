@@ -16,6 +16,7 @@ import Message from './components/Feedback/Message';
 import LoadingSpinner from './components/Feedback/LoadingSpinner';
 import Footer from './components/Layout/Footer';
 import LoginModal from './components/Auth/LoginModal';
+import MasterySetupModal from './components/Auth/MasterySetupModal';
 
 // Pages
 import HomePage from './pages/HomePage_Premium.jsx';
@@ -68,10 +69,26 @@ function App() {
 
   // --- Local State ---
   const [currentPage, setCurrentPage] = useState('home');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [message, setMessage] = useState(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedCourseLessons, setSelectedCourseLessons] = useState(null);
   const [lessonProgress, setLessonProgress] = useState({});
+  const [projectGoal, setProjectGoal] = useState(localStorage.getItem('studyverse_project_goal') || "");
+  const [isMasteryModalOpen, setIsMasteryModalOpen] = useState(false);
+
+  const setGlobalProjectGoal = (goal) => {
+    setProjectGoal(goal);
+    localStorage.setItem('studyverse_project_goal', goal);
+  };
+
+
 
   // --- Basic Routing Persistence ---
   useEffect(() => {
@@ -124,6 +141,13 @@ function App() {
     myCourses
   } = useCourseData(address, showMessage, jwt);
 
+  // Trigger Onboarding if no goal set
+  useEffect(() => {
+    if (user && !projectGoal && !localStorage.getItem('mastery_onboarding_skipped')) {
+      setIsMasteryModalOpen(true);
+    }
+  }, [user, projectGoal]);
+
   const {
     createSchoolOnChain,
     createSchoolWithCourses,
@@ -160,6 +184,23 @@ function App() {
   };
 
   const handleLessonComplete = async (lessonId) => {
+    // Handle Mock/Fallback IDs (like trial-00, elenchus-01, etc.)
+    const isMock = typeof lessonId === 'string' && (
+      lessonId.startsWith('trial-') || 
+      lessonId.startsWith('elenchus-') || 
+      lessonId.startsWith('virtue-') || 
+      lessonId.startsWith('irony-')
+    );
+
+    if (isMock) {
+      setLessonProgress(prev => ({
+        ...prev,
+        [lessonId]: { completed: true, progress: 100 }
+      }));
+      showMessage('Mastery Node Synced Locally!', 'success');
+      return true;
+    }
+
     const success = await markLessonCompleted(lessonId, selectedCourse.id);
 
     if (success) {
@@ -175,6 +216,13 @@ function App() {
     if (!user) return null;
     if (user.certificates?.some(cert => cert.course_id === courseId)) return 'completed';
     if (user.enrollments?.some(enrollment => enrollment.course_id === courseId)) return 'enrolled';
+    
+    // 🎯 NEW: Recognize Instructor as a special status (not on-chain enrolled)
+    const course = courses.find(c => c.id === courseId);
+    if (course && user.address?.toLowerCase() === course.instructor_address?.toLowerCase()) {
+        return 'instructor';
+    }
+    
     return null;
   };
 
@@ -209,7 +257,14 @@ function App() {
     const renderCurrentPage = () => {
         switch (currentPage) {
             case 'home':
-                return <HomePage stats={stats} user={user} certificates={certificates} showPage={showPage} />;
+                return <HomePage 
+                    stats={stats} 
+                    user={user} 
+                    certificates={certificates} 
+                    showPage={showPage} 
+                    projectGoal={projectGoal}
+                    setProjectGoal={setGlobalProjectGoal}
+                />;
             case 'courses':
                 return <CoursesPage
                     courses={courses}
@@ -237,6 +292,7 @@ function App() {
             case 'course_view':
                 const userCert = user?.certificates?.find(c => c.course_id === selectedCourse?.id);
                 return <CourseView
+                    user={user}
                     course={selectedCourse}
                     lessons={selectedCourseLessons}
                     lessonProgress={lessonProgress}
@@ -248,6 +304,7 @@ function App() {
                     onLessonComplete={handleLessonComplete}
                     onEnroll={enrollInCourse}
                     onBack={() => showPage('courses')}
+                    projectGoal={projectGoal}
                 />;
             case 'my_courses':
                 return <MyCoursesPage
@@ -271,6 +328,8 @@ function App() {
                     linkWallet={linkWallet}
                     address={address}
                     onLogout={handleLogout}
+                    projectGoal={projectGoal}
+                    setProjectGoal={setGlobalProjectGoal}
                 />;
             case 'instructor':
                 return <InstructorDashboard 
@@ -305,23 +364,36 @@ function App() {
                 isAuthorized={!!jwt}
             />
 
+            <MasterySetupModal 
+                isOpen={isMasteryModalOpen} 
+                onClose={() => {
+                    setIsMasteryModalOpen(false);
+                    localStorage.setItem('mastery_onboarding_skipped', 'true');
+                }}
+                onSave={setGlobalProjectGoal}
+            />
+
             {!isImmersivePage && (
-              <header>
-                  <div className="logo nav-module"><a onClick={() => showPage('home')}>Study Verse</a></div>
+              <header style={{ height: isMobile ? '5rem' : '6rem' }}>
+                  <div className="logo nav-module" style={{ fontSize: isMobile ? '1.2rem' : '1.5rem' }}>
+                      <a onClick={() => showPage('home')}>Study Verse</a>
+                  </div>
                   
-                  <ul className="nav-links nav-module">
-                      <li><a onClick={() => showPage('courses')} className={currentPage === 'courses' ? 'active' : ''}>Explore</a></li>
-                      <li><a onClick={() => showPage('my_courses')} className={currentPage === 'my_courses' ? 'active' : ''}>My Courses</a></li>
-                      <li><a onClick={() => showPage('schools')} className={currentPage === 'schools' ? 'active' : ''}>Learning Engine</a></li>
-                      <li><a onClick={() => showPage('profile')} className={currentPage === 'profile' ? 'active' : ''}>Portfolio</a></li>
-                      {user && (
-                          <li><a onClick={() => showPage('instructor')} className={currentPage === 'instructor' ? 'active' : ''}>Studio</a></li>
-                      )}
-                  </ul>
+                  {!isMobile && (
+                      <ul className="nav-links nav-module">
+                          <li><a onClick={() => showPage('courses')} className={currentPage === 'courses' ? 'active' : ''}>Explore</a></li>
+                          <li><a onClick={() => showPage('my_courses')} className={currentPage === 'my_courses' ? 'active' : ''}>My Courses</a></li>
+                          <li><a onClick={() => showPage('schools')} className={currentPage === 'schools' ? 'active' : ''}>Learning Engine</a></li>
+                          <li><a onClick={() => showPage('profile')} className={currentPage === 'profile' ? 'active' : ''}>Portfolio</a></li>
+                          {user && (
+                              <li><a onClick={() => showPage('instructor')} className={currentPage === 'instructor' ? 'active' : ''}>Studio</a></li>
+                          )}
+                      </ul>
+                  )}
 
                   <div className="wallet-section nav-module">
                           {!jwt ? (
-                              <button onClick={() => setIsLoginModalOpen(true)} style={{ background: 'var(--primary-color)', color: '#fff' }}>
+                              <button onClick={() => setIsLoginModalOpen(true)} style={{ background: 'var(--primary-color)', color: '#fff', padding: isMobile ? '0.6rem 1.2rem' : '0.8rem 1.6rem', fontSize: isMobile ? '0.8rem' : '1rem' }}>
                                   Sign In
                               </button>
                           ) : (
@@ -329,8 +401,8 @@ function App() {
                                   <div 
                                       onClick={() => showPage('profile')}
                                       style={{ 
-                                          width: '42px', 
-                                          height: '42px', 
+                                          width: isMobile ? '36px' : '42px', 
+                                          height: isMobile ? '36px' : '42px', 
                                           background: 'var(--surface)', 
                                           border: '1px solid var(--glass-border)', 
                                           borderRadius: '50%',
@@ -344,7 +416,7 @@ function App() {
                                       {user?.profile_image ? (
                                           <img src={user.profile_image} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                       ) : (
-                                          <span style={{ fontSize: '1rem', fontWeight: '800' }}>
+                                          <span style={{ fontSize: isMobile ? '0.8rem' : '1rem', fontWeight: '800' }}>
                                               {(user?.display_name?.[0] || user?.address?.[2] || '?').toUpperCase()}
                                           </span>
                                       )}

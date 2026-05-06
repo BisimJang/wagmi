@@ -29,15 +29,15 @@ const MyCoursesPage = ({ user, allCourses, loading, onViewCourse, showPage }) =>
     }
 
     return (
-        <section className="page active">
-            <div className="container" style={{ maxWidth: '1200px' }}>
+        <section className="page active" style={{ transform: 'scale(0.9)', transformOrigin: 'top center', width: '111%', marginLeft: '-5.5%' }}>
+            <div className="container" style={{ maxWidth: '1000px' }}>
                 <header style={{ 
                     background: 'rgba(255, 255, 255, 0.03)', 
                     backdropFilter: 'blur(12px)',
                     border: '1px solid rgba(255, 255, 255, 0.1)', 
                     borderRadius: '24px',
-                    padding: '2rem 2.5rem', 
-                    marginBottom: '2rem',
+                    padding: '1.5rem 2rem', 
+                    marginBottom: '1.5rem',
                     position: 'relative',
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -45,18 +45,18 @@ const MyCoursesPage = ({ user, allCourses, loading, onViewCourse, showPage }) =>
                     boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
                 }}>
                     <div>
-                        <h1 style={{ fontSize: '2rem', fontWeight: '800', margin: 0, color: '#fff', letterSpacing: '-0.5px' }}>
+                        <h1 style={{ fontSize: '1.6rem', fontWeight: '800', margin: 0, color: '#fff', letterSpacing: '-0.5px' }}>
                             My Curriculum
                         </h1>
-                        <p style={{ color: '#94a3b8', marginTop: '0.5rem', fontSize: '1rem' }}>
+                        <p style={{ color: '#94a3b8', marginTop: '0.4rem', fontSize: '0.85rem' }}>
                             {enrolledCourses.length} Active Modules
                         </p>
                     </div>
-                    <BookOpen style={{ color: 'var(--primary-color)', opacity: 0.5 }} size={48} />
+                    <BookOpen style={{ color: 'var(--primary-color)', opacity: 0.5 }} size={36} />
                 </header>
 
                 {enrolledCourses.length > 0 ? (
-                    <div className="course-grid">
+                    <div className="course-grid" style={{ gap: '2rem' }}>
                         {enrolledCourses.map(course => (
                             <CourseCard 
                                 key={course.id} 

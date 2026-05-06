@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
+const HomePage_Premium = ({ stats, user, certificates, showPage, projectGoal, setProjectGoal }) => {
     return (
         <div style={{
             backgroundColor: '#0a0a0c',
@@ -79,6 +79,25 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
                 .btn-outline:hover {
                     background: rgba(255,255,255,0.05);
                     border-color: #fff;
+                }
+                .intake-input {
+                    background: rgba(255, 255, 255, 0.02);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    border-radius: 20px;
+                    padding: 1.5rem;
+                    color: #fff;
+                    font-size: 1.1rem;
+                    width: 100%;
+                    height: 120px;
+                    outline: none;
+                    transition: all 0.3s;
+                    resize: none;
+                    margin-bottom: 2rem;
+                }
+                .intake-input:focus {
+                    background: rgba(255, 255, 255, 0.05);
+                    border-color: rgba(165, 180, 252, 0.5);
+                    box-shadow: 0 0 20px rgba(165, 180, 252, 0.1);
                 }
             `}</style>
 

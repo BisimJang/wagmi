@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSovereignManagement } from '../hooks/useSovereignManagement';
 import { useAccount } from 'wagmi';
-import { Layout, Plus, Settings, List, Eye, CloudLightning, CheckCircle, ChevronRight, Play, ArrowLeft, Layers, Save } from 'lucide-react';
+import { Layout, Plus, Settings, List, Eye, CloudLightning, CheckCircle, ChevronRight, Play, ArrowLeft, Layers, Save, X } from 'lucide-react';
 
 const InstructorDashboard = ({ 
     user,
@@ -52,20 +52,34 @@ const InstructorDashboard = ({
     const [expandedSectionId, setExpandedSectionId] = useState(null);
     const [selectedSchoolIndex, setSelectedSchoolIndex] = useState(0);
     const [isLegacySchool, setIsLegacySchool] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
 
     const hasSchool = ownedSchools && ownedSchools.length > 0;
 
     const { updateOnChainSigner, withdrawFunds, getContractSigner, isActionLoading } = useSovereignManagement(showMessage);
 
     useEffect(() => {
-        const checkLegacy = async () => {
+        const handleResize = () => {
+            const mobile = window.innerWidth <= 1024;
+            setIsMobile(mobile);
+            // Only force open on PC if transitioning from mobile
+            if (!mobile && window.innerWidth > 1024) {
+                // We don't force it here so user preference is kept
+            }
+        };
+        
+        const checkLegacyStatus = async () => {
             if (hasSchool && ownedSchools[selectedSchoolIndex]) {
                 const signerStatus = await getContractSigner(ownedSchools[selectedSchoolIndex].address);
                 setIsLegacySchool(signerStatus === 'LEGACY_CONTRACT');
             }
         };
-        checkLegacy();
-    }, [selectedSchoolIndex, ownedSchools, getContractSigner]);
+
+        window.addEventListener('resize', handleResize);
+        checkLegacyStatus();
+        return () => window.removeEventListener('resize', handleResize);
+    }, [selectedSchoolIndex, ownedSchools, getContractSigner, hasSchool]);
 
     const groupLessonsBySection = (flatLessons) => {
         const sectionsMap = {};
@@ -121,6 +135,43 @@ const InstructorDashboard = ({
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const [isUploading, setIsUploading] = useState(false);
+
+    const handleImageUpload = async (e, type = 'course') => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        setIsUploading(true);
+        const uploadData = new FormData();
+        uploadData.append('image', file);
+        
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/upload/`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+                },
+                body: uploadData
+            });
+            
+            if (!response.ok) throw new Error('Upload failed');
+            const data = await response.json();
+            
+            if (type === 'course') {
+                setFormData(prev => ({ ...prev, image_url: data.url }));
+            } else {
+                setLessonData(prev => ({ ...prev, image_url: data.url }));
+            }
+            
+            showMessage('Image uploaded successfully', 'success');
+        } catch (error) {
+            console.error('Upload error:', error);
+            showMessage('Failed to upload image', 'error');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     const handleCourseSubmit = async (e) => {
         e.preventDefault();
         const floatPrice = parseFloat(formData.price);
@@ -155,6 +206,10 @@ const InstructorDashboard = ({
                 setEditingSectionId(null);
             }
         } else {
+            if (!createdCourse) {
+                if (showMessage) showMessage('Please save course details before adding sections.', 'error');
+                return;
+            }
             const result = await createSection(createdCourse.id, newSectionTitle);
             if (result && result.id) {
                 setSections([...sections, { id: result.id, title: result.title, lessons: [] }]);
@@ -201,51 +256,131 @@ const InstructorDashboard = ({
         <section className="page" style={{ padding: 0 }}>
             {!hasSchool ? (
                 <div className="container" style={{ paddingTop: '8rem' }}>
-                    <div className="glass-panel" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', padding: '4rem' }}>
-                        <h2 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '2rem' }}>Initialize Sovereign School</h2>
-                        <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem' }}>You must launch an institutional node to issue on-chain certificates.</p>
-                        <input 
-                            type="text" 
-                            placeholder="Institutional Identifier (e.g. Code Culture)" 
-                            value={schoolName}
-                            onChange={(e) => setSchoolName(e.target.value)}
-                            style={{ padding: '1.2rem', width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', marginBottom: '2rem' }}
-                        />
-                        <button onClick={handleLaunchSchool} disabled={isSchoolLoading} style={{ width: '100%', padding: '1.2rem', background: 'var(--primary-color)' }}>
-                            {isSchoolLoading ? 'Initializing...' : 'Launch On-Chain Node'}
-                        </button>
-                    </div>
-                </div>
-            ) : (
-                <div style={{ display: 'flex', minHeight: '100vh', background: '#08080a' }}>
-                    
-                    {/* STUDIO SIDEBAR */}
-                    <div style={{ width: '280px', borderRight: '1px solid rgba(255,255,255,0.05)', padding: '8rem 2rem 2rem 2rem', display: 'flex', flexDirection: 'column', gap: '2rem', background: 'rgba(255,255,255,0.01)' }}>
-                        <div style={{ fontSize: '0.6rem', fontWeight: '900', color: '#444', letterSpacing: '1px' }}>WORKSPACE</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            <button 
-                                onClick={() => setView('list')}
-                                style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem 1.2rem', background: view === 'list' ? 'rgba(79, 70, 229, 0.1)' : 'transparent', border: 'none', color: view === 'list' ? '#fff' : '#666', borderRadius: '12px', textAlign: 'left', fontWeight: '700' }}
-                            >
-                                <Layout size={18} /> Modules
-                            </button>
-                            <button 
-                                onClick={handleCreateNew}
-                                style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem 1.2rem', background: 'transparent', border: 'none', color: '#666', borderRadius: '12px', textAlign: 'left', fontWeight: '700' }}
-                            >
-                                <Plus size={18} /> New Module
-                            </button>
-                            <button 
-                                onClick={() => setView('settings')}
-                                style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem 1.2rem', background: view === 'settings' ? 'rgba(79, 70, 229, 0.1)' : 'transparent', border: 'none', color: view === 'settings' ? '#fff' : '#666', borderRadius: '12px', textAlign: 'left', fontWeight: '700' }}
-                            >
-                                <Settings size={18} /> Node Settings
+                    <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '1rem' }}>Initialize Sovereign School</h2>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', maxWidth: '500px', margin: '0 auto 2.5rem auto' }}>You haven't launched an institutional node yet. Create one to start publishing your own on-chain curriculum.</p>
+                        <div style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
+                            <label htmlFor="school-name-input" style={{ display: 'block', fontSize: '0.6rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>INSTITUTION NAME</label>
+                            <input 
+                                id="school-name-input"
+                                name="school-name-input"
+                                type="text" 
+                                placeholder="e.g. Code Culture Academy" 
+                                value={schoolName} 
+                                onChange={(e) => setSchoolName(e.target.value)} 
+                                style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', marginBottom: '1.5rem' }} 
+                            />
+                            <button onClick={handleLaunchSchool} disabled={isSchoolLoading} style={{ width: '100%', background: 'var(--primary-color)', padding: '1rem' }}>
+                                {isSchoolLoading ? 'Initializing...' : 'Launch On-Chain Node'}
                             </button>
                         </div>
                     </div>
+                </div>
+            ) : (
+                <div style={{ display: 'flex', minHeight: '100vh', background: '#08080a', position: 'relative' }}>
+                    
+                    {/* STUDIO SIDEBAR */}
+                    <div style={{ 
+                        width: isSidebarOpen ? '280px' : '0px', 
+                        borderRight: isSidebarOpen ? '1px solid rgba(255,255,255,0.05)' : 'none', 
+                        padding: isSidebarOpen ? '8rem 2rem 2rem 2rem' : '0', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '2rem', 
+                        background: 'rgba(13, 13, 15, 0.98)',
+                        position: isMobile ? 'fixed' : 'relative',
+                        top: 0,
+                        left: 0,
+                        height: '100vh',
+                        zIndex: 3500,
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        overflow: 'hidden',
+                        backdropFilter: 'blur(20px)'
+                    }}>
+                        {isSidebarOpen && (
+                            <>
+                                <button 
+                                    onClick={() => setIsSidebarOpen(false)}
+                                    style={{ position: 'absolute', top: '2rem', right: '1.5rem', background: 'none', border: 'none', color: '#444', cursor: 'pointer' }}
+                                >
+                                    <X size={isMobile ? 24 : 20} />
+                                </button>
+                                <div style={{ fontSize: '0.6rem', fontWeight: '900', color: '#444', letterSpacing: '1px' }}>WORKSPACE</div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <button 
+                                        onClick={() => { setView('list'); if(isMobile) setIsSidebarOpen(false); }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem 1.2rem', background: view === 'list' ? 'rgba(79, 70, 229, 0.1)' : 'transparent', border: 'none', color: view === 'list' ? '#fff' : '#666', borderRadius: '12px', textAlign: 'left', fontWeight: '700' }}
+                                    >
+                                        <Layout size={18} /> Modules
+                                    </button>
+                                    <button 
+                                        onClick={() => { handleCreateNew(); if(isMobile) setIsSidebarOpen(false); }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem 1.2rem', background: 'transparent', border: 'none', color: '#666', borderRadius: '12px', textAlign: 'left', fontWeight: '700' }}
+                                    >
+                                        <Plus size={18} /> New Module
+                                    </button>
+                                    <button 
+                                        onClick={() => { setView('settings'); if(isMobile) setIsSidebarOpen(false); }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem 1.2rem', background: view === 'settings' ? 'rgba(79, 70, 229, 0.1)' : 'transparent', border: 'none', color: view === 'settings' ? '#fff' : '#666', borderRadius: '12px', textAlign: 'left', fontWeight: '700' }}
+                                    >
+                                        <Settings size={18} /> Node Settings
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    {/* MOBILE TOGGLE (Floating) */}
+                    {isMobile && !isSidebarOpen && (
+                        <button 
+                            onClick={() => setIsSidebarOpen(true)}
+                            style={{ 
+                                position: 'fixed', 
+                                bottom: '6.5rem', 
+                                left: '1.5rem', 
+                                zIndex: 3600, 
+                                background: 'var(--primary-color)', 
+                                width: '48px', 
+                                height: '48px', 
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <List size={20} />
+                        </button>
+                    )}
 
                     {/* MAIN AREA */}
-                    <div style={{ flex: 1, padding: '8rem 4rem 4rem 4rem', overflowY: 'auto' }}>
+                    <div style={{ 
+                        flex: 1, 
+                        padding: isMobile ? '6rem 1.5rem 6rem 1.5rem' : '8rem 4rem 4rem 4rem', 
+                        overflowY: 'auto',
+                        position: 'relative'
+                    }}>
+                        {/* PC Sidebar Toggle (Only visible when closed) */}
+                        {!isSidebarOpen && !isMobile && (
+                            <button 
+                                onClick={() => setIsSidebarOpen(true)}
+                                style={{ 
+                                    position: 'absolute', 
+                                    top: '2rem', 
+                                    left: '2rem', 
+                                    zIndex: 100, 
+                                    background: 'rgba(79, 70, 229, 0.1)', 
+                                    border: '1px solid rgba(79, 70, 229, 0.2)', 
+                                    color: 'var(--primary-color)',
+                                    padding: '0.8rem',
+                                    borderRadius: '12px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <List size={20} />
+                            </button>
+                        )}
                         {view === 'list' ? (
                             <>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4rem' }}>
@@ -279,20 +414,32 @@ const InstructorDashboard = ({
                                         <p style={{ color: 'var(--text-secondary)' }}>Configure on-chain authorization and financial settings.</p>
                                     </div>
                                     
-                                    {ownedSchools.length > 1 && (
-                                        <div style={{ textAlign: 'right' }}>
-                                            <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>SWITCH SCHOOL</label>
-                                            <select 
-                                                value={selectedSchoolIndex}
-                                                onChange={(e) => setSelectedSchoolIndex(parseInt(e.target.value))}
-                                                style={{ padding: '0.8rem 1.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', fontSize: '0.9rem', cursor: 'pointer' }}
-                                            >
-                                                {ownedSchools.map((school, idx) => (
-                                                    <option key={idx} value={idx}>{school.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
+                                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
+                                        {ownedSchools.length > 0 && (
+                                            <div style={{ textAlign: 'right' }}>
+                                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>SWITCH NODE</label>
+                                                <select 
+                                                    value={selectedSchoolIndex}
+                                                    onChange={(e) => setSelectedSchoolIndex(parseInt(e.target.value))}
+                                                    style={{ padding: '0.8rem 1.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', fontSize: '0.9rem', cursor: 'pointer' }}
+                                                >
+                                                    {ownedSchools.map((school, idx) => (
+                                                        <option key={idx} value={idx}>{school.name} ({school.address.slice(0,6)}...)</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
+                                        <button 
+                                            onClick={() => {
+                                                // Trigger a "New School" flow
+                                                const name = prompt("Enter a name for your New Institutional Node:");
+                                                if (name) createSchoolOnChain(name);
+                                            }}
+                                            style={{ background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary-color)', border: '1px dashed var(--primary-color)', padding: '0.8rem 1.5rem', borderRadius: '10px', fontSize: '0.8rem', fontWeight: '800' }}
+                                        >
+                                            + Launch New Node
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {isLegacySchool && (
@@ -326,26 +473,62 @@ const InstructorDashboard = ({
                             </div>
                         ) : (
                             <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '4rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: isMobile ? '2rem' : '4rem' }}>
                                     <button onClick={() => setView('list')} style={{ background: 'rgba(255,255,255,0.05)', padding: '0.6rem', borderRadius: '10px' }}><ArrowLeft size={18} /></button>
-                                    <h1 style={{ fontSize: '2rem', fontWeight: '900' }}>{formData.title || 'New Module'}</h1>
+                                    <h1 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{formData.title || 'New Module'}</h1>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '4rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 380px', gap: isMobile ? '2rem' : '4rem' }}>
                                     <div>
                                         <div style={{ display: 'flex', gap: '2rem', marginBottom: '3rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <button onClick={() => setActiveTab('settings')} style={{ padding: '1rem 0', background: 'none', border: 'none', color: activeTab === 'settings' ? '#fff' : '#444', fontWeight: '700', borderBottom: activeTab === 'settings' ? '2px solid var(--primary-color)' : '2px solid transparent', borderRadius: 0 }}>Settings</button>
-                                            <button onClick={() => setActiveTab('curriculum')} style={{ padding: '1rem 0', background: 'none', border: 'none', color: activeTab === 'curriculum' ? '#fff' : '#444', fontWeight: '700', borderBottom: activeTab === 'curriculum' ? '2px solid var(--primary-color)' : '2px solid transparent', borderRadius: 0 }}>Curriculum</button>
+                                            <button 
+                                                onClick={() => setActiveTab('settings')} 
+                                                style={{ padding: '1rem 0', background: 'none', border: 'none', color: activeTab === 'settings' ? '#fff' : '#444', fontWeight: '700', borderBottom: activeTab === 'settings' ? '2px solid var(--primary-color)' : '2px solid transparent', borderRadius: 0 }}
+                                            >
+                                                Settings
+                                            </button>
+                                            <button 
+                                                disabled={!createdCourse}
+                                                onClick={() => setActiveTab('curriculum')} 
+                                                style={{ 
+                                                    padding: '1rem 0', 
+                                                    background: 'none', 
+                                                    border: 'none', 
+                                                    color: !createdCourse ? '#222' : (activeTab === 'curriculum' ? '#fff' : '#444'), 
+                                                    fontWeight: '700', 
+                                                    borderBottom: activeTab === 'curriculum' ? '2px solid var(--primary-color)' : '2px solid transparent', 
+                                                    borderRadius: 0,
+                                                    opacity: !createdCourse ? 0.5 : 1,
+                                                    cursor: !createdCourse ? 'not-allowed' : 'pointer'
+                                                }}
+                                            >
+                                                Curriculum
+                                            </button>
                                         </div>
                                         {activeTab === 'settings' ? (
                                             <form onSubmit={handleCourseSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                                 <div className="glass-panel" style={{ padding: '2.5rem' }}>
                                                     <div style={{ marginBottom: '2rem' }}>
-                                                        <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>MODULE TITLE</label>
-                                                        <input type="text" name="title" value={formData.title} onChange={handleChange} style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#fff' }} />
+                                                        <label htmlFor="course-title" style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>MODULE TITLE</label>
+                                                        <input id="course-title" type="text" name="title" value={formData.title} onChange={handleChange} style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#fff' }} />
+                                                    </div>
+                                                    <div style={{ marginBottom: '2rem' }}>
+                                                        <label htmlFor="course-image-url" style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>MODULE IMAGE</label>
+                                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                                            {formData.image_url && <img src={formData.image_url} alt="Course" style={{ width: '60px', height: '60px', borderRadius: '10px', objectFit: 'cover' }} />}
+                                                            <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'course')} style={{ display: 'none' }} id="course-image-upload" />
+                                                            <label htmlFor="course-image-upload" style={{ background: 'rgba(255,255,255,0.05)', padding: '0.8rem 1.5rem', borderRadius: '10px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: '800' }}>
+                                                                {isUploading ? 'Uploading...' : 'Upload Image'}
+                                                            </label>
+                                                            <input id="course-image-url" type="text" name="image_url" value={formData.image_url} onChange={handleChange} placeholder="Or paste image URL" style={{ flex: 1, minWidth: '200px', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#fff' }} />
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ marginBottom: '2rem' }}>
+                                                        <label htmlFor="course-price" style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>PRICE (ETH)</label>
+                                                        <input id="course-price" type="number" step="0.001" name="price" value={formData.price} onChange={handleChange} placeholder="0.00" style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#fff' }} />
                                                     </div>
                                                     <div>
-                                                        <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>DESCRIPTION</label>
-                                                        <textarea rows="5" name="description" value={formData.description} onChange={handleChange} style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#fff' }} />
+                                                        <label htmlFor="course-desc" style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>DESCRIPTION</label>
+                                                        <textarea id="course-desc" rows="5" name="description" value={formData.description} onChange={handleChange} style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#fff' }} />
                                                     </div>
                                                 </div>
                                                 <button type="submit" style={{ background: 'var(--primary-color)', padding: '1rem 3rem', alignSelf: 'flex-start' }}>Save Changes</button>
@@ -359,7 +542,16 @@ const InstructorDashboard = ({
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                                     {addingSection && (
                                                         <div className="glass-panel" style={{ padding: '1.5rem', border: '1px solid var(--primary-color)' }}>
-                                                            <input type="text" placeholder="Section Title" value={newSectionTitle} onChange={(e) => setNewSectionTitle(e.target.value)} autoFocus style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', marginBottom: '1rem' }} />
+                                                            <input 
+                                                                id="new-section-title"
+                                                                name="new-section-title"
+                                                                type="text" 
+                                                                placeholder="Section Title" 
+                                                                value={newSectionTitle} 
+                                                                onChange={(e) => setNewSectionTitle(e.target.value)} 
+                                                                autoFocus 
+                                                                style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', marginBottom: '1rem' }} 
+                                                            />
                                                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                                 <button onClick={handleAddSection} style={{ background: 'var(--primary-color)', fontSize: '0.7rem' }}>Save Section</button>
                                                                 <button onClick={() => setAddingSection(false)} style={{ background: 'transparent', fontSize: '0.7rem' }}>Cancel</button>
@@ -378,9 +570,61 @@ const InstructorDashboard = ({
                                                                         {section.lessons?.map(lesson => <div key={lesson.id} style={{ padding: '0.8rem 1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '0.9rem' }}>{lesson.title}</div>)}
                                                                         {activeLessonSectionId === section.id && (
                                                                             <div className="glass-panel" style={{ padding: '1.5rem', border: '1px solid var(--primary-color)' }}>
-                                                                                <input type="text" value={lessonData.title} onChange={(e) => setLessonData({ ...lessonData, title: e.target.value })} style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', marginBottom: '1rem' }} />
-                                                                                <input type="text" value={lessonData.video_url} onChange={(e) => setLessonData({ ...lessonData, video_url: e.target.value })} style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', marginBottom: '1rem' }} />
-                                                                                <button onClick={handleAddLesson} style={{ background: 'var(--primary-color)', fontSize: '0.7rem' }}>Save Lesson</button>
+                                                                                <label style={{ display: 'block', fontSize: '0.6rem', fontWeight: '800', color: '#444', marginBottom: '0.5rem' }}>LESSON TITLE</label>
+                                                                                <input 
+                                                                                    id="lesson-title-input"
+                                                                                    name="lesson-title-input"
+                                                                                    type="text" 
+                                                                                    placeholder="Lesson Title" 
+                                                                                    value={lessonData.title} 
+                                                                                    onChange={(e) => setLessonData({ ...lessonData, title: e.target.value })} 
+                                                                                    style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', marginBottom: '1rem' }} 
+                                                                                />
+                                                                                
+                                                                                <label style={{ display: 'block', fontSize: '0.6rem', fontWeight: '800', color: '#444', marginBottom: '0.5rem' }}>LESSON CONTENT (MARKDOWN)</label>
+                                                                                <textarea 
+                                                                                    id="lesson-content-input"
+                                                                                    name="lesson-content-input"
+                                                                                    rows="4" 
+                                                                                    placeholder="Enter lesson content..." 
+                                                                                    value={lessonData.content} 
+                                                                                    onChange={(e) => setLessonData({ ...lessonData, content: e.target.value })} 
+                                                                                    style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', marginBottom: '1rem' }} 
+                                                                                />
+
+                                                                                <label style={{ display: 'block', fontSize: '0.6rem', fontWeight: '800', color: '#444', marginBottom: '0.5rem' }}>VIDEO URL</label>
+                                                                                <input 
+                                                                                    id="lesson-video-url"
+                                                                                    name="lesson-video-url"
+                                                                                    type="text" 
+                                                                                    placeholder="https://..." 
+                                                                                    value={lessonData.video_url} 
+                                                                                    onChange={(e) => setLessonData({ ...lessonData, video_url: e.target.value })} 
+                                                                                    style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', marginBottom: '1rem' }} 
+                                                                                />
+                                                                                
+                                                                                <label style={{ display: 'block', fontSize: '0.6rem', fontWeight: '800', color: '#444', marginBottom: '0.5rem' }}>LESSON IMAGE</label>
+                                                                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                                                                    {lessonData.image_url && <img src={lessonData.image_url} alt="Lesson" style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />}
+                                                                                    <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'lesson')} style={{ display: 'none' }} id="lesson-image-upload" />
+                                                                                    <label htmlFor="lesson-image-upload" style={{ background: 'rgba(255,255,255,0.05)', padding: '0.6rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: '800' }}>
+                                                                                        {isUploading ? '...' : 'Upload'}
+                                                                                    </label>
+                                                                                    <input 
+                                                                                        id="lesson-image-url-manual"
+                                                                                        name="lesson-image-url-manual"
+                                                                                        type="text" 
+                                                                                        value={lessonData.image_url} 
+                                                                                        onChange={(e) => setLessonData({ ...lessonData, image_url: e.target.value })} 
+                                                                                        placeholder="URL" 
+                                                                                        style={{ flex: 1, padding: '0.6rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', color: '#fff', fontSize: '0.8rem' }} 
+                                                                                    />
+                                                                                </div>
+
+                                                                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                                                                    <button onClick={handleAddLesson} style={{ background: 'var(--primary-color)', fontSize: '0.7rem', flex: 1 }}>Save Lesson</button>
+                                                                                    <button onClick={() => setActiveLessonSectionId(null)} style={{ background: 'rgba(255,255,255,0.05)', fontSize: '0.7rem' }}>Cancel</button>
+                                                                                </div>
                                                                             </div>
                                                                         )}
                                                                         <button onClick={() => setActiveLessonSectionId(section.id)} style={{ padding: '0.8rem', border: '1px dashed rgba(255,255,255,0.1)', background: 'none', color: '#444', fontSize: '0.7rem' }}>+ ADD LESSON</button>
@@ -393,7 +637,7 @@ const InstructorDashboard = ({
                                             </div>
                                         )}
                                     </div>
-                                    <div style={{ position: 'sticky', top: '8rem' }}>
+                                    <div style={{ position: isMobile ? 'static' : 'sticky', top: '8rem' }}>
                                         <div className="glass-panel" style={{ padding: '2rem' }}>
                                             <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem' }}>{formData.title || 'Untitled'}</h3>
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -401,9 +645,25 @@ const InstructorDashboard = ({
                                                 <span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#444' }}>{sections.length} SECTIONS</span>
                                             </div>
                                         </div>
-                                        {createdCourse && !createdCourse.is_minted && (
-                                            <div className="glass-panel" style={{ marginTop: '2rem', padding: '2rem', border: '1px solid var(--primary-color)' }}>
-                                                <button onClick={handleMint} style={{ width: '100%', background: 'var(--primary-color)' }}>Mint Node</button>
+                                        {createdCourse && (
+                                            <div className="glass-panel" style={{ marginTop: '2rem', padding: '2rem', border: '1px solid var(--primary-color)', background: 'rgba(79, 70, 229, 0.05)' }}>
+                                                <h4 style={{ fontSize: '0.8rem', fontWeight: '900', marginBottom: '1rem', color: 'var(--primary-color)' }}>NODE DEPLOYMENT</h4>
+                                                <p style={{ fontSize: '0.7rem', color: '#666', marginBottom: '1.5rem' }}>
+                                                    {createdCourse.is_minted 
+                                                        ? `Currently deployed to ${createdCourse.school_name || 'Legacy Node'}. You can redeploy to your active node below.`
+                                                        : "This module is in draft mode. Deploy it to your institutional node to enable enrollments."}
+                                                </p>
+                                                <button 
+                                                    onClick={handleMint} 
+                                                    style={{ width: '100%', background: 'var(--primary-color)', padding: '1rem', fontWeight: '800' }}
+                                                >
+                                                    {createdCourse.is_minted ? 'REDEPLOY TO ACTIVE NODE' : 'DEPLOY TO NODE'}
+                                                </button>
+                                                {isLegacySchool && (
+                                                    <p style={{ fontSize: '0.6rem', color: '#ff4d4d', marginTop: '1rem', fontWeight: '700' }}>
+                                                        ⚠️ Current school is LEGACY. Redeploying to a new node is required for certificates.
+                                                    </p>
+                                                )}
                                             </div>
                                         )}
                                     </div>
