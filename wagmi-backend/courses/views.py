@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 import json
-from .models import Course, Section, Lesson, Enrollment, Certificate, LessonProgress, SovereignSchool
+from .models import Course, Section, Lesson, Enrollment, Certificate, LessonProgress, SovereignSchool, StudyBubble
 from django.core.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import (
@@ -16,6 +16,7 @@ from .serializers import (
     LessonProgressSerializer,
     UserProfileSerializer,
     CurriculumLessonSerializer,
+    StudyBubbleSerializer,
 )
 import logging
 from django.http import HttpResponse
@@ -557,3 +558,118 @@ def upload_image(request):
     url = request.build_absolute_uri(settings.MEDIA_URL + path)
     
     return Response({"url": url}, status=status.HTTP_201_CREATED)
+
+
+from rest_framework.decorators import action
+
+class StudyBubbleViewSet(viewsets.ModelViewSet):
+    queryset = StudyBubble.objects.all()
+    serializer_class = StudyBubbleSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return StudyBubble.objects.filter(user=self.request.user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['post'], url_path='generate')
+    def generate_bubble(self, request):
+        """
+        Synthesize a new Study Bubble using Vera AI.
+        Expects: concept (str, optional), source_file (file, optional), learning_style (str, optional)
+        """
+        import requests
+        user = request.user
+        concept = request.data.get('concept', '')
+        learning_style = request.data.get('learning_style', 'Mastery/Exploratory')
+        source_file = request.FILES.get('source_file')
+        
+        # 0. Handle file extraction if provided
+        file_content = ""
+        if source_file:
+            if source_file.name.endswith('.txt'):
+                file_content = source_file.read().decode('utf-8')
+            # Future: Add PDF extraction here
+            
+        if not concept and not file_content:
+            return Response({"error": "Concept or source file is required for synthesis."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Combine inputs
+        combined_concept = f"{concept}\n\n[FILE CONTENT]:\n{file_content}" if file_content else concept
+
+        # 1. Create the placeholder bubble
+        bubble = StudyBubble.objects.create(
+            user=user,
+            title=f"Synthesizing: {(concept or source_file.name)[:30]}...",
+            concept=combined_concept,
+            source_file=source_file,
+            status='processing'
+        )
+
+        # 2. Formulate the prompt for Vera AI
+        prompt = f"""
+        [SYSTEM: VERA AI MASTERY ENGINE]
+        [ACTION: KNOWLEDGE SYNTHESIS]
+        [CONCEPT: {combined_concept[:5000]}]  # Cap input for safety
+        [MASTERY GOAL: {learning_style}]
+
+        Your task is to synthesize the provided concept into a 'Study Bubble'. 
+        This is for Studyverse, a platform centered on Mastery and Learner Agency.
+
+        Please provide the output STRICTLY in JSON format with the following keys:
+        1. "title": A concise, engaging title for the bubble.
+        2. "summary": A high-level summary of the concept.
+        3. "nodes": A list of objects, each with "title", "body", and "mastery_challenge" (a specific task or thought experiment to verify understanding).
+        4. "video_refs": A list of objects with "title" and "url" to relevant educational videos.
+        5. "audio_script": A short script (1-2 paragraphs) for a technical synthesis voiceover.
+
+        Ensure the tone is analytical, precise, and supports high-performance learning.
+        """
+
+        try:
+            # 3. Call AI Engine (Port 8001)
+            ai_response = requests.post('http://localhost:8001/v1/chat', json={
+                'project_id': 'study_verse',
+                'query': prompt,
+                'user_context': {
+                    'user_name': user.display_name or "Learner",
+                    'role': "Knowledge Architect"
+                }
+            }, timeout=30)
+
+            if ai_response.status_code == 200:
+                data = ai_response.json()
+                response_text = data.get('response_text', '')
+                
+                # Attempt to extract JSON from the AI response
+                try:
+                    import re
+                    json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+                    if json_match:
+                        synthesis = json.loads(json_match.group())
+                        
+                        bubble.title = synthesis.get('title', bubble.title)
+                        bubble.summary = synthesis.get('summary', '')
+                        bubble.content = synthesis.get('nodes', [])
+                        bubble.video_refs = synthesis.get('video_refs', [])
+                        # We store the script for now; actual audio gen could be a second step
+                        bubble.notes = synthesis.get('audio_script', '') 
+                        bubble.status = 'completed'
+                    else:
+                        raise ValueError("No JSON found in AI response")
+                except Exception as e:
+                    logger.error(f"Failed to parse AI synthesis: {str(e)}")
+                    bubble.status = 'failed'
+                    bubble.summary = f"Synthesis failed: Could not parse AI response. Raw: {response_text[:200]}"
+            else:
+                bubble.status = 'failed'
+                bubble.summary = f"AI Engine error: {ai_response.status_code}"
+                
+        except Exception as e:
+            logger.error(f"AI Synthesis Exception: {str(e)}")
+            bubble.status = 'failed'
+            bubble.summary = f"System error during synthesis: {str(e)}"
+
+        bubble.save()
+        return Response(StudyBubbleSerializer(bubble).data, status=status.HTTP_200_OK)

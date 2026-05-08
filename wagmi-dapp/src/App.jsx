@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
-import { Compass, School as SchoolIcon, User, Layout, BookOpen } from 'lucide-react';
+import { Compass, School as SchoolIcon, User, Layout, BookOpen, Sparkles } from 'lucide-react';
 import './App.css';
 
 // Hooks
@@ -28,6 +28,7 @@ import CertificatesPage from './pages/CertificatesPage.jsx';
 import InstructorDashboard from './pages/InstructorDashboard.jsx';
 import SchoolsPage from './pages/SchoolsPage.jsx';
 import MyCoursesPage from './pages/MyCoursesPage.jsx';
+import StudyBubblesPage from './pages/StudyBubblesPage.jsx';
 
 // Helper function to convert flat lessons into nested sections
 const groupLessonsBySection = (flatLessons) => {
@@ -93,7 +94,7 @@ function App() {
   // --- Basic Routing Persistence ---
   useEffect(() => {
     const path = window.location.pathname.replace('/', '');
-    const validPages = ['home', 'courses', 'schools', 'my_courses', 'profile', 'instructor'];
+    const validPages = ['home', 'courses', 'schools', 'my_courses', 'profile', 'instructor', 'study-bubbles'];
     if (validPages.includes(path)) {
       setCurrentPage(path);
     }
@@ -163,7 +164,7 @@ function App() {
   }, [address, fetchOwnedSchools]);
 
   const loading = dataLoading || authLoading;
-  const isImmersivePage = ['course_view'].includes(currentPage);
+  const isImmersivePage = ['course_view', 'study-bubbles'].includes(currentPage);
   const showGlobalFooter = !['course_view', 'instructor'].includes(currentPage);
 
   useEffect(() => {
@@ -346,9 +347,10 @@ function App() {
                     createSchoolOnChain={createSchoolOnChain}
                     ownedSchools={ownedSchools}
                     isSchoolLoading={isSchoolLoading}
-                    fetchLessons={fetchLessonsAndProgress}
                     showMessage={showMessage}
                 />;
+            case 'study-bubbles':
+                return <StudyBubblesPage showPage={showPage} />;
             default: return <HomePage stats={stats} user={user} certificates={certificates} showPage={showPage} />;
         }
     };
@@ -385,6 +387,7 @@ function App() {
                           <li><a onClick={() => showPage('my_courses')} className={currentPage === 'my_courses' ? 'active' : ''}>My Courses</a></li>
                           <li><a onClick={() => showPage('schools')} className={currentPage === 'schools' ? 'active' : ''}>Learning Engine</a></li>
                           <li><a onClick={() => showPage('profile')} className={currentPage === 'profile' ? 'active' : ''}>Portfolio</a></li>
+                          <li><a onClick={() => showPage('study-bubbles')} className={currentPage === 'study-bubbles' ? 'active' : ''}>Bubbles</a></li>
                           {user && (
                               <li><a onClick={() => showPage('instructor')} className={currentPage === 'instructor' ? 'active' : ''}>Studio</a></li>
                           )}
@@ -453,6 +456,10 @@ function App() {
                 <a className={`bottom-nav-link ${currentPage === 'schools' ? 'active' : ''}`} onClick={() => showPage('schools')}>
                   <SchoolIcon size={22} />
                   <span>Engine</span>
+                </a>
+                <a className={`bottom-nav-link ${currentPage === 'study-bubbles' ? 'active' : ''}`} onClick={() => showPage('study-bubbles')}>
+                  <Sparkles size={22} />
+                  <span>Bubbles</span>
                 </a>
                 <a className={`bottom-nav-link ${currentPage === 'profile' ? 'active' : ''}`} onClick={() => showPage('profile')}>
                   <User size={22} />

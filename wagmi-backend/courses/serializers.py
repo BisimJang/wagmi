@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Course, Section, Lesson, Enrollment, Certificate, LessonProgress
+from .models import Course, Section, Lesson, Enrollment, Certificate, LessonProgress, StudyBubble
 
 User = get_user_model()
 
@@ -33,6 +33,7 @@ class SectionSerializer(serializers.ModelSerializer):
 class CourseSerializer(serializers.ModelSerializer):
     sections = SectionSerializer(many=True, read_only=True)
     instructor = serializers.StringRelatedField(read_only=True)
+    instructor_address = serializers.ReadOnlyField(source='instructor.address')
     name = serializers.CharField(source='title', read_only=True)
     imageUrl = serializers.SerializerMethodField()
     is_instructor = serializers.SerializerMethodField()
@@ -45,7 +46,7 @@ class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = [
-            "id", "title", "name", "description", "instructor", "price", 
+            "id", "title", "name", "description", "instructor", "instructor_address", "price", 
             "created_at", "sections", "imageUrl", "image_url", 
             "is_minted", "tx_hash", "school_address", "school_name",
             "is_instructor"
@@ -107,15 +108,33 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "address", "full_name", "enrollments", "certificates", "google_id"]
         
     def get_enrollments(self, obj):
-        return [
+        # 📚 Courses the user has explicitly enrolled in
+        enrolled = Enrollment.objects.filter(user=obj)
+        enrolled_list = [
             {
                 "course": e.course.title,
                 "course_id": e.course.id,
                 "enrolled_at": e.enrolled_at,
                 "tx_hash": e.tx_hash,
+                "role": "student"
             }
-            for e in Enrollment.objects.filter(user=obj)
+            for e in enrolled
         ]
+        
+        # 🎓 Courses the user is an instructor for (they are implicitly enrolled as the Master)
+        teaching = Course.objects.filter(instructor=obj)
+        teaching_list = [
+            {
+                "course": c.title,
+                "course_id": c.id,
+                "enrolled_at": c.created_at,
+                "tx_hash": c.tx_hash,
+                "role": "instructor"
+            }
+            for c in teaching if not enrolled.filter(course=c).exists() # Avoid duplicates
+        ]
+        
+        return enrolled_list + teaching_list
 
     def get_certificates(self, obj):
         return [
@@ -154,3 +173,14 @@ class LessonProgressSerializer(serializers.ModelSerializer):
         model = LessonProgress
         fields = ['lesson', 'progress', 'completed']
         read_only_fields = ['lesson', 'user']
+
+
+class StudyBubbleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudyBubble
+        fields = [
+            'id', 'title', 'concept', 'source_file', 'summary', 
+            'content', 'video_refs', 'audio_url', 'status', 
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'user', 'summary', 'content', 'video_refs', 'audio_url', 'status', 'created_at', 'updated_at']

@@ -1,544 +1,282 @@
 import React, { useState, useEffect } from 'react';
-import DraggableWidget from './DraggableWidget';
-import BrutalistButton from '../UI/BrutalistButton';
-import { Video, Book, PenTool, Bot, Plus, X, ChevronRight, Send } from 'lucide-react';
+import { ArrowLeft, Video, Book, PenTool, Bot, Plus, X, ChevronRight, Send, List, MessageSquare, BookOpen, Notebook, Play, Pause, Volume2, Music, Eye, Headphones, FileText, Sparkles } from 'lucide-react';
 import { useStudyVerseAI } from '../../hooks/useStudyVerseAI';
-import DesktopRecommendation from '../UI/DesktopRecommendation';
+import ReactMarkdown from 'react-markdown';
 
 const getEmbedUrl = (url) => {
     if (!url) return null;
-    if (url.includes('youtube.com/watch?v=')) {
-        return url.replace('watch?v=', 'embed/');
-    }
-    if (url.includes('youtu.be/')) {
-        return url.replace('youtu.be/', 'youtube.com/embed/');
-    }
+    if (url.includes('youtube.com/watch?v=')) return url.replace('watch?v=', 'embed/');
+    if (url.includes('youtu.be/')) return url.replace('youtu.be/', 'youtube.com/embed/');
     return url;
 };
 
-const LessonWorkspace = ({ lesson, isCompleted, onClose, onNext }) => {
-    const defaultWidgets = [
-        { id: 'widget-media', title: 'Media Viewer', type: 'media', size: { width: 300, height: 195 }, pos: { x: 20, y: 20 }, isVisible: true },
-        { id: 'widget-syllabus', title: 'Curriculum & Content', type: 'content', size: { width: 195, height: 195 }, pos: { x: 340, y: 20 }, isVisible: true },
-        { id: 'widget-notes', title: 'Personal Notes', type: 'notes', size: { width: 300, height: 175 }, pos: { x: 20, y: 230 }, isVisible: false },
-        { id: 'widget-ai', title: 'Study Verse AI', type: 'ai', size: { width: 280, height: 385 }, pos: { x: 340, y: 230 }, isVisible: false },
-    ];
-
+const LessonWorkspace = ({ lesson, isCompleted, onClose, onNext, onLessonComplete, projectGoal }) => {
     const { askVera, isLoading: aiLoading } = useStudyVerseAI();
-    const [chatHistory, setChatHistory] = useState([
-        { role: 'vera', content: `[AI SYSTEM READY]\nI am Vera, your Study Verse mentor. How can I assist you with your mastery of **${lesson?.title}** today?` }
-    ]);
-    const [aiInput, setAiInput] = useState("");
-
-    const [widgets, setWidgets] = useState([]);
     const [notesText, setNotesText] = useState("");
-    const [stackOrder, setStackOrder] = useState(['widget-media', 'widget-syllabus', 'widget-notes', 'widget-ai']);
-    const [dockHoveredWidgetId, setDockHoveredWidgetId] = useState(null);
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const workspaceRef = React.useRef(null);
+    const [activeTab, setActiveTab] = useState('content'); 
+    const [mediaType, setMediaType] = useState('article'); 
+    const [chatHistory, setChatHistory] = useState([]);
+    const [aiInput, setAiInput] = useState("");
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
+    const [isToolPanelOpen, setIsToolPanelOpen] = useState(!window.innerWidth <= 1024);
 
-    // Handle Resize for Mobile Detection
+    const handleCompleteAction = async () => {
+        if (!isCompleted && onLessonComplete) {
+            await onLessonComplete(lesson.id);
+        }
+        onNext();
+    };
+
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        const handleResize = () => setIsMobile(window.innerWidth <= 1024);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Load from local storage or use defaults
     useEffect(() => {
-        if (!lesson) return;
-        
-        const storageKey = `studyverse_layout_v6_${lesson.id}`;
-        const savedLayout = localStorage.getItem(storageKey);
-        
-        if (savedLayout) {
-            const parsed = JSON.parse(savedLayout);
-            setWidgets(parsed.widgets);
-            if (parsed.stackOrder) setStackOrder(parsed.stackOrder);
-        } else {
-            setWidgets(defaultWidgets);
-        }
+        if (lesson?.video_url && lesson.video_url.length > 10) setMediaType('video');
+        else if (lesson?.audio_url && lesson.audio_url.length > 10) setMediaType('audio');
+        else setMediaType('article');
 
-        const savedNotes = localStorage.getItem(`studyverse_notes_${lesson.id}`);
-        if (savedNotes) {
-            setNotesText(savedNotes);
-        }
+        setChatHistory([
+            { role: 'vera', content: projectGoal 
+                ? `[MASTERY ENGINE ACTIVE]\nTo reach your goal of **${projectGoal}**, mastering **${lesson?.title}** is a critical node.`
+                : `[AI SYSTEM READY]\nI am Vera, your Study Verse mentor. How can I assist you with your mastery of **${lesson?.title}** today?` 
+            }
+        ]);
+    }, [lesson, projectGoal]);
+
+    useEffect(() => {
+        const savedNotes = localStorage.getItem(`studyverse_notes_${lesson?.id}`);
+        if (savedNotes) setNotesText(savedNotes);
     }, [lesson]);
-
-    // Save to local storage whenever widgets change
-    useEffect(() => {
-        if (!lesson || widgets.length === 0) return;
-        const storageKey = `studyverse_layout_v6_${lesson.id}`;
-        localStorage.setItem(storageKey, JSON.stringify({ widgets, stackOrder }));
-    }, [widgets, stackOrder, lesson]);
-
-    const isNearToolbar = (newPos, widgetWidth) => {
-        if (newPos.y > 60) return false;
-        if (!workspaceRef.current) return newPos.y <= 60; // fallback
-        const centerX = workspaceRef.current.clientWidth / 2;
-        const toolbarStart = centerX - 120;
-        const toolbarEnd = centerX + 120;
-        const widgetStart = newPos.x;
-        const widgetEnd = newPos.x + widgetWidth;
-        
-        return (widgetStart < toolbarEnd && widgetEnd > toolbarStart);
-    };
-
-    const handlePosChange = (id, newPos) => {
-        setDockHoveredWidgetId(null); // Reset on drop
-        const widget = widgets.find(w => w.id === id);
-        const wWidth = widget?.size?.width || 300;
-
-        if (isNearToolbar(newPos, wWidth)) {
-            setWidgets(widgets.map(w => w.id === id ? { ...w, pos: { x: newPos.x, y: 80 }, isVisible: false } : w));
-        } else {
-            setWidgets(widgets.map(w => w.id === id ? { ...w, pos: newPos } : w));
-        }
-    };
-
-    const handleDrag = (id, newPos) => {
-        const widget = widgets.find(w => w.id === id);
-        const wWidth = widget?.size?.width || 300;
-        
-        if (isNearToolbar(newPos, wWidth)) {
-            if (dockHoveredWidgetId !== id) setDockHoveredWidgetId(id);
-        } else {
-            if (dockHoveredWidgetId === id) setDockHoveredWidgetId(null);
-        }
-    };
-
-    const handleSizeChange = (id, newSize) => {
-        setWidgets(widgets.map(w => w.id === id ? { ...w, size: newSize } : w));
-    };
-
-    const handleFocus = (id) => {
-        setStackOrder(prev => {
-            const filtered = prev.filter(wId => wId !== id);
-            return [...filtered, id];
-        });
-    };
-
-    const handleNotesChange = (e) => {
-        const value = e.target.value;
-        setNotesText(value);
-        localStorage.setItem(`studyverse_notes_${lesson.id}`, value);
-    };
-
-    const handleWidgetClose = (id) => {
-        setWidgets(widgets.map(w => w.id === id ? { ...w, isVisible: false } : w));
-    };
-
-    const handleWidgetToggle = (id) => {
-        setWidgets(widgets.map(w => w.id === id ? { ...w, isVisible: w.isVisible === false ? true : false } : w));
-        
-        if (!isMobile) {
-            setStackOrder(prev => {
-                const filtered = prev.filter(wId => wId !== id);
-                return [...filtered, id];
-            });
-        }
-    };
 
     const handleSendAI = async () => {
         if (!aiInput.trim() || aiLoading) return;
-
-        const userMessage = aiInput;
+        const userMsg = aiInput;
         setAiInput("");
-        setChatHistory(prev => [...prev, { role: 'user', content: userMessage }]);
+        setChatHistory(prev => [...prev, { role: 'user', content: userMsg }]);
+        const response = await askVera(userMsg, lesson.title, projectGoal);
+        if (response?.response_text) setChatHistory(prev => [...prev, { role: 'vera', content: response.response_text }]);
+    };
 
-        const response = await askVera(userMessage, lesson.title);
-        
-        if (response && response.response_text) {
-            setChatHistory(prev => [...prev, { role: 'vera', content: response.response_text }]);
-        } else {
-            setChatHistory(prev => [...prev, { role: 'vera', content: "I encountered an error connecting to the intelligence engine. Please ensure the backend is running." }]);
-        }
+    const handleNotesChange = (e) => {
+        setNotesText(e.target.value);
+        localStorage.setItem(`studyverse_notes_${lesson.id}`, e.target.value);
     };
 
     if (!lesson) return null;
 
+    const hasVideo = lesson?.video_url && lesson.video_url.length > 10 && !lesson.video_url.includes('placeholder');
+    const hasAudio = lesson?.audio_url && lesson.audio_url.length > 10;
+    const hasArticle = lesson?.content && lesson.content.length > 0;
+
     return (
-        <div ref={workspaceRef} style={{
+        <div style={{ 
+            height: '100%', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            background: isMobile ? '#fff' : '#f8f9fa',
             position: 'relative',
-            width: '100%',
-            height: '100%',
-            backgroundColor: isMobile ? '#fff' : '#f0f0f0',
-            backgroundImage: isMobile ? 'none' : 'radial-gradient(#ccc 2px, transparent 2px)',
-            backgroundSize: '30px 30px', /* Dotted grid background */
-            overflow: isMobile ? 'auto' : 'hidden', /* Allow scrolling on mobile fixed view */
-            display: isMobile ? 'flex' : 'block',
-            flexDirection: isMobile ? 'column' : 'unset',
-            padding: isMobile ? '1rem' : '0',
-            paddingTop: isMobile ? '2rem' : '6rem'
+            overflow: 'hidden',
+            padding: isMobile ? '0' : '1.5rem'
         }}>
-            <DesktopRecommendation />
-            {/* Toolbar for toggling widgets - DESKTOP ONLY */}
-            {!isMobile && (
+            {/* COMMAND CENTER (PLUS BUTTON) */}
+            <button 
+                onClick={() => {
+                    setIsToolPanelOpen(!isToolPanelOpen);
+                    // On mobile, if we open tools, switch to AI by default
+                    if (!isToolPanelOpen && isMobile) setActiveTab('ai');
+                }}
+                style={{
+                    position: 'absolute',
+                    right: isMobile ? '1.5rem' : '2.5rem',
+                    bottom: isMobile ? '1.5rem' : '2.5rem',
+                    width: isMobile ? '56px' : '64px',
+                    height: isMobile ? '56px' : '64px',
+                    background: 'var(--primary-color)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    zIndex: 300,
+                    boxShadow: '0 10px 30px rgba(79, 70, 229, 0.4)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transform: isToolPanelOpen ? 'rotate(45deg)' : 'rotate(0)'
+                }}
+            >
+                <Plus size={isMobile ? 28 : 32} />
+            </button>
+
+            {/* WORKSPACE HEADER */}
             <div style={{ 
-                position: 'absolute', 
-                top: '1rem', 
-                left: '50%', 
-                transform: 'translateX(-50%)', 
-                zIndex: 1000, 
                 display: 'flex', 
-                gap: '0.8rem', 
-                background: dockHoveredWidgetId !== null ? '#39ff14' : '#000', 
-                padding: '0.5rem 1rem', 
-                borderRadius: isMobile ? '0' : '40px',
-                width: isMobile ? '100%' : 'auto',
-                transition: 'background 0.2s',
-                boxShadow: isMobile ? 'none' : (dockHoveredWidgetId !== null ? '0 0 20px rgba(57, 255, 20, 0.8)' : 'none'),
-                borderLeft: isMobile ? 'none' : '3px solid #000',
-                borderRight: isMobile ? 'none' : '3px solid #000',
-                borderTop: isMobile ? 'none' : '3px solid #000',
-                borderBottom: '3px solid #000',
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                padding: isMobile ? '1rem' : '1rem 2.5rem',
+                background: '#fff',
+                borderBottom: '1px solid #e9ecef',
+                zIndex: 100
             }}>
-                {widgets
-                    .map(w => (
-                    <button 
-                        key={w.id}
-                        onClick={() => handleWidgetToggle(w.id)}
-                        title={`Toggle ${w.title}`}
-                        style={{
-                            background: (w.isVisible !== false ? '#39ff14' : '#fff'),
-                            color: '#000',
-                            border: '2px solid #000',
-                            borderRadius: '50%',
-                            flex: 'none',
-                            width: '40px',
-                            height: '40px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '2px 2px 0px #000',
-                            transition: 'all 0.1s'
-                        }}
-                    >
-                        {w.type === 'media' && <Video size={18} />}
-                        {w.type === 'content' && <Book size={18} />}
-                        {w.type === 'notes' && <PenTool size={18} />}
-                        {w.type === 'ai' && <Bot size={18} />}
-                    </button>
-                ))}
-                
-                {/* Desktop Next Button - Integrated Power Shortcut */}
-                {onNext && (
-                    <button 
-                        onClick={onNext}
-                        title={isCompleted ? "Move to Next Lesson" : "Mark Complete & Next Lesson"}
-                        style={{
-                            background: isCompleted ? '#39ff14' : '#fff',
-                            color: '#000',
-                            border: '3px solid #000',
-                            borderRadius: '50%',
-                            width: '42px',
-                            height: '42px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: isCompleted ? '4px 4px 0px #000' : '2px 2px 0px #000',
-                            marginLeft: '1rem',
-                            borderLeft: '4px solid #000',
-                            transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'scale(1.1)';
-                            e.currentTarget.style.boxShadow = '6px 6px 0px #000';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'none';
-                            e.currentTarget.style.boxShadow = isCompleted ? '4px 4px 0px #000' : '2px 2px 0px #000';
-                        }}
-                    >
-                        {isCompleted ? <span style={{fontWeight: '900', fontSize: '1rem'}}>✓</span> : <ChevronRight size={24} strokeWidth={3} />}
-                    </button>
+                <button 
+                    onClick={onClose}
+                    style={{ 
+                        background: 'transparent', 
+                        border: 'none', 
+                        cursor: 'pointer', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.8rem',
+                        color: '#495057',
+                        fontWeight: '700',
+                        fontSize: '0.9rem'
+                    }}
+                >
+                    <ArrowLeft size={18} /> BACK TO SYLLABUS
+                </button>
+                {!isMobile && (
+                    <div style={{ fontSize: '0.9rem', fontWeight: '800', color: '#1a1d23' }}>
+                        {lesson?.title}
+                    </div>
                 )}
+                <div style={{ width: '100px' }} /> {/* Spacer */}
             </div>
-            )}
 
-            {/* Content Area for Mobile or Floating Canvas for Desktop */}
             <div style={{
-                flex: isMobile ? 'none' : 'none',
-                position: isMobile ? 'relative' : 'static',
-                width: '100%',
-                height: isMobile ? 'auto' : 'auto',
-                overflow: isMobile ? 'visible' : 'visible'
+                flex: 1,
+                display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                background: '#fff',
+                borderRadius: isMobile ? '0' : '32px',
+                border: isMobile ? 'none' : '1px solid #e9ecef',
+                boxShadow: isMobile ? 'none' : '0 20px 50px rgba(0,0,0,0.06)',
+                overflow: 'hidden',
+                position: 'relative'
             }}>
-                {widgets.filter(w => isMobile ? w.isVisible !== false : w.isVisible !== false).map((widget) => {
-                    const zIndex = 10 + stackOrder.indexOf(widget.id);
-                    return (
-                        <DraggableWidget 
-                            key={widget.id} 
-                            id={widget.id} 
-                            title={widget.title}
-                            position={widget.pos}
-                            size={widget.size}
-                            zIndex={zIndex}
-                            onPositionChange={handlePosChange}
-                            onSizeChange={handleSizeChange}
-                            onFocus={handleFocus}
-                            onClose={handleWidgetClose}
-                            onDrag={handleDrag}
-                            isDockingTarget={dockHoveredWidgetId === widget.id}
-                            isMobile={isMobile}
-                        >
-                        {/* Render content conditionally based on type */}
-                        {widget.type === 'media' && (
-                            <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                                {lesson.video_url ? (
-                                    <div style={{ flex: 1, minHeight: 0 }}>
-                                        <iframe 
-                                            src={getEmbedUrl(lesson.video_url)} 
-                                            title={lesson.title} 
-                                            frameBorder="0" 
-                                            allowFullScreen
-                                            style={{ width: '100%', height: '100%', display: 'block', border: '4px solid #000' }}
-                                        />
+                {/* Stage Area */}
+                <div style={{ 
+                    flex: 1, 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    overflowY: 'auto',
+                    background: '#fff',
+                    position: 'relative'
+                }}>
+                    {/* LESSON CONTENT VIEW */}
+                    <div style={{ padding: isMobile ? '1.5rem' : '3rem', paddingBottom: '100px', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <div style={{ background: '#f1f3f5', padding: '6px', borderRadius: '16px', display: 'inline-flex', gap: '4px' }}>
+                                {hasVideo && <button onClick={() => setMediaType('video')} style={{ padding: '10px 20px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', background: mediaType === 'video' ? '#fff' : 'transparent', color: mediaType === 'video' ? 'var(--primary-color)' : '#868e96' }}><Eye size={16} /> WATCH</button>}
+                                {hasAudio && <button onClick={() => setMediaType('audio')} style={{ padding: '10px 20px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', background: mediaType === 'audio' ? '#fff' : 'transparent', color: mediaType === 'audio' ? 'var(--primary-color)' : '#868e96' }}><Headphones size={16} /> LISTEN</button>}
+                                {hasArticle && <button onClick={() => setMediaType('article')} style={{ padding: '10px 20px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', background: mediaType === 'article' ? '#fff' : 'transparent', color: mediaType === 'article' ? 'var(--primary-color)' : '#868e96' }}><FileText size={16} /> READ</button>}
+                            </div>
+                        </div>
+
+                        <div style={{ minHeight: '400px' }}>
+                            {mediaType === 'video' && hasVideo && (
+                                <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.1)' }}>
+                                    <iframe src={getEmbedUrl(lesson.video_url)} style={{ width: '100%', height: '100%', border: 'none' }} allowFullScreen />
+                                </div>
+                            )}
+                            {mediaType === 'audio' && hasAudio && (
+                                <div style={{ padding: '4rem 2rem', background: '#f8f9fa', borderRadius: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem', border: '1px solid #e9ecef', textAlign: 'center' }}>
+                                    <div style={{ width: '100px', height: '100px', background: 'var(--primary-color)', borderRadius: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}><Music size={48} /></div>
+                                    <audio controls style={{ width: '100%', maxWidth: '500px' }}><source src={lesson.audio_url} type="audio/mpeg" /></audio>
+                                </div>
+                            )}
+                            {mediaType === 'article' && hasArticle && (
+                                <div className="prose" style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+                                    <h1 style={{ fontSize: isMobile ? '2rem' : '3.2rem', fontWeight: '800', color: '#1a1d23', lineHeight: '1.1', marginBottom: '2rem' }}>{lesson.title}</h1>
+                                    <div style={{ fontSize: '1.15rem', lineHeight: '1.9', color: '#444' }}>
+                                        <ReactMarkdown>{lesson.content}</ReactMarkdown>
                                     </div>
-                                ) : (
-                                    <img 
-                                        src={lesson.image_url || 'https://images.unsplash.com/photo-1518005020480-1a2fd6d52579?q=80&w=1964'} 
-                                        alt={lesson.title}
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', border: '4px solid #000', filter: 'grayscale(100%)' }}
-                                    />
-                                )}
-                            </div>
-                        )}
-
-                        {widget.type === 'content' && (
-                            <div style={{ fontSize: '0.65rem', color: '#333', lineHeight: '1.4' }}>
-                                {lesson.content ? (
-                                    <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
-                                ) : (
-                                    <p>Understanding the core mechanics of this module. The foundation of structured rebellion lies in comprehending the limits of the existing architecture.</p>
-                                )}
-                            </div>
-                        )}
-
-                        {widget.type === 'notes' && (
-                            <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                                <textarea 
-                                    value={notesText}
-                                    onChange={handleNotesChange}
-                                    placeholder="Start taking notes here. They will persist locally."
-                                    style={{ 
-                                        flex: 1, 
-                                        width: '100%', 
-                                        border: '3px solid #000', 
-                                        padding: '0.5rem', 
-                                        fontSize: '0.7rem',
-                                        fontFamily: 'inherit',
-                                        resize: 'none',
-                                        outline: 'none',
-                                        background: '#fff'
-                                    }}
-                                />
-                                <div style={{ fontSize: '0.65rem', color: '#666', marginTop: '0.4rem', textAlign: 'right' }}>
-                                    Auto-saving...
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
 
-                        {widget.type === 'ai' && (
-                            <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#08080a', color: '#fff', border: '4px solid #000' }}>
-                                {/* Header / Status */}
-                                <div style={{ background: '#39ff14', color: '#000', padding: '0.4rem 1rem', fontSize: '0.6rem', fontWeight: '900', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span>CORE INTELLIGENCE: ACTIVE</span>
-                                    <span style={{ opacity: aiLoading ? 1 : 0 }}>THINKING...</span>
-                                </div>
+                        <div style={{ borderTop: '1px solid #eee', paddingTop: '3rem', textAlign: 'center' }}>
+                            <button onClick={handleCompleteAction} style={{ background: isCompleted ? '#2ecc71' : 'var(--primary-color)', color: '#fff', padding: '1.2rem 3.5rem', borderRadius: '18px', border: 'none', fontSize: '1.1rem', fontWeight: '800', cursor: 'pointer' }}>
+                                {isCompleted ? 'CONTINUE JOURNEY' : 'COMPLETE MODULE'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-                                {/* Chat Feed */}
-                                <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    {chatHistory.map((msg, i) => (
+                {/* Tool Panel (Mobile Overlay or Desktop Side) */}
+                <div style={{ 
+                    width: isMobile ? '100%' : (isToolPanelOpen ? '420px' : '0px'), 
+                    height: isMobile ? (isToolPanelOpen ? '80%' : '0') : '100%',
+                    position: isMobile ? 'fixed' : 'relative',
+                    bottom: isMobile ? 0 : 'auto',
+                    left: isMobile ? 0 : 'auto',
+                    borderLeft: (!isMobile && isToolPanelOpen) ? '1px solid #e9ecef' : 'none', 
+                    borderTop: (isMobile && isToolPanelOpen) ? '1px solid #e9ecef' : 'none',
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    background: '#fff',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    overflow: 'hidden',
+                    zIndex: 250,
+                    borderRadius: isMobile ? '32px 32px 0 0' : '0',
+                    boxShadow: isMobile ? '0 -20px 50px rgba(0,0,0,0.1)' : 'none'
+                }}>
+                     <div style={{ display: 'flex', padding: '1.2rem', gap: '0.5rem', background: '#fff', borderBottom: '1px solid #e9ecef', minWidth: isMobile ? '100%' : '420px' }}>
+                        <button onClick={() => setActiveTab('ai')} style={{ flex: 1, padding: '1rem', borderRadius: '14px', background: activeTab === 'ai' ? 'rgba(79, 70, 229, 0.08)' : 'transparent', color: activeTab === 'ai' ? 'var(--primary-color)' : '#868e96', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <Bot size={20} /> VERA AI
+                        </button>
+                        <button onClick={() => setActiveTab('notes')} style={{ flex: 1, padding: '1rem', borderRadius: '14px', background: activeTab === 'notes' ? 'rgba(79, 70, 229, 0.08)' : 'transparent', color: activeTab === 'notes' ? 'var(--primary-color)' : '#868e96', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <PenTool size={20} /> JOURNAL
+                        </button>
+                    </div>
+                    <div style={{ flex: 1, padding: '2rem', overflowY: 'auto', minWidth: isMobile ? '100%' : '420px' }}>
+                        {activeTab === 'ai' ? (
+                            <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                                    {chatHistory.map((m, i) => (
                                         <div key={i} style={{ 
-                                            alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                                            maxWidth: '85%',
-                                            background: msg.role === 'user' ? '#1a1a1a' : '#222',
-                                            padding: '0.8rem',
-                                            border: msg.role === 'user' ? '1px solid #444' : '1px solid #39ff14',
-                                            color: msg.role === 'user' ? '#fff' : '#39ff14',
-                                            lineHeight: '1.4',
-                                            whiteSpace: 'pre-wrap'
+                                            alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', 
+                                            maxWidth: '85%', 
+                                            background: m.role === 'user' ? 'var(--primary-color)' : '#f8f9fa', 
+                                            color: m.role === 'user' ? '#fff' : '#495057', 
+                                            padding: '1.2rem', 
+                                            borderRadius: '20px', 
+                                            fontSize: '0.9rem', 
+                                            border: m.role === 'user' ? 'none' : '1px solid #e9ecef', 
+                                            whiteSpace: 'pre-wrap' 
                                         }}>
-                                            {msg.content}
+                                            <ReactMarkdown>{m.content}</ReactMarkdown>
                                         </div>
                                     ))}
-                                    {aiLoading && (
-                                        <div style={{ alignSelf: 'flex-start', color: '#39ff14', opacity: 0.5, fontSize: '0.6rem' }}>
-                                            VERA IS ANALYZING...
-                                        </div>
-                                    )}
                                 </div>
-
-                                {/* Input Area */}
-                                <div style={{ display: 'flex', borderTop: '4px solid #000', padding: '0.5rem', background: '#000' }}>
+                                <div style={{ display: 'flex', gap: '0.5rem', background: '#fff', border: '1.5px solid #e9ecef', borderRadius: '18px', padding: '6px', marginBottom: isMobile ? '2rem' : '0' }}>
                                     <input 
-                                        type="text" 
-                                        value={aiInput}
-                                        onChange={(e) => setAiInput(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSendAI()}
-                                        placeholder="Command Vera..." 
-                                        style={{ 
-                                            flex: 1, 
-                                            background: '#000', 
-                                            color: '#39ff14', 
-                                            border: '2px solid #333', 
-                                            padding: '0.6rem', 
-                                            fontSize: '0.7rem', 
-                                            outline: 'none',
-                                            fontFamily: 'monospace'
-                                        }}
+                                        id="vera-ai-input"
+                                        name="vera-ai-input"
+                                        value={aiInput} 
+                                        onChange={e => setAiInput(e.target.value)} 
+                                        onKeyDown={e => e.key === 'Enter' && handleSendAI()} 
+                                        placeholder="Consult Vera..." 
+                                        style={{ flex: 1, border: 'none', padding: '1rem', outline: 'none' }} 
                                     />
-                                    <button 
-                                        onClick={handleSendAI}
-                                        disabled={aiLoading}
-                                        style={{ 
-                                            background: '#39ff14', 
-                                            color: '#000', 
-                                            border: 'none', 
-                                            padding: '0 1.2rem', 
-                                            fontSize: '0.7rem', 
-                                            fontWeight: '900', 
-                                            cursor: 'pointer', 
-                                            marginLeft: '0.4rem',
-                                            opacity: aiLoading ? 0.5 : 1
-                                        }}
-                                    >
-                                        <Send size={14} />
-                                    </button>
+                                    <button onClick={handleSendAI} style={{ background: 'var(--primary-color)', color: '#fff', border: 'none', width: '48px', height: '48px', borderRadius: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Send size={20} /></button>
                                 </div>
                             </div>
+                        ) : (
+                            <textarea 
+                                id="lesson-journal-notes"
+                                name="lesson-journal-notes"
+                                value={notesText} 
+                                onChange={handleNotesChange} 
+                                style={{ width: '100%', height: '100%', minHeight: '300px', background: '#fff', border: '1.5px solid #e9ecef', padding: '2rem', borderRadius: '20px', resize: 'none', outline: 'none', marginBottom: isMobile ? '2rem' : '0' }} 
+                                placeholder="Your insights..." 
+                            />
                         )}
-                    </DraggableWidget>
-                );
-            })}
-            </div>
-
-
-            {/* STUDIO HUB / WIDGET HUB - Persistent Action Center */}
-            {true && (
-                <div style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 3000 }}>
-                    {/* Pop-up Menu */}
-                    {isMenuOpen && (
-                        <div className="brutalist-card" style={{
-                            position: 'absolute',
-                            bottom: '4.5rem',
-                            right: 0,
-                            width: '200px',
-                            background: '#fff',
-                            padding: '1rem',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '0.8rem',
-                            boxShadow: '8px 8px 0 #000',
-                            border: '4px solid #000'
-                        }}>
-                             <div style={{ fontSize: '0.7rem', fontWeight: '900', textTransform: 'uppercase', borderBottom: '2px solid #000', paddingBottom: '0.4rem', marginBottom: '0.2rem', color: '#666' }}>
-                                 Lesson Status
-                             </div>
-                             
-                             {onNext && (
-                                 <button 
-                                     onClick={onNext}
-                                     style={{
-                                         display: 'flex',
-                                         alignItems: 'center',
-                                         gap: '1rem',
-                                         padding: '0.8rem 1rem',
-                                         background: isCompleted ? 'var(--primary-color)' : '#000',
-                                         color: isCompleted ? '#000' : 'var(--primary-color)',
-                                         border: '3px solid #000',
-                                         cursor: 'pointer',
-                                         fontSize: '0.75rem',
-                                         fontWeight: '900',
-                                         textTransform: 'uppercase',
-                                         textAlign: 'left',
-                                         width: '100%',
-                                         boxShadow: isCompleted ? '4px 4px 0 #000' : `4px 4px 0 var(--primary-color)`,
-                                         transition: 'all 0.1s'
-                                     }}
-                                     onMouseEnter={(e) => {
-                                         e.currentTarget.style.transform = 'translate(-2px, -2px)';
-                                         e.currentTarget.style.boxShadow = isCompleted ? '6px 6px 0 #000' : `6px 6px 0 var(--primary-color)`;
-                                     }}
-                                     onMouseLeave={(e) => {
-                                         e.currentTarget.style.transform = 'none';
-                                         e.currentTarget.style.boxShadow = isCompleted ? '4px 4px 0 #000' : `4px 4px 0 var(--primary-color)`;
-                                     }}
-                                 >
-                                     <div style={{ padding: '4px', background: isCompleted ? '#000' : 'var(--primary-color)', color: isCompleted ? 'var(--primary-color)' : '#000', borderRadius: '50%' }}>
-                                         {isCompleted ? <span style={{fontSize: '10px'}}>✓</span> : <Plus size={14} style={{ transform: 'rotate(45deg)' }} strokeWidth={4} />}
-                                     </div>
-                                     <span style={{ flex: 1 }}>{isCompleted ? 'COMPLETED → NEXT' : 'FINISH & NEXT'}</span>
-                                     <ChevronRight size={16} />
-                                 </button>
-                             )}
-
-                             <div style={{ fontSize: '0.7rem', fontWeight: '900', textTransform: 'uppercase', borderBottom: '2px solid #000', paddingBottom: '0.4rem', marginBottom: '0.2rem', color: '#666', marginTop: '0.5rem' }}>
-                                 Workspace Modules
-                             </div>
-                            {widgets.map(w => (
-                                <div 
-                                    key={w.id} 
-                                    onClick={() => handleWidgetToggle(w.id)}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.8rem',
-                                        padding: '0.5rem',
-                                        background: w.isVisible !== false ? 'var(--primary-color)' : '#f0f0f0',
-                                        border: '3px solid #000',
-                                        cursor: 'pointer',
-                                        fontSize: '0.8rem',
-                                        fontWeight: '700'
-                                    }}
-                                >
-                                    <div style={{ flexShrink: 0 }}>
-                                        {w.type === 'media' && <Video size={16} />}
-                                        {w.type === 'content' && <Book size={16} />}
-                                        {w.type === 'notes' && <PenTool size={16} />}
-                                        {w.type === 'ai' && <Bot size={16} />}
-                                    </div>
-                                    <span style={{ flex: 1 }}>{w.title.split(' ')[0]}</span>
-                                    <div style={{ 
-                                        width: '12px', 
-                                        height: '12px', 
-                                        borderRadius: '50%', 
-                                        background: w.isVisible !== false ? '#000' : '#ccc',
-                                        border: '2px solid #000'
-                                    }} />
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* FAB Bubble */}
-                    <button
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        style={{
-                            width: '56px',
-                            height: '56px',
-                            background: isMenuOpen ? '#ff00ff' : 'var(--primary-color)',
-                            color: '#000',
-                            borderRadius: '50%',
-                            border: '4px solid #000',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '6px 6px 0 #000',
-                            cursor: 'pointer',
-                            outline: 'none',
-                            transition: 'all 0.2s',
-                            transform: isMenuOpen ? 'rotate(45deg)' : 'none'
-                        }}
-                    >
-                        <Plus size={32} strokeWidth={3} />
-                    </button>
+                    </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 };

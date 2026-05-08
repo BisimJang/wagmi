@@ -280,11 +280,19 @@ export const useCourseData = (address, showMessage, jwt) => {
     }, [showMessage]);
 
     // --- Enrollment Handler (Triggers Web3 Flow) ---
+    const COGNITIVE_LOAD_LIMIT = 3;
 
     const enrollInCourse = useCallback(async (course) => {
         const token = localStorage.getItem('jwt');
         if (!token) { showMessage('Please connect and sign in to enroll', 'warning'); return; }
         if (!address) { showMessage('Please connect your wallet to enroll', 'warning'); return; }
+
+        // 🧠 Cognitive Load Check
+        const activeEnrollments = user?.enrollments?.filter(e => e.status === 'enrolled') || [];
+        if (activeEnrollments.length >= COGNITIVE_LOAD_LIMIT) {
+            showMessage(`Cognitive Load Reached: You have ${activeEnrollments.length} active nodes. Complete a module to unlock a new mastery slot.`, 'warning');
+            return;
+        }
 
         if (!course || !course.id || !course.price) {
             console.error("Enrollment failed: Course data is missing ID or price.", course);
@@ -395,15 +403,18 @@ export const useCourseData = (address, showMessage, jwt) => {
     // (Removed Web3 Submission Effect to prevent StrictMode double-firing)
 
 
-    const syncEnrollmentWithBackend = useCallback(async (courseId, txHash = 'on-chain-verified') => {
+    const syncEnrollmentWithBackend = useCallback(async (courseId, txHash = null) => {
         const token = localStorage.getItem('jwt');
         if (!token || !address) return;
+
+        // 🎯 Use a unique dummy hash if none provided to avoid DB collisions
+        const effectiveTxHash = txHash || `verified-${courseId}-${address.toLowerCase()}`;
 
         try {
             await apiCall(`/courses/${courseId}/enroll/`, {
                 method: 'POST',
                 body: JSON.stringify({ 
-                    tx_hash: txHash,
+                    tx_hash: effectiveTxHash,
                     wallet_address: address,
                     course_id: courseId
                 })

@@ -144,7 +144,10 @@ export function useSovereignManagement(showMessage) {
      * Fetches the current authorized certificate signer for a school.
      */
     const getContractSigner = useCallback(async (schoolAddress) => {
-        if (!publicClient || !schoolAddress) return null;
+        if (!publicClient || !schoolAddress || !schoolAddress.startsWith('0x') || schoolAddress.length < 42) {
+            console.warn(`Signer check skipped: Invalid school address at ${schoolAddress}`);
+            return 'LEGACY_CONTRACT';
+        }
         try {
             return await publicClient.readContract({
                 address: schoolAddress,

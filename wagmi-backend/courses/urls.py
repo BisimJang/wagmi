@@ -8,6 +8,7 @@ from .views import (
     EnrollmentListCreateView,
     CertificateListCreateView,
     LessonProgressViewSet,
+    StudyBubbleViewSet,
     enroll_in_course, 
     issue_certificate,
     get_certificate_image,
@@ -21,12 +22,13 @@ from .views import (
     school_list,
     register_school,
     SectionDetailView,
-    LessonDetailView
+    LessonDetailView,
+    upload_image
 )
 
-# Router for viewsets (only lesson progress for now)
+# Router for viewsets
 router = DefaultRouter()
-# router.register(r'lesson-progress', LessonProgressViewSet, basename='lesson-progress')
+router.register(r'study-bubbles', StudyBubbleViewSet, basename='study-bubble')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -62,4 +64,5 @@ urlpatterns = [
     
     #user profile
     path("me/", me, name="user-profile"),
+    path("upload/", upload_image, name="upload-image"),
 ]

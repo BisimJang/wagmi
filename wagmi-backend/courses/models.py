@@ -59,6 +59,7 @@ class Lesson(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField(blank=True, null=True)
     video_url = models.URLField(blank=True, null=True)
+    audio_url = models.URLField(blank=True, null=True)
     image_url = models.URLField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
 
@@ -131,3 +132,26 @@ class Certificate(models.Model):
 
     def __str__(self):
         return f"Certificate for {self.user} - {self.course.title} ({self.status})"
+
+
+class StudyBubble(models.Model):
+    STATUS_CHOICES = [
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="study_bubbles")
+    title = models.CharField(max_length=255)
+    concept = models.TextField()
+    source_file = models.FileField(upload_to='study_bubbles/sources/', null=True, blank=True)
+    summary = models.TextField(blank=True, null=True)
+    content = models.JSONField(default=list, blank=True) # List of knowledge nodes
+    video_refs = models.JSONField(default=list, blank=True) # List of video URLs/metadata
+    audio_url = models.URLField(max_length=500, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='processing')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Bubble: {self.title} ({self.user.address[:8]})"

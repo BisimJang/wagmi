@@ -1,0 +1,49 @@
+# Strategy: The Studyverse "Learning Studio" Workspace
+
+This document outlines the vision and technical strategy for transforming the Course Detail page into a professional-grade, customizable learning environment.
+
+## 👁️ The Vision: "Learning as Organization"
+I believe you are trying to move away from the traditional "video on top, text on bottom" LMS (Learning Management System) model. 
+
+The goal is to create a **Canvas-based Workspace** similar to Notion or Obsidian, where:
+- **Students control the environment**: If a student is a visual learner, they make the video 80% wide. If they are a researcher, they pull the **Notes** widget to the top and expand it.
+- **Persistent Context**: The workspace "remembers" how you like to learn. Your layout for "Module 01" stays exactly as you left it.
+- **Frictionless Research**: Taking notes shouldn't require switching tabs; it should be part of the UI block itself.
+
+---
+
+## 🛠️ The Tech Stack
+To achieve this without bloating the app, I’ve selected the following:
+
+| Package | Purpose |
+| :--- | :--- |
+| **`@hello-pangea/dnd`** | A high-performance fork of `react-beautiful-dnd`. It handles the natural "reordering" of widgets (Notes, Video, Syllabus) with smooth animations. |
+| **`lucide-react`** | Used for "Grab Handles" and "Resize Icons" to ensure the workspace tools feel intuitive and clear. |
+| **`Debounced Persistence`** | A custom React logic that waits for a user to finish typing or dragging before syncing to the database, preventing constant network requests. |
+| **`Django JSONField`** | Used in the backend to store the `layout_config`, allowing us to save complex window positions as a single data object. |
+
+---
+
+## 🚀 The Strategic Approach
+
+### 1. The "Widget" Architecture
+Instead of a single `LessonView`, I treat every lesson as a container of **Top-Level Widgets**:
+- **`MediaWidget`**: The YouTube/Image player.
+- **`SyllabusWidget`**: The curriculum text.
+- **`NotesWidget`**: The persistent scratchpad.
+
+### 2. Draggable Resizing (Custom Implementation)
+Rather than using a generic library, I implemented a custom **Resizer Handle** logic. This allows us to maintain the strict **Neo-Brutalist** aesthetic (thick 0px borders) while giving users granular control over the width of their content.
+
+### 3. State Synchronization
+The "Draggable" state and the "Notes" content are stored in the `LessonProgress` table. This is architecturally important because it ties the workspace to the **user's wallet address**, ensuring their research follows them across the decentralized web.
+
+### 4. Refining the "Compacts"
+You mentioned it feels "rough and compact." To fix this, the next iteration will focus on:
+- **Negative Space**: More padding between widgets to let the content breathe.
+- **Handle Visibility**: Making the "Grab" and "Resize" tools more subtle until hovered, reducing visual clutter.
+- **Layout Transitions**: Smoother CSS transitions when widgets shift position.
+
+---
+
+**Does this align with the "Studio" experience you have in mind?** If so, I will proceed with refining the current "rough" layout to match this high-level vision.
