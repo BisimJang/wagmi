@@ -58,7 +58,6 @@ const config = createConfig({
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "PASTE_YOUR_GOOGLE_CLIENT_ID_HERE";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
     <GoogleOAuthProvider clientId={googleClientId}>
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={config}>
@@ -68,5 +67,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         </WagmiProvider>
       </QueryClientProvider>
     </GoogleOAuthProvider>
-  </React.StrictMode>
 );
+

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useContractRead, useAccount } from 'wagmi';
+import { useAccount } from 'wagmi';
+
 import LoadingSpinner from '../components/Feedback/LoadingSpinner';
 import LessonWorkspace from '../components/Course/LessonWorkspace';
 import { SCHOOL_ABI, COURSE_CONTRACT_ADDRESS } from '../web3/constants';

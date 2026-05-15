@@ -172,16 +172,17 @@ const LoginModal = ({ isOpen, onClose, onGoogleSuccess, onGoogleError, loginWith
                                 Access the network through standard social identity providers for a fast, gasless experience.
                             </p>
                         </div>
-                        <div style={{ width: '100%' }}>
+                        <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
                             <GoogleLogin
                                 onSuccess={onGoogleSuccess}
                                 onError={onGoogleError}
-                                useOneTap
+                                useOneTap={false}
                                 theme="filled_black"
                                 shape="pill"
-                                width="100%"
+                                width="320"
                             />
                         </div>
+
                     </div>
                 </div>
 
