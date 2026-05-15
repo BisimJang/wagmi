@@ -1,13 +1,21 @@
+# Node / Frontend
+node_modules/
+dist/
+build/
+.vite/
+
 # Environments
 .env
+*.env
 wagmi-dapp/.env
 
 # Python / Django
 __pycache__/
 *.pyc
+db.sqlite3
 wagmi-backend/seed_pottery_course.py
 
 # IDE / OS
 .vscode/
+.idea/
 .DS_Store
-
