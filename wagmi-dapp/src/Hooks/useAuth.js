@@ -142,5 +142,28 @@ export const useAuth = (showMessage) => {
     localStorage.removeItem('auth_type');
   }, []);
 
-  return { jwt, authLoading, loginWithWallet, loginWithGoogle, linkWallet, logout };
+  const loginWithEmail = useCallback(async (email, password) => {
+      try {
+          setAuthLoading(true);
+          const data = await apiCall('/auth/password/', {
+              method: 'POST',
+              body: JSON.stringify({ email, password }),
+          });
+
+          setJwt(data.access);
+          localStorage.setItem('jwt', data.access);
+          localStorage.setItem('auth_type', 'email');
+
+          showMessage('Successfully logged in with email!', 'success');
+          return true;
+      } catch (error) {
+          console.error('Email login error:', error);
+          showMessage(`Email login failed: ${error.message || 'Check credentials.'}`, 'error');
+          return false;
+      } finally {
+          setAuthLoading(false);
+      }
+  }, [showMessage]);
+
+  return { jwt, authLoading, loginWithWallet, loginWithGoogle, loginWithEmail, linkWallet, logout };
 };

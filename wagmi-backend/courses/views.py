@@ -32,18 +32,29 @@ logger = logging.getLogger(__name__)
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import PageNumberPagination
 
+from django.db.models import Q
+
 class CoursePagination(PageNumberPagination):
     page_size = 6
     page_size_query_param = 'page_size'
     max_page_size = 100
 
 class CourseListCreateView(generics.ListCreateAPIView):
-    queryset = Course.objects.all().order_by('-created_at')
     serializer_class = CourseSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [SearchFilter]
     search_fields = ['title', 'description', 'school_name', 'school__name']
     pagination_class = CoursePagination
+
+    def get_queryset(self):
+        user = self.request.user
+        base_qs = Course.objects.all().order_by('-created_at')
+        if user.is_authenticated:
+            # Show public courses OR private courses where user is a member of the school
+            return base_qs.filter(
+                Q(is_public=True) | Q(school__memberships__user=user)
+            ).distinct()
+        return base_qs.filter(is_public=True)
 
     def perform_create(self, serializer):
         user = self.request.user

@@ -15,6 +15,18 @@ class SovereignSchool(models.Model):
         return self.name
 
 
+class SchoolMembership(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="school_memberships")
+    school = models.ForeignKey(SovereignSchool, on_delete=models.CASCADE, related_name="memberships")
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'school')
+
+    def __str__(self):
+        return f"{self.user} - {self.school.name}"
+
+
 class Course(models.Model):
     DIVISION_CHOICES = [
         ('builders', 'Builders Division'),
@@ -39,6 +51,7 @@ class Course(models.Model):
     school = models.ForeignKey(SovereignSchool, on_delete=models.SET_NULL, null=True, blank=True, related_name="courses")
     school_address = models.CharField(max_length=42, blank=True, null=True)
     school_name = models.CharField(max_length=200, blank=True, null=True)
+    is_public = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

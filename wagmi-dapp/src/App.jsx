@@ -29,6 +29,7 @@ import InstructorDashboard from './pages/InstructorDashboard.jsx';
 import SchoolsPage from './pages/SchoolsPage.jsx';
 import MyCoursesPage from './pages/MyCoursesPage.jsx';
 import StudyBubblesPage from './pages/StudyBubblesPage.jsx';
+import InstitutionPage from './pages/InstitutionPage.jsx';
 
 // Helper function to convert flat lessons into nested sections
 const groupLessonsBySection = (flatLessons) => {
@@ -94,7 +95,7 @@ function App() {
   // --- Basic Routing Persistence ---
   useEffect(() => {
     const path = window.location.pathname.replace('/', '');
-    const validPages = ['home', 'courses', 'schools', 'my_courses', 'profile', 'instructor', 'study-bubbles'];
+    const validPages = ['home', 'courses', 'schools', 'my_courses', 'profile', 'instructor', 'study-bubbles', 'institutions'];
     if (validPages.includes(path)) {
       setCurrentPage(path);
     }
@@ -110,6 +111,7 @@ function App() {
     authLoading,
     loginWithWallet,
     loginWithGoogle,
+    loginWithEmail,
     linkWallet,
     logout
   } = useAuth(showMessage);
@@ -351,6 +353,8 @@ function App() {
                 />;
             case 'study-bubbles':
                 return <StudyBubblesPage showPage={showPage} />;
+            case 'institutions':
+                return <InstitutionPage showPage={showPage} loginWithEmail={loginWithEmail} />;
             default: return <HomePage stats={stats} user={user} certificates={certificates} showPage={showPage} />;
         }
     };
@@ -388,6 +392,7 @@ function App() {
                           <li><a onClick={() => showPage('schools')} className={currentPage === 'schools' ? 'active' : ''}>Learning Engine</a></li>
                           <li><a onClick={() => showPage('profile')} className={currentPage === 'profile' ? 'active' : ''}>Portfolio</a></li>
                           <li><a onClick={() => showPage('study-bubbles')} className={currentPage === 'study-bubbles' ? 'active' : ''}>Bubbles</a></li>
+                          <li><a onClick={() => showPage('institutions')} className={currentPage === 'institutions' ? 'active' : ''} style={{ color: '#fbbf24' }}>For Institutions</a></li>
                           {user && (
                               <li><a onClick={() => showPage('instructor')} className={currentPage === 'instructor' ? 'active' : ''}>Studio</a></li>
                           )}

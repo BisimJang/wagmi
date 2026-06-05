@@ -11,7 +11,7 @@ from .models import WalletNonce, WalletUser
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from django.conf import settings
-
+from rest_framework import serializers
 
 class NonceView(APIView):
     def post(self, request):
@@ -153,3 +153,81 @@ class LinkWalletView(APIView):
             "message": "Wallet linked successfully",
             "address": user.address
         })
+
+from rest_framework.permissions import IsAuthenticated
+
+class StudentProvisioningView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        
+        # Only staff/instructors can provision
+        if not user.is_staff:
+            return Response({"error": "Only instructors can provision students."}, status=403)
+            
+        from courses.models import SovereignSchool, SchoolMembership
+        
+        # Get instructor's school
+        school = SovereignSchool.objects.filter(instructor=user).first()
+        if not school:
+            return Response({"error": "You must create a school before provisioning students."}, status=400)
+            
+        email = request.data.get("email")
+        password = request.data.get("password")
+        
+        if not email or not password:
+            return Response({"error": "Email and password are required."}, status=400)
+            
+        # Check if user already exists
+        if WalletUser.objects.filter(email=email).exists():
+            return Response({"error": "A user with this email already exists."}, status=400)
+            
+        student = WalletUser.objects.create_user(
+            email=email,
+            password=password
+        )
+        
+        # Add to school
+        SchoolMembership.objects.create(user=student, school=school)
+        
+        return Response({
+            "message": f"Student {email} provisioned and added to {school.name}.",
+            "email": email
+        }, status=201)
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['email'] = self.fields.pop('address', None) or self.fields.pop('username', None)
+        if 'email' not in self.fields:
+            self.fields['email'] = serializers.CharField()
+            
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        from django.contrib.auth import authenticate
+        from .models import WalletUser
+        
+        user = WalletUser.objects.filter(email=email).first()
+        if not user:
+            raise serializers.ValidationError('No active account found with the given credentials')
+
+        if not user.check_password(password):
+            raise serializers.ValidationError('No active account found with the given credentials')
+            
+        refresh = RefreshToken.for_user(user)
+
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
+
+class EmailTokenObtainPairView(TokenObtainPairView):
+    serializer_class = EmailTokenObtainPairSerializer
+
+
