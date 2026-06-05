@@ -1,6 +1,13 @@
 # The Studyverse Framework
 
-Studyverse is a decentralized educational ecosystem. Beyond acting as a public marketplace for courses and verifiable on-chain certificates, Studyverse serves as a **Headless Learning Management System (LMS) Framework** that organizations and schools can use to host their own private curriculums.
+Studyverse is a decentralized educational ecosystem powered by AI. Beyond acting as a public marketplace for courses and verifiable on-chain certificates, Studyverse serves as an **AI-Native Headless Learning Management System (LMS) Framework** that organizations and schools can use to host their own private curriculums.
+
+## AI Integration (Gemini)
+
+Studyverse heavily leverages the Gemini API to provide an adaptive learning experience:
+1. **Study Bubbles (AI Course Builder):** Users can input any concept they want to learn, and the system dynamically generates a structured "Study Bubble" (a draft course) with modules and quizzes.
+2. **AI Course Ingestion:** Schools can drag-and-drop their existing PDFs and documents, and Gemini automatically structures them into Studyverse courses.
+3. **AI Tutor:** A conversational agent integrated into the learning dashboard that helps students master their current modules.
 
 ## Organizational Structure (B2B Multi-Tenant)
 
@@ -27,8 +34,10 @@ Because the architecture is strictly headless (Django REST API separated from th
 1. **Use the Studyverse Client:** Organizations can instruct their students to log into the main Studyverse frontend, where their private courses will seamlessly appear in their dashboard.
 2. **Build Custom Clients:** Organizations can hit the Studyverse API from their *own* external websites to fetch their private courses and student progress data, using Studyverse purely as a backend content engine.
 
-## Next Steps for Implementation
-- Generate the `organizations` Django app.
-- Update the `Course` model to support the `is_public` flag.
-- Build the Student Provisioning API for instructors.
+## Next Steps for Implementation (Gemini XPRIZE Scope)
+- Generate the `ai_services` Django app for Gemini integration (Study Bubbles and Course Ingestion).
+- Deploy the Django backend to Google Cloud Run.
+- Integrate Paystack for fiat monetization of standard courses.
+- Build the Drag-and-Drop Course Ingestion UI for instructors.
+- Expand the `StudyBubbleView` dashboard with an integrated AI Chat Tutor.
 - Expand the frontend authentication modal to support the generated Email/Password logins.
