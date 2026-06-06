@@ -99,6 +99,7 @@ class LessonProgress(models.Model):
 
 class Enrollment(models.Model):
     STATUS_CHOICES = [
+        ('pending', 'Pending Fiat Payment'),
         ('enrolled', 'Enrolled'),
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),

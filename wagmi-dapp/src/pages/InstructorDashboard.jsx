@@ -104,7 +104,8 @@ const InstructorDashboard = ({
             title: course.title,
             description: course.description,
             price: course.price,
-            image_url: course.image_url || ''
+            image_url: course.image_url || '',
+            school_address: course.school_address || ''
         });
         setIsEditingCourseDetail(false);
         setView('editor');
@@ -119,7 +120,7 @@ const InstructorDashboard = ({
 
     const handleCreateNew = () => {
         setCreatedCourse(null);
-        setFormData({ title: '', description: '', price: '', image_url: '' });
+        setFormData({ title: '', description: '', price: '', image_url: '', school_address: ownedSchools.length > 0 ? ownedSchools[0].address : '' });
         setSections([]);
         setIsEditingCourseDetail(true);
         setView('editor');
@@ -271,7 +272,7 @@ const InstructorDashboard = ({
                                 style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', marginBottom: '1.5rem' }} 
                             />
                             <button onClick={handleLaunchSchool} disabled={isSchoolLoading} style={{ width: '100%', background: 'var(--primary-color)', padding: '1rem' }}>
-                                {isSchoolLoading ? 'Initializing...' : 'Launch On-Chain Node'}
+                                {isSchoolLoading ? 'Initializing...' : 'Launch Sovereign School'}
                             </button>
                         </div>
                     </div>
@@ -525,6 +526,15 @@ const InstructorDashboard = ({
                                                     <div style={{ marginBottom: '2rem' }}>
                                                         <label htmlFor="course-price" style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>PRICE (ETH)</label>
                                                         <input id="course-price" type="number" step="0.001" name="price" value={formData.price} onChange={handleChange} placeholder="0.00" style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#fff' }} />
+                                                    </div>
+                                                    <div style={{ marginBottom: '2rem' }}>
+                                                        <label htmlFor="course-school" style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>ASSOCIATED SCHOOL</label>
+                                                        <select id="course-school" name="school_address" value={formData.school_address || ''} onChange={handleChange} style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#fff' }}>
+                                                            <option value="" style={{ color: '#000' }}>-- Select a School --</option>
+                                                            {ownedSchools && ownedSchools.map(s => (
+                                                                <option key={s.address} value={s.address} style={{ color: '#000' }}>{s.name}</option>
+                                                            ))}
+                                                        </select>
                                                     </div>
                                                     <div>
                                                         <label htmlFor="course-desc" style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>DESCRIPTION</label>

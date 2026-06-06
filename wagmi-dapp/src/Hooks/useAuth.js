@@ -1,12 +1,12 @@
 // src/hooks/useAuth.js
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAccount, useSignMessage } from 'wagmi';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { apiCall } from '../api/api'; // Assuming api.js exists
 
 export const useAuth = (showMessage) => {
-  const { address, isConnected, status } = useAccount();
-  const { signMessageAsync } = useSignMessage();
+  const { publicKey, signMessage, connected: isConnected, connecting } = useWallet();
+  const address = publicKey ? publicKey.toString() : null;
   const [jwt, setJwt] = useState(null);
   const [authLoading, setAuthLoading] = useState(false);
   const hasAttemptedAutoLogin = useRef(false);
@@ -31,7 +31,9 @@ export const useAuth = (showMessage) => {
           });
 
           const message = `Sign in to Studyverse\n\nNonce: ${nonce}`;
-          const signature = await signMessageAsync({ message });
+          const encodedMessage = new TextEncoder().encode(message);
+          const signatureRaw = await signMessage(encodedMessage);
+          const signature = Array.from(signatureRaw);
 
           const data = await apiCall('/auth/wallet/', {
               method: 'POST',
@@ -51,7 +53,7 @@ export const useAuth = (showMessage) => {
       } finally {
           setAuthLoading(false);
       }
-  }, [address, signMessageAsync, showMessage]);
+  }, [address, signMessage, showMessage]);
 
   const loginWithGoogle = useCallback(async (googleResponse) => {
       try {
@@ -89,7 +91,9 @@ export const useAuth = (showMessage) => {
           });
 
           const message = `Link wallet to Studyverse account\n\nNonce: ${nonce}`;
-          const signature = await signMessageAsync({ message });
+          const encodedMessage = new TextEncoder().encode(message);
+          const signatureRaw = await signMessage(encodedMessage);
+          const signature = Array.from(signatureRaw);
 
           await apiCall('/auth/link-wallet/', {
               method: 'POST',
@@ -105,11 +109,11 @@ export const useAuth = (showMessage) => {
       } finally {
           setAuthLoading(false);
       }
-  }, [address, signMessageAsync, showMessage]);
+  }, [address, signMessage, showMessage]);
 
   useEffect(() => {
       const initAuth = async () => {
-          if (status === 'connecting' || status === 'reconnecting') return;
+          if (connecting) return;
 
           const storedToken = localStorage.getItem('jwt');
           const authType = localStorage.getItem('auth_type');
@@ -134,7 +138,7 @@ export const useAuth = (showMessage) => {
       };
 
       initAuth();
-  }, [isConnected, status, verifyJWT]);
+  }, [isConnected, connecting, verifyJWT]);
 
   const logout = useCallback(() => {
     setJwt(null);

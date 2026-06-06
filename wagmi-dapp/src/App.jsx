@@ -141,7 +141,8 @@ function App() {
     schools,
     pagination,
     syncEnrollmentWithBackend,
-    myCourses
+    myCourses,
+    payWithFiat
   } = useCourseData(address, showMessage, jwt);
 
   // Trigger Onboarding if no goal set
@@ -278,6 +279,7 @@ function App() {
                     pagination={pagination}
                     schools={schools}
                     syncEnrollment={syncEnrollmentWithBackend}
+                    payWithFiat={payWithFiat}
                 />;
             case 'schools':
                 return <SchoolsPage 
@@ -390,7 +392,6 @@ function App() {
                           <li><a onClick={() => showPage('courses')} className={currentPage === 'courses' ? 'active' : ''}>Explore</a></li>
                           <li><a onClick={() => showPage('my_courses')} className={currentPage === 'my_courses' ? 'active' : ''}>My Courses</a></li>
                           <li><a onClick={() => showPage('schools')} className={currentPage === 'schools' ? 'active' : ''}>Learning Engine</a></li>
-                          <li><a onClick={() => showPage('profile')} className={currentPage === 'profile' ? 'active' : ''}>Portfolio</a></li>
                           <li><a onClick={() => showPage('study-bubbles')} className={currentPage === 'study-bubbles' ? 'active' : ''}>Bubbles</a></li>
                           <li><a onClick={() => showPage('institutions')} className={currentPage === 'institutions' ? 'active' : ''} style={{ color: '#fbbf24' }}>For Institutions</a></li>
                           {user && (
@@ -465,10 +466,6 @@ function App() {
                 <a className={`bottom-nav-link ${currentPage === 'study-bubbles' ? 'active' : ''}`} onClick={() => showPage('study-bubbles')}>
                   <Sparkles size={22} />
                   <span>Bubbles</span>
-                </a>
-                <a className={`bottom-nav-link ${currentPage === 'profile' ? 'active' : ''}`} onClick={() => showPage('profile')}>
-                  <User size={22} />
-                  <span>Profile</span>
                 </a>
                 {user && (
                   <a className={`bottom-nav-link ${currentPage === 'instructor' ? 'active' : ''}`} onClick={() => showPage('instructor')}>

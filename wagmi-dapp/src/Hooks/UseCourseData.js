@@ -319,6 +319,38 @@ export const useCourseData = (address, showMessage, jwt) => {
         }
     }, [showMessage, address, writeEnroll]);
 
+    const payWithFiat = useCallback(async (course) => {
+        const token = localStorage.getItem('jwt');
+        if (!token) { showMessage('Please connect and sign in to enroll', 'warning'); return; }
+
+        if (!course || !course.id || !course.price) {
+            showMessage('Error: Missing course price or ID.', 'error');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            showMessage('Initializing payment...', 'info');
+            const data = await apiCall(`/courses/${course.id}/pay/`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    callback_url: window.location.origin + '/courses'
+                })
+            });
+            
+            if (data && data.authorization_url) {
+                window.location.href = data.authorization_url; // Redirect to Paystack
+            } else {
+                showMessage('Payment initialization failed.', 'error');
+            }
+        } catch (error) {
+            console.error('Paystack init error:', error);
+            showMessage(`Payment failed: ${error.message}`, 'error');
+        } finally {
+            setLoading(false);
+        }
+    }, [showMessage]);
+
 
     /**
      * Bulk Mints multiple courses in one transaction.
@@ -520,6 +552,7 @@ export const useCourseData = (address, showMessage, jwt) => {
         bulkMintCourses,
         syncEnrollmentWithBackend,
         myCourses,
-        setMyCourses
+        setMyCourses,
+        payWithFiat
     };
 };

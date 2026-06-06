@@ -202,6 +202,72 @@ def enroll_in_course(request, course_id):
     serializer = EnrollmentSerializer(enrollment)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+from .paystack import initialize_paystack_transaction, verify_paystack_transaction, convert_sol_to_kobo
+import uuid
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def initialize_fiat_payment(request, course_id):
+    try:
+        course = Course.objects.get(pk=course_id)
+    except Course.DoesNotExist:
+        return Response({"error": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    user = request.user
+    if not user.email:
+        return Response({"error": "You must have an email address to use Paystack."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Check if already enrolled
+    if Enrollment.objects.filter(user=user, course=course, status__in=['enrolled', 'completed']).exists():
+        return Response({"error": "You are already enrolled in this course."}, status=status.HTTP_400_BAD_REQUEST)
+
+    amount_in_kobo = convert_sol_to_kobo(course.price)
+    if amount_in_kobo <= 0:
+        return Response({"error": "Course is free or invalid price. Use standard enrollment."}, status=status.HTTP_400_BAD_REQUEST)
+
+    reference = f"ps_{uuid.uuid4().hex}"
+    callback_url = request.data.get('callback_url', f"{request.build_absolute_uri('/')[:-1]}/courses/")
+    
+    paystack_res = initialize_paystack_transaction(user.email, amount_in_kobo, reference, callback_url)
+    
+    if paystack_res.get('status'):
+        # Pass the course_id to frontend through reference or store it in cache.
+        # But we can just use the reference to verify later. We will create a pending enrollment.
+        Enrollment.objects.create(
+            user=user,
+            course=course,
+            wallet_address=getattr(user, "address", "paystack_user"),
+            tx_hash=reference,
+            status='pending' # Will use 'pending' as a custom status internally, though 'enrolled' is in choices
+        )
+        return Response(paystack_res['data'], status=status.HTTP_200_OK)
+    else:
+        return Response({"error": paystack_res.get('message', 'Failed to initialize payment')}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def verify_fiat_payment(request):
+    reference = request.data.get('reference')
+    if not reference:
+        return Response({"error": "Reference is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        enrollment = Enrollment.objects.get(tx_hash=reference, user=request.user)
+    except Enrollment.DoesNotExist:
+        return Response({"error": "Pending enrollment not found for this reference."}, status=status.HTTP_404_NOT_FOUND)
+
+    if enrollment.status == 'enrolled':
+        return Response({"message": "Payment already verified.", "enrolled": True}, status=status.HTTP_200_OK)
+
+    paystack_res = verify_paystack_transaction(reference)
+    if paystack_res.get('status') and paystack_res['data']['status'] == 'success':
+        enrollment.status = 'enrolled'
+        enrollment.save()
+        return Response({"message": "Payment verified and enrolled.", "enrolled": True}, status=status.HTTP_200_OK)
+    else:
+        return Response({"error": "Payment verification failed or not successful."}, status=status.HTTP_400_BAD_REQUEST)
+
 class CertificateListCreateView(generics.ListCreateAPIView):
     queryset = Certificate.objects.all()
     serializer_class = CertificateSerializer
@@ -239,17 +305,59 @@ def issue_certificate(request, course_id):
     
     certificate.image_uri = f"{base_url}/api/certificates/{certificate.id}/image/"
     certificate.metadata_uri = f"{base_url}/api/certificates/{certificate.id}/metadata/"
-    certificate.status = 'issued'
+    
+    # 🎯 NEW: Mint Solana NFT using Node.js script
+    import subprocess
+    import os
+    from django.conf import settings
+    import json
+    
+    script_path = os.path.join(settings.BASE_DIR, 'scripts', 'solana_minter.js')
+    student_wallet = request.user.address
+    
+    if not student_wallet:
+        return Response({"error": "You must link a Solana wallet address to your profile first!"}, status=status.HTTP_400_BAD_REQUEST)
+        
+    try:
+        # Call the Node script to perform the Anchor CPI
+        result = subprocess.run([
+            'node', script_path, 
+            student_wallet, 
+            str(course.id), 
+            f"{course.title} Certificate", 
+            "WAGMI", 
+            certificate.metadata_uri
+        ], capture_output=True, text=True, check=True)
+        
+        # Parse the JSON output from the script
+        lines = result.stdout.strip().split('\n')
+        output = json.loads(lines[-1]) # Grab the last line, which is our JSON
+        
+        if output.get('success'):
+            certificate.tx_hash = output.get('tx_hash')
+            certificate.token_id = output.get('mint')
+            certificate.status = 'claimed' # Instantly claimed!
+        else:
+            logger.error(f"Solana Minting Failed: {output.get('error')}")
+            certificate.status = 'failed'
+            
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Node script crashed: {e.stderr}")
+        certificate.status = 'failed'
+    
     certificate.save()
 
-    return Response({
-        "message": "Certificate issued! You can now claim it on-chain.",
-        "course": course.title,
-        "certificate_id": certificate.id,
-        "metadata_uri": certificate.metadata_uri,
-        "image_uri": certificate.image_uri,
-        "status": certificate.status
-    }, status=status.HTTP_201_CREATED)
+    if certificate.status == 'claimed':
+        return Response({
+            "message": "Certificate successfully minted to your Solana wallet!",
+            "course": course.title,
+            "certificate_id": certificate.id,
+            "tx_hash": certificate.tx_hash,
+            "mint": certificate.token_id,
+            "status": certificate.status
+        }, status=status.HTTP_201_CREATED)
+    else:
+        return Response({"error": "Failed to mint NFT on Solana network."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
@@ -503,13 +611,18 @@ def confirm_mint(request, course_id):
 @permission_classes([IsAuthenticated])
 def register_school(request):
     """
-    Registers a newly deployed sovereign school in the backend.
+    Registers a newly created sovereign school in the backend.
     """
+    import uuid
     address = request.data.get('address')
     name = request.data.get('name')
     
-    if not address or not name:
-        return Response({"error": "Address and name are required."}, status=status.HTTP_400_BAD_REQUEST)
+    if not name:
+        return Response({"error": "Name is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+    if not address:
+        # Generate a unique pseudo-address for Web2 schools
+        address = f"0xschool_{uuid.uuid4().hex[:32]}"
         
     school, created = SovereignSchool.objects.get_or_create(
         address=address,
@@ -536,7 +649,10 @@ def school_list(request):
     """
     Returns a list of unique sovereign schools.
     """
+    mine = request.query_params.get('mine') == 'true'
     schools = SovereignSchool.objects.all().select_related('instructor')
+    if mine and request.user.is_authenticated:
+        schools = schools.filter(instructor=request.user)
     
     return Response([
         {

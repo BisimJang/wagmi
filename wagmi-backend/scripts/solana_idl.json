@@ -1,0 +1,111 @@
+{
+  "version": "0.1.0",
+  "name": "wagmi_solana",
+  "instructions": [
+    {
+      "name": "initializeSchool",
+      "accounts": [
+        { "name": "school", "isMut": true, "isSigner": false },
+        { "name": "owner", "isMut": true, "isSigner": true },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
+      ],
+      "args": [{ "name": "name", "type": "string" }]
+    },
+    {
+      "name": "createCourse",
+      "accounts": [
+        { "name": "school", "isMut": true, "isSigner": false },
+        { "name": "course", "isMut": true, "isSigner": false },
+        { "name": "owner", "isMut": true, "isSigner": true },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
+      ],
+      "args": [
+        { "name": "courseId", "type": "u64" },
+        { "name": "price", "type": "u64" },
+        { "name": "isPublic", "type": "bool" }
+      ]
+    },
+    {
+      "name": "enrollStudent",
+      "accounts": [
+        { "name": "school", "isMut": true, "isSigner": false },
+        { "name": "course", "isMut": false, "isSigner": false },
+        { "name": "studentAccount", "isMut": true, "isSigner": false },
+        { "name": "student", "isMut": true, "isSigner": true },
+        { "name": "schoolOwner", "isMut": true, "isSigner": false },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
+      ],
+      "args": [{ "name": "courseId", "type": "u64" }]
+    },
+    {
+      "name": "completeCourse",
+      "accounts": [
+        { "name": "school", "isMut": false, "isSigner": false },
+        { "name": "course", "isMut": false, "isSigner": false },
+        { "name": "studentAccount", "isMut": true, "isSigner": false },
+        { "name": "owner", "isMut": true, "isSigner": true },
+        { "name": "studentWallet", "isMut": true, "isSigner": false },
+        { "name": "mint", "isMut": true, "isSigner": true },
+        { "name": "studentTokenAccount", "isMut": true, "isSigner": false },
+        { "name": "metadataAccount", "isMut": true, "isSigner": false },
+        { "name": "masterEditionAccount", "isMut": true, "isSigner": false },
+        { "name": "tokenProgram", "isMut": false, "isSigner": false },
+        { "name": "associatedTokenProgram", "isMut": false, "isSigner": false },
+        { "name": "tokenMetadataProgram", "isMut": false, "isSigner": false },
+        { "name": "systemProgram", "isMut": false, "isSigner": false },
+        { "name": "rent", "isMut": false, "isSigner": false }
+      ],
+      "args": [
+        { "name": "courseId", "type": "u64" },
+        { "name": "metadataTitle", "type": "string" },
+        { "name": "metadataSymbol", "type": "string" },
+        { "name": "metadataUri", "type": "string" }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "School",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "owner", "type": "publicKey" },
+          { "name": "name", "type": "string" },
+          { "name": "totalCourses", "type": "u64" },
+          { "name": "totalStudents", "type": "u64" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "Course",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "school", "type": "publicKey" },
+          { "name": "courseId", "type": "u64" },
+          { "name": "price", "type": "u64" },
+          { "name": "isPublic", "type": "bool" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "StudentAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "student", "type": "publicKey" },
+          { "name": "course", "type": "publicKey" },
+          { "name": "courseId", "type": "u64" },
+          { "name": "isCompleted", "type": "bool" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    { "code": 6000, "name": "Unauthorized", "msg": "You are not authorized to perform this action." },
+    { "code": 6001, "name": "InsufficientFunds", "msg": "Insufficient funds for the course price." }
+  ]
+}

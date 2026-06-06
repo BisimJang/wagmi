@@ -1,11 +1,10 @@
-// src/pages/HomePage_Premium.jsx
-
 import React from 'react';
+import { Sparkles, ArrowRight, Zap, Shield, Database } from 'lucide-react';
 
-const HomePage_Premium = ({ stats, user, certificates, showPage, projectGoal, setProjectGoal }) => {
+const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
     return (
         <div style={{
-            backgroundColor: '#0a0a0c',
+            backgroundColor: '#050505',
             color: '#fff',
             fontFamily: "'Inter', sans-serif",
             minHeight: '100vh',
@@ -18,301 +17,238 @@ const HomePage_Premium = ({ stats, user, certificates, showPage, projectGoal, se
                     100% { transform: translateY(0px); }
                 }
                 @keyframes pulse-glow {
-                    0% { opacity: 0.4; }
-                    50% { opacity: 0.8; }
-                    100% { opacity: 0.4; }
+                    0% { opacity: 0.2; transform: scale(1); }
+                    50% { opacity: 0.5; transform: scale(1.05); }
+                    100% { opacity: 0.2; transform: scale(1); }
                 }
                 .glass-card {
-                    background: rgba(255, 255, 255, 0.03);
-                    backdrop-filter: blur(12px);
-                    -webkit-backdrop-filter: blur(12px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    background: rgba(255, 255, 255, 0.02);
+                    backdrop-filter: blur(20px);
+                    -webkit-backdrop-filter: blur(20px);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
                     border-radius: 24px;
-                    transition: all 0.3s ease;
+                    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
                 }
                 .glass-card:hover {
-                    background: rgba(255, 255, 255, 0.06);
-                    border-color: rgba(255, 255, 255, 0.2);
-                    transform: translateY(-5px);
+                    background: rgba(255, 255, 255, 0.04);
+                    border-color: rgba(255, 255, 255, 0.15);
+                    transform: translateY(-8px);
+                    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
                 }
                 .gradient-text {
-                    background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+                    background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
                 }
-                .hero-glow {
+                .hero-glow-1 {
                     position: absolute;
                     width: 600px;
                     height: 600px;
-                    background: radial-gradient(circle, rgba(79, 70, 229, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
-                    top: -200px;
-                    left: -100px;
+                    background: radial-gradient(circle, rgba(79, 70, 229, 0.25) 0%, rgba(0, 0, 0, 0) 70%);
+                    top: -100px;
+                    left: -200px;
                     pointer-events: none;
                     animation: pulse-glow 8s infinite ease-in-out;
                 }
-                .btn-premium {
-                    background: #fff;
-                    color: #000;
-                    padding: 1rem 2.5rem;
+                .hero-glow-2 {
+                    position: absolute;
+                    width: 500px;
+                    height: 500px;
+                    background: radial-gradient(circle, rgba(45, 212, 191, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+                    bottom: -100px;
+                    right: -100px;
+                    pointer-events: none;
+                    animation: pulse-glow 10s infinite ease-in-out reverse;
+                }
+                .btn-primary {
+                    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+                    color: #fff;
+                    padding: 1.2rem 3rem;
                     border-radius: 100px;
-                    font-weight: 700;
-                    font-size: 1rem;
+                    font-weight: 800;
+                    font-size: 1.1rem;
                     text-transform: none;
                     border: none;
-                    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-                    transition: all 0.2s;
+                    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.3);
+                    transition: all 0.3s ease;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.8rem;
+                    cursor: pointer;
                 }
-                .btn-premium:hover {
-                    transform: scale(1.02);
-                    box-shadow: 0 15px 30px rgba(0,0,0,0.3);
-                    background: #f0f0f0;
+                .btn-primary:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 15px 40px rgba(79, 70, 229, 0.5);
+                    filter: brightness(1.1);
                 }
-                .btn-outline {
-                    background: transparent;
+                .btn-secondary {
+                    background: rgba(255, 255, 255, 0.05);
                     color: #fff;
-                    border: 1px solid rgba(255,255,255,0.2);
-                    padding: 1rem 2.5rem;
+                    border: 1px solid rgba(255,255,255,0.1);
+                    padding: 1.2rem 3rem;
                     border-radius: 100px;
                     font-weight: 700;
-                    transition: all 0.2s;
-                }
-                .btn-outline:hover {
-                    background: rgba(255,255,255,0.05);
-                    border-color: #fff;
-                }
-                .intake-input {
-                    background: rgba(255, 255, 255, 0.02);
-                    border: 1px solid rgba(255, 255, 255, 0.05);
-                    border-radius: 20px;
-                    padding: 1.5rem;
-                    color: #fff;
                     font-size: 1.1rem;
-                    width: 100%;
-                    height: 120px;
-                    outline: none;
-                    transition: all 0.3s;
-                    resize: none;
-                    margin-bottom: 2rem;
+                    transition: all 0.3s ease;
+                    cursor: pointer;
                 }
-                .intake-input:focus {
-                    background: rgba(255, 255, 255, 0.05);
-                    border-color: rgba(165, 180, 252, 0.5);
-                    box-shadow: 0 0 20px rgba(165, 180, 252, 0.1);
+                .btn-secondary:hover {
+                    background: rgba(255,255,255,0.1);
+                    border-color: rgba(255,255,255,0.2);
                 }
             `}</style>
 
             {/* HERO SECTION */}
             <section style={{ 
                 position: 'relative', 
-                padding: '12rem 2rem 8rem 2rem', 
+                minHeight: '90vh',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '8rem 2rem', 
                 textAlign: 'center',
-                background: 'radial-gradient(circle at 50% 50%, rgba(30, 27, 75, 0.3) 0%, transparent 100%)'
+                overflow: 'hidden'
             }}>
-                <div className="hero-glow" />
-                <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative' }}>
+                <div className="hero-glow-1" />
+                <div className="hero-glow-2" />
+                
+                <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
                     <div style={{ 
-                        display: 'inline-block', 
-                        padding: '0.5rem 1.2rem', 
-                        background: 'rgba(79, 70, 229, 0.1)', 
-                        border: '1px solid rgba(79, 70, 229, 0.3)', 
+                        display: 'inline-flex', 
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.6rem 1.5rem', 
+                        background: 'rgba(255, 255, 255, 0.03)', 
+                        border: '1px solid rgba(255, 255, 255, 0.1)', 
                         borderRadius: '100px',
                         color: '#a5b4fc',
                         fontSize: '0.85rem',
                         fontWeight: '600',
-                        marginBottom: '2rem',
-                        letterSpacing: '0.5px'
+                        marginBottom: '2.5rem',
+                        backdropFilter: 'blur(10px)'
                     }}>
-                        STRATEGIC LEARNING INFRASTRUCTURE
+                        <Sparkles size={16} /> Welcome to the Future of Education
                     </div>
                     
                     <h1 className="gradient-text" style={{ 
-                        fontSize: 'clamp(3rem, 8vw, 5.5rem)', 
+                        fontSize: 'clamp(3.5rem, 8vw, 6rem)', 
                         fontWeight: '900', 
-                        lineHeight: '1', 
+                        lineHeight: '1.1', 
                         marginBottom: '2rem',
-                        textTransform: 'none',
                         letterSpacing: '-2px'
                     }}>
-                        The Study Verse <br/>API Learning Engine
+                        Learn, Build, and <br/> Prove Your Mastery.
                     </h1>
                     
                     <p style={{ 
                         fontSize: 'clamp(1.1rem, 2vw, 1.4rem)', 
                         color: '#94a3b8', 
                         maxWidth: '700px', 
-                        margin: '0 auto 3rem auto',
-                        lineHeight: '1.6',
-                        fontWeight: '500',
-                        textTransform: 'none'
+                        margin: '0 auto 3.5rem auto',
+                        lineHeight: '1.7',
+                        fontWeight: '500'
                     }}>
-                        Build, scale, and verify sovereign education. <br/>
-                        A high-performance protocol for creators and institutions.
+                        Studyverse is the next-generation platform for builders and creatives. 
+                        Master new skills, earn verifiable certificates, and launch your own sovereign institution.
                     </p>
 
                     <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button className="btn-premium" onClick={() => showPage('courses')}>
-                            Explore the Grid
+                        <button className="btn-primary" onClick={() => showPage('courses')}>
+                            Get Started with Studyverse <ArrowRight size={20} />
                         </button>
-                        <button className="btn-outline" onClick={() => showPage(user ? 'instructor' : 'profile')}>
-                            Deploy Curriculum
+                        <button className="btn-secondary" onClick={() => showPage(user ? 'instructor' : 'profile')}>
+                            Deploy a School
                         </button>
                     </div>
                 </div>
             </section>
 
-            {/* THREE PILLAR MODEL */}
-            <section style={{ padding: '8rem 2rem', background: '#08080a' }}>
-                <div className="container" style={{ maxWidth: '1100px', margin: '0 auto' }}>
+            {/* HOW IT WORKS / PILLARS */}
+            <section style={{ padding: '8rem 2rem', position: 'relative', zIndex: 10 }}>
+                <div className="container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
-                        <h2 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1rem', textTransform: 'none' }}>The Three-Pillar Model</h2>
-                        <p style={{ color: '#64748b', fontWeight: '500', fontSize: '1.1rem', textTransform: 'none' }}>A modular framework designed for momentum and verification.</p>
+                        <h2 style={{ fontSize: '3rem', fontWeight: '800', marginBottom: '1rem' }}>How Studyverse Works</h2>
+                        <p style={{ color: '#64748b', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto' }}>A seamless ecosystem designed to help you accelerate your learning and prove your competence to the world.</p>
                     </div>
 
                     <div style={{ 
                         display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
-                        gap: '3rem',
-                        alignItems: 'center'
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+                        gap: '2.5rem'
                     }}>
-                        {/* PILLAR 1: THE CORE */}
-                        <div className="glass-card" style={{ 
-                            padding: '4rem 2.5rem',
-                            clipPath: 'polygon(0% 5%, 100% 0%, 95% 92%, 8% 100%)',
-                            minHeight: '350px'
-                        }}>
+                        {/* Feature 1 */}
+                        <div className="glass-card" style={{ padding: '3.5rem 2.5rem' }}>
                             <div style={{ 
-                                width: '48px', height: '48px', 
-                                background: 'linear-gradient(135deg, #3b82f6, #2dd4bf)', 
-                                borderRadius: '12px', marginBottom: '2rem',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                boxShadow: '0 10px 20px rgba(59, 130, 246, 0.3)'
+                                width: '60px', height: '60px', 
+                                background: 'rgba(79, 70, 229, 0.1)', 
+                                border: '1px solid rgba(79, 70, 229, 0.2)',
+                                color: '#a5b4fc',
+                                borderRadius: '16px', marginBottom: '2rem',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
                             }}>
-                                <span style={{ fontSize: '1.2rem', fontWeight: '900' }}>01</span>
+                                <Zap size={28} />
                             </div>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '1rem', textTransform: 'none' }}>The Core</h3>
-                            <p style={{ color: '#94a3b8', lineHeight: '1.7', marginBottom: '0' }}>
-                                Watch → Complete → Advance. A self-paced curriculum loop designed to maintain high-speed momentum.
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1rem' }}>Immersive Learning</h3>
+                            <p style={{ color: '#94a3b8', lineHeight: '1.7' }}>
+                                Dive into high-quality modules crafted by top industry experts. Learn at your own pace through interactive video and rich markdown content.
                             </p>
                         </div>
 
-                        {/* PILLAR 2: THE ENGINE */}
-                        <div className="glass-card" style={{ 
-                            padding: '4rem 2.5rem',
-                            clipPath: 'polygon(10% 0%, 95% 8%, 100% 95%, 0% 88%)',
-                            minHeight: '350px',
-                            background: 'rgba(79, 70, 229, 0.08)',
-                            border: '1px solid rgba(79, 70, 229, 0.2)'
-                        }}>
+                        {/* Feature 2 */}
+                        <div className="glass-card" style={{ padding: '3.5rem 2.5rem' }}>
                             <div style={{ 
-                                width: '48px', height: '48px', 
-                                background: 'linear-gradient(135deg, #a855f7, #ec4899)', 
-                                borderRadius: '12px', marginBottom: '2rem',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                boxShadow: '0 10px 20px rgba(168, 85, 247, 0.3)'
+                                width: '60px', height: '60px', 
+                                background: 'rgba(45, 212, 191, 0.1)', 
+                                border: '1px solid rgba(45, 212, 191, 0.2)',
+                                color: '#5eead4',
+                                borderRadius: '16px', marginBottom: '2rem',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
                             }}>
-                                <span style={{ fontSize: '1.2rem', fontWeight: '900' }}>02</span>
+                                <Shield size={28} />
                             </div>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '1rem', textTransform: 'none' }}>The Engine</h3>
-                            <p style={{ color: '#94a3b8', lineHeight: '1.7', marginBottom: '0' }}>
-                                Study Verse API. Decouple content from logic. Host high-performance modules on any sovereign domain.
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1rem' }}>Verifiable Credentials</h3>
+                            <p style={{ color: '#94a3b8', lineHeight: '1.7' }}>
+                                Your achievements are minted as immutable, cryptographic certificates. Prove your skills to employers with unquestionable authenticity.
                             </p>
                         </div>
 
-                        {/* PILLAR 3: THE RECORD */}
-                        <div className="glass-card" style={{ 
-                            padding: '4rem 2.5rem',
-                            clipPath: 'polygon(5% 0%, 100% 12%, 92% 100%, 0% 95%)',
-                            minHeight: '350px'
-                        }}>
+                        {/* Feature 3 */}
+                        <div className="glass-card" style={{ padding: '3.5rem 2.5rem' }}>
                             <div style={{ 
-                                width: '48px', height: '48px', 
-                                background: 'linear-gradient(135deg, #f97316, #eab308)', 
-                                borderRadius: '12px', marginBottom: '2rem',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                boxShadow: '0 10px 20px rgba(249, 115, 22, 0.3)'
+                                width: '60px', height: '60px', 
+                                background: 'rgba(244, 63, 94, 0.1)', 
+                                border: '1px solid rgba(244, 63, 94, 0.2)',
+                                color: '#fda4af',
+                                borderRadius: '16px', marginBottom: '2rem',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
                             }}>
-                                <span style={{ fontSize: '1.2rem', fontWeight: '900' }}>03</span>
+                                <Database size={28} />
                             </div>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '1rem', textTransform: 'none' }}>The Record</h3>
-                            <p style={{ color: '#94a3b8', lineHeight: '1.7', marginBottom: '0' }}>
-                                Web3 Registry. Verifiable, immutable proof of competency stored as on-chain cryptographic signatures.
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1rem' }}>Sovereign Institutions</h3>
+                            <p style={{ color: '#94a3b8', lineHeight: '1.7' }}>
+                                Ready to teach? Launch your own Institutional Node in seconds. Deploy curriculum and monetize your knowledge globally without friction.
                             </p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* SPECIALIZED DIVISIONS */}
-            <section style={{ padding: '8rem 2rem', background: '#0a0a0c' }}>
-                <div className="container" style={{ maxWidth: '1100px', margin: '0 auto' }}>
-                    <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'flex-end', 
-                        marginBottom: '4rem',
-                        flexWrap: 'wrap',
-                        gap: '2rem'
+            {/* FINAL CTA BANNER */}
+            <section style={{ padding: '8rem 2rem' }}>
+                <div className="container" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+                    <div className="glass-card" style={{ 
+                        padding: '6rem 4rem', 
+                        textAlign: 'center',
+                        background: 'linear-gradient(135deg, rgba(79,70,229,0.05) 0%, rgba(124,58,237,0.05) 100%)',
+                        border: '1px solid rgba(124,58,237,0.2)'
                     }}>
-                        <div>
-                            <h2 style={{ fontSize: '3rem', fontWeight: '800', marginBottom: '1rem', textTransform: 'none' }}>Specialized Divisions</h2>
-                            <p style={{ color: '#64748b', fontSize: '1.1rem', maxWidth: '500px', textTransform: 'none' }}>Bridging the gap between theory and execution.</p>
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '4rem' }}>
-                        {/* BUILDERS */}
-                        <div className="glass-card" style={{ 
-                            padding: '4rem', 
-                            borderLeft: '4px solid #3b82f6',
-                            clipPath: 'polygon(0% 0%, 100% 5%, 92% 100%, 5% 95%)',
-                            background: 'rgba(59, 130, 246, 0.04)'
-                        }}>
-                            <h3 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '2rem', letterSpacing: '-1px', textTransform: 'none' }}>Builders</h3>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 3rem 0', color: '#94a3b8', fontSize: '1.1rem', fontWeight: '500' }}>
-                                <li style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '6px', height: '6px', background: '#3b82f6', borderRadius: '50%' }} />
-                                    Smart Contract Architecture
-                                </li>
-                                <li style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '6px', height: '6px', background: '#3b82f6', borderRadius: '50%' }} />
-                                    Hardware & Robotics
-                                </li>
-                                <li style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '6px', height: '6px', background: '#3b82f6', borderRadius: '50%' }} />
-                                    Distributed Systems
-                                </li>
-                            </ul>
-                            <button className="btn-premium" onClick={() => showPage('courses')} style={{ width: '100%' }}>
-                                Enter Division
-                            </button>
-                        </div>
-
-                        {/* CREATIVES */}
-                        <div className="glass-card" style={{ 
-                            padding: '4rem', 
-                            borderLeft: '4px solid #a855f7',
-                            clipPath: 'polygon(8% 0%, 100% 0%, 95% 95%, 0% 100%)',
-                            background: 'rgba(168, 85, 247, 0.04)'
-                        }}>
-                            <h3 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '2rem', letterSpacing: '-1px', textTransform: 'none' }}>Creatives</h3>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 3rem 0', color: '#94a3b8', fontSize: '1.1rem', fontWeight: '500' }}>
-                                <li style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '6px', height: '6px', background: '#a855f7', borderRadius: '50%' }} />
-                                    Visual Architecture
-                                </li>
-                                <li style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '6px', height: '6px', background: '#a855f7', borderRadius: '50%' }} />
-                                    Generative Aesthetics
-                                </li>
-                                <li style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '6px', height: '6px', background: '#a855f7', borderRadius: '50%' }} />
-                                    Product Design Loop
-                                </li>
-                            </ul>
-                            <button className="btn-premium" onClick={() => showPage('courses')} style={{ width: '100%', background: 'linear-gradient(135deg, #a855f7, #7c3aed)', color: '#fff' }}>
-                                Enter Division
-                            </button>
-                        </div>
+                        <h2 style={{ fontSize: '3.5rem', fontWeight: '900', marginBottom: '1.5rem', letterSpacing: '-1px' }}>Ready to unlock your potential?</h2>
+                        <p style={{ color: '#94a3b8', fontSize: '1.2rem', marginBottom: '3rem', maxWidth: '600px', margin: '0 auto 3rem auto' }}>
+                            Join thousands of builders and creatives who are already accelerating their careers on Studyverse.
+                        </p>
+                        <button className="btn-primary" onClick={() => showPage('courses')} style={{ padding: '1.5rem 4rem', fontSize: '1.2rem' }}>
+                            Get Started Now <ArrowRight size={24} />
+                        </button>
                     </div>
                 </div>
             </section>

@@ -55,13 +55,24 @@ const CourseCard = ({ course, onEnroll, onViewDetails, enrollmentStatus, onSync 
           ) : isEnrolled ? (
             <button style={{ width: '100%', padding: '0.6rem', fontSize: '0.75rem', background: 'var(--primary-color)', color: '#fff' }} onClick={(e) => { e.stopPropagation(); onViewDetails(course); }}>Resume</button>
           ) : (
-            <button 
-              style={{ width: '100%', padding: '0.6rem', fontSize: '0.75rem', background: 'var(--primary-color)', color: '#fff' }}
-              disabled={isCheckingStatus}
-              onClick={(e) => { e.stopPropagation(); onEnroll(course); }}
-            >
-              {isCheckingStatus ? '...' : 'Enroll Now'}
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+              <button 
+                style={{ flex: 1, padding: '0.6rem', fontSize: '0.75rem', background: 'transparent', color: '#fff', border: '1px solid var(--primary-color)' }}
+                disabled={isCheckingStatus}
+                onClick={(e) => { e.stopPropagation(); onEnroll(course); }}
+              >
+                {isCheckingStatus ? '...' : 'Enroll (Crypto)'}
+              </button>
+              {course.price > 0 && (
+                <button 
+                  style={{ flex: 1, padding: '0.6rem', fontSize: '0.75rem', background: '#0BA4DB', color: '#fff', border: '1px solid #0BA4DB' }}
+                  disabled={isCheckingStatus}
+                  onClick={(e) => { e.stopPropagation(); if(onPayFiat) onPayFiat(course); }}
+                >
+                  Pay with Card
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

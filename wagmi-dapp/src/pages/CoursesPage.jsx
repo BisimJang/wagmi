@@ -11,7 +11,8 @@ const CoursesPage = ({
     loadCourses,
     pagination,
     schools = [],
-    syncEnrollment
+    syncEnrollment,
+    payWithFiat
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedSchool, setSelectedSchool] = useState(null);
@@ -23,6 +24,42 @@ const CoursesPage = ({
         }, 500);
         return () => clearTimeout(handler);
     }, [searchQuery, loadCourses]);
+
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const reference = urlParams.get('reference');
+        if (reference) {
+            // Remove it from the URL so we don't re-verify on refresh
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({path:newUrl}, '', newUrl);
+
+            // Verify with backend
+            const token = localStorage.getItem('jwt');
+            if (token) {
+                fetch('http://127.0.0.1:8000/api/courses/verify_payment/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ reference })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.enrolled) {
+                        alert("Payment successful! You are now enrolled.");
+                        loadCourses(searchQuery, pagination.currentPage || 1);
+                    } else {
+                        alert("Payment verification failed: " + (data.error || "Unknown error"));
+                    }
+                })
+                .catch(err => {
+                    console.error("Verification error:", err);
+                    alert("Error verifying payment.");
+                });
+            }
+        }
+    }, [loadCourses, pagination, searchQuery]);
 
     const handlePageChange = (newPage) => {
         if (newPage > 0) {
@@ -206,6 +243,7 @@ const CoursesPage = ({
                                     onViewDetails={onViewDetails}
                                     enrollmentStatus={enrollmentStatusGetter(course.id)}
                                     onSync={() => syncEnrollment(course.id)}
+                                    onPayFiat={payWithFiat}
                                 />
                             ))}
                         </div>

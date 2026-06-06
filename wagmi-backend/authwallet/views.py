@@ -1,6 +1,7 @@
 import secrets
-from eth_account.messages import encode_defunct
-from eth_account import Account
+import base58
+from nacl.signing import VerifyKey
+from nacl.exceptions import BadSignatureError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -38,16 +39,16 @@ class VerifyView(APIView):
             return Response({"error": "Address and signature required"}, status=400)
 
         wallet_nonce = get_object_or_404(WalletNonce, address=address.lower())
-        message = encode_defunct(text=f"Sign in to Studyverse\n\nNonce: {wallet_nonce.nonce}")
-
+        message_str = f"Sign in to Studyverse\n\nNonce: {wallet_nonce.nonce}"
 
         try:
-            recovered_address = Account.recover_message(message, signature=signature)
+            pubkey_bytes = base58.b58decode(address)
+            signature_bytes = bytes(signature)
+            message_bytes = message_str.encode('utf-8')
+            verify_key = VerifyKey(pubkey_bytes)
+            verify_key.verify(message_bytes, signature_bytes)
         except Exception as e:
-            return Response({"error": str(e)}, status=400)
-
-        if recovered_address.lower() != address.lower():
-            return Response({"error": "Signature invalid"}, status=400)
+            return Response({"error": f"Signature invalid or malformed: {str(e)}"}, status=400)
 
         # delete nonce so it can't be reused
         wallet_nonce.delete()
@@ -129,14 +130,15 @@ class LinkWalletView(APIView):
             return Response({"error": "Missing parameters"}, status=400)
 
         # Verify the signature
-        message = encode_defunct(text=f"Link wallet to Studyverse account\n\nNonce: {nonce}")
+        message_str = f"Link wallet to Studyverse account\n\nNonce: {nonce}"
         try:
-            recovered_address = Account.recover_message(message, signature=signature)
+            pubkey_bytes = base58.b58decode(address)
+            signature_bytes = bytes(signature)
+            message_bytes = message_str.encode('utf-8')
+            verify_key = VerifyKey(pubkey_bytes)
+            verify_key.verify(message_bytes, signature_bytes)
         except Exception as e:
-            return Response({"error": str(e)}, status=400)
-
-        if recovered_address.lower() != address.lower():
-            return Response({"error": "Signature invalid"}, status=400)
+            return Response({"error": f"Signature invalid or malformed: {str(e)}"}, status=400)
 
         # Check if this address is already linked to another account
         existing = WalletUser.objects.filter(address=address.lower()).first()

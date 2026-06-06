@@ -7,6 +7,8 @@ import LoadingSpinner from '../components/Feedback/LoadingSpinner';
 import CourseCard from '../components/Card/CourseCard';
 import NftAvatarSelector from '../components/Profile/NftAvatarSelector';
 import { apiCall } from '../api/api';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 const ProfilePage = ({ 
     user, 
@@ -43,7 +45,8 @@ const ProfilePage = ({
         display_name: user?.display_name || '',
         bio: user?.bio || '',
         twitter_handle: user?.twitter_handle || '',
-        github_handle: user?.github_handle || ''
+        github_handle: user?.github_handle || '',
+        address: user?.address || ''
     });
 
     useEffect(() => {
@@ -52,10 +55,19 @@ const ProfilePage = ({
                 display_name: user.display_name || '',
                 bio: user.bio || '',
                 twitter_handle: user.twitter_handle || '',
-                github_handle: user.github_handle || ''
+                github_handle: user.github_handle || '',
+                address: user.address || ''
             });
         }
     }, [user]);
+
+    const { publicKey } = useWallet();
+    
+    useEffect(() => {
+        if (publicKey && formData.address !== publicKey.toString()) {
+            setFormData(prev => ({ ...prev, address: publicKey.toString() }));
+        }
+    }, [publicKey]);
 
     const enrolledCourses = useMemo(() => {
         if (!user || !allCourses) return [];
@@ -153,12 +165,12 @@ const ProfilePage = ({
                                 {user.address ? (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'rgba(255,255,255,0.03)', padding: '0.8rem 1.2rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '100px' }}>
                                         <LinkIcon size={16} color="var(--primary-color)" />
-                                        <span style={{ fontSize: '0.9rem', fontWeight: '700' }}>{user.address.slice(0, 6)}...{user.address.slice(-4)}</span>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '700' }}>{user.address.slice(0, 6)}...{user.address.slice(-4)} (Solana)</span>
                                     </div>
                                 ) : (
-                                    <button onClick={handleLinkWallet} disabled={isLinking} style={{ background: 'var(--primary-color)', color: '#fff' }}>
-                                        {isLinking ? 'Linking...' : 'Connect Wallet'}
-                                    </button>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'rgba(239, 68, 68, 0.1)', padding: '0.8rem 1.2rem', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '100px' }}>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#ef4444' }}>No Solana Wallet Linked!</span>
+                                    </div>
                                 )}
                                 
                                 <button onClick={handleSignOut} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#ef4444' }}>
@@ -428,8 +440,24 @@ const ProfilePage = ({
                                         rows="4" 
                                         value={formData.bio}
                                         onChange={e => setFormData({...formData, bio: e.target.value})}
-                                        style={{ width: '100%', padding: '1rem 1.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff' }} 
+                                        style={{ width: '100%', padding: '1rem 1.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', marginBottom: '1.5rem' }} 
                                     />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontWeight: '800', fontSize: '0.75rem', color: 'var(--primary-color)', letterSpacing: '1px', marginBottom: '0.8rem', textTransform: 'uppercase' }}>
+                                        SOLANA WALLET (FOR NFT CERTIFICATES)
+                                    </label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <WalletMultiButton style={{ background: 'var(--primary-color)', borderRadius: '12px', height: '48px', fontFamily: 'inherit', fontWeight: 'bold' }} />
+                                        {formData.address && (
+                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                                                Linked: {formData.address.slice(0, 6)}...{formData.address.slice(-4)}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p style={{ marginTop: '0.8rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                                        Securely connect your Phantom wallet. When you complete a course, the Studyverse backend will instantly mint your NFT Certificate to this verified address for free.
+                                    </p>
                                 </div>
                                 <button type="submit" style={{ background: 'var(--primary-color)', alignSelf: 'flex-start', padding: '1rem 3rem' }}>
                                     Update Identity

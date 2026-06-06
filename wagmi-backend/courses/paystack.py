@@ -1,7 +1,25 @@
 import requests
 from django.conf import settings
+from decimal import Decimal
 
-def initialize_paystack_transaction(email, amount_in_kobo):
+def convert_sol_to_kobo(sol_amount):
+    """
+    Converts a SOL decimal amount to NGN Kobo.
+    Assumes:
+    1 SOL = $150 USD
+    1 USD = 1500 NGN
+    1 NGN = 100 Kobo
+    """
+    try:
+        sol = Decimal(str(sol_amount))
+        # 1 SOL = 150 * 1500 * 100 = 22,500,000 Kobo
+        kobo_per_sol = Decimal('22500000')
+        kobo = int(sol * kobo_per_sol)
+        return kobo
+    except:
+        return 0
+
+def initialize_paystack_transaction(email, amount_in_kobo, reference=None, callback_url=None):
     """
     Initializes a Paystack transaction for course purchases.
     Returns the authorization URL and access code.
@@ -16,19 +34,23 @@ def initialize_paystack_transaction(email, amount_in_kobo):
         "amount": amount_in_kobo
     }
     
-    # response = requests.post(url, headers=headers, json=data)
-    # return response.json()
+    if reference:
+        data["reference"] = reference
+    if callback_url:
+        data["callback_url"] = callback_url
     
-    # Placeholder for local dev without key
-    return {
-        "status": True,
-        "message": "Authorization URL created",
-        "data": {
-            "authorization_url": "https://checkout.paystack.com/placeholder",
-            "access_code": "placeholder_code",
-            "reference": "placeholder_ref"
+    response = requests.post(url, headers=headers, json=data)
+    
+    if response.status_code == 200:
+        return response.json()
+    else:
+        # Fallback for dev if API key fails or isn't set
+        print("Paystack Init Failed:", response.text)
+        return {
+            "status": False,
+            "message": response.text,
+            "data": None
         }
-    }
 
 def verify_paystack_transaction(reference):
     """
@@ -39,14 +61,13 @@ def verify_paystack_transaction(reference):
         "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"
     }
     
-    # response = requests.get(url, headers=headers)
-    # return response.json()
+    response = requests.get(url, headers=headers)
     
-    return {
-        "status": True,
-        "message": "Verification successful",
-        "data": {
-            "status": "success",
-            "amount": 500000
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {
+            "status": False,
+            "message": response.text,
+            "data": None
         }
-    }

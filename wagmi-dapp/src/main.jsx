@@ -19,6 +19,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
+// Solana Wallet Adapter Imports
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
+import { clusterApiUrl } from '@solana/web3.js';
+import '@solana/wallet-adapter-react-ui/styles.css';
+
 // 1. Create QueryClient
 const queryClient = new QueryClient();
 
@@ -57,12 +63,22 @@ const config = createConfig({
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "PASTE_YOUR_GOOGLE_CLIENT_ID_HERE";
 
+// Solana Config
+const solanaNetwork = clusterApiUrl('devnet');
+const solanaWallets = []; // Modern Phantom auto-detects via Wallet Standard
+
 ReactDOM.createRoot(document.getElementById("root")).render(
     <GoogleOAuthProvider clientId={googleClientId}>
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={config}>
           <RainbowKitProvider chains={chains}>
-            <App />
+            <ConnectionProvider endpoint={solanaNetwork}>
+              <WalletProvider wallets={solanaWallets} autoConnect>
+                <WalletModalProvider>
+                  <App />
+                </WalletModalProvider>
+              </WalletProvider>
+            </ConnectionProvider>
           </RainbowKitProvider>
         </WagmiProvider>
       </QueryClientProvider>

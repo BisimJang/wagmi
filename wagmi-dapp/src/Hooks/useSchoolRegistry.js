@@ -21,110 +21,42 @@ export function useSchoolRegistry(showMessage) {
      * Creates a new sovereign school contract via the Factory.
      */
     const createSchoolOnChain = useCallback(async (schoolName) => {
-        if (!walletClient || !address) {
-            showMessage('Wallet not connected', 'error');
-            return null;
-        }
-
         setIsLoading(true);
         try {
-            const hash = await walletClient.writeContract({
-                address: SCHOOL_REGISTRY_ADDRESS,
-                abi: SCHOOL_REGISTRY_ABI,
-                functionName: 'createSchool',
-                args: [schoolName],
+            showMessage(`Creating ${schoolName}...`, 'info');
+            const data = await apiCall('/schools/register/', {
+                method: 'POST',
+                body: JSON.stringify({ name: schoolName })
             });
-
-            showMessage(`Deploying ${schoolName} on-chain...`, 'info');
-            const receipt = await waitForTransactionReceipt(publicClient, { hash });
-
-            if (receipt.status === 'success') {
-                // Find school address from logs
-                let schoolAddress = null;
-                console.log('Transaction receipt logs:', receipt.logs);
-                
-                try {
-                    for (const log of receipt.logs) {
-                        try {
-                            const decoded = decodeEventLog({
-                                abi: SCHOOL_REGISTRY_ABI,
-                                data: log.data,
-                                topics: log.topics,
-                            });
-                            
-                            console.log('Decoded log:', decoded);
-                            
-                            if (decoded.eventName === 'SchoolCreated') {
-                                schoolAddress = decoded.args.schoolAddress;
-                                console.log('Successfully found schoolAddress in logs:', schoolAddress);
-                                break;
-                            }
-                        } catch (e) { 
-                            // This might be an event from a different contract (e.g. proxy or ERC20)
-                            console.debug('Failed to decode a log entry (expected for non-registry events):', e.message);
-                        }
-                    }
-                    
-                    if (schoolAddress) {
-                        console.log('Syncing new school to backend...', { schoolAddress, schoolName });
-                        await apiCall('/schools/register/', {
-                            method: 'POST',
-                            body: JSON.stringify({ address: schoolAddress, name: schoolName })
-                        });
-                        console.log('School registered in backend:', schoolAddress);
-                    } else {
-                        console.warn('SchoolCreated event log NOT found in receipt. Backend sync skipped.');
-                    }
-                } catch (syncErr) {
-                    console.error('Failed to sync school to backend:', syncErr);
-                }
-
-                showMessage('School successfully created on-chain!', 'success');
-                await fetchOwnedSchools();
-                return receipt;
-            }
+            showMessage('Institution successfully created!', 'success');
+            await fetchOwnedSchools();
+            return { status: 'success', address: data.address };
         } catch (error) {
             console.error('School creation error:', error);
-            
-            // Simulation fallback if revert occurs
-            if (error.message.includes('gas limit') || error.message.includes('execution reverted')) {
-                const proceed = confirm("Smart Contract revert (gas limit too high).\n\nWould you like to SIMULATE a successful school creation for UI testing?");
-                if (proceed) {
-                    const mockSchoolAddress = `0xschool${Math.random().toString(16).slice(2)}abc987654321`;
-                    setOwnedSchools(prev => [...prev, mockSchoolAddress]);
-                    showMessage('Simulated school creation successful!', 'success');
-                    return { status: 'simulated', address: mockSchoolAddress };
-                }
-            }
-
-            showMessage(`Failed to create school: ${error.message}`, 'error');
+            showMessage(`Failed to create institution: ${error.message}`, 'error');
         } finally {
             setIsLoading(false);
         }
         return null;
-    }, [walletClient, address, publicClient, showMessage]);
+    }, [showMessage]);
 
     /**
      * Fetches all school addresses owned by the current user.
      * Prioritizes backend for reliability, with contract as secondary.
      */
     const fetchOwnedSchools = useCallback(async () => {
-        if (!address) return [];
-        
         let schoolsList = [];
 
         // 1. Fetch from Backend (Source of Truth for Dashboard)
         // Also fetches instructor-owned courses to derive school addresses
         try {
             const [backendSchools, instructorCourses] = await Promise.all([
-                apiCall('/schools/'),
+                apiCall('/schools/?mine=true'),
                 apiCall('/courses/')
             ]);
 
             if (Array.isArray(backendSchools)) {
-                schoolsList = backendSchools
-                    .filter(s => s.instructor_address?.toLowerCase() === address.toLowerCase())
-                    .map(s => ({ address: s.address, name: s.name }));
+                schoolsList = backendSchools.map(s => ({ address: s.address, name: s.name }));
             }
 
             // Fallback/enrich with courses
