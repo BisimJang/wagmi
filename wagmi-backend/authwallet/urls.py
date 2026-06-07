@@ -1,6 +1,10 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenVerifyView
-from .views import NonceView, VerifyView, GoogleLoginView, LinkWalletView, StudentProvisioningView, EmailTokenObtainPairView
+from .views import (
+    NonceView, VerifyView, GoogleLoginView, LinkWalletView, 
+    StudentProvisioningView, EmailTokenObtainPairView,
+    RegisterUserView, RegisterInstitutionView
+)
 
 urlpatterns = [
     path("nonce/", NonceView.as_view(), name="nonce"),
@@ -10,4 +14,6 @@ urlpatterns = [
     path("link-wallet/", LinkWalletView.as_view(), name="link-wallet"),
     path("verify/", TokenVerifyView.as_view(), name="token_verify"),
     path("provision/", StudentProvisioningView.as_view(), name="provision_student"),
+    path("register/", RegisterUserView.as_view(), name="register_user"),
+    path("register-institution/", RegisterInstitutionView.as_view(), name="register_institution"),
 ]

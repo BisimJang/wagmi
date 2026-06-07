@@ -40,13 +40,14 @@ class CourseSerializer(serializers.ModelSerializer):
     
     # Enable writing to these fields
     price = serializers.DecimalField(max_digits=20, decimal_places=8, required=False)
+    fiat_price = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
     title = serializers.CharField()
     image_url = serializers.URLField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = Course
         fields = [
-            "id", "title", "name", "description", "instructor", "instructor_address", "price", 
+            "id", "title", "name", "description", "instructor", "instructor_address", "price", "fiat_price",
             "created_at", "sections", "imageUrl", "image_url", 
             "is_minted", "tx_hash", "school_address", "school_name",
             "is_instructor"
@@ -104,8 +105,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "full_name",
             "enrollments",
             "certificates",
+            "is_institution",
+            "org_name",
+            "org_type",
+            "org_size"
         ]
-        read_only_fields = ["id", "address", "full_name", "enrollments", "certificates", "google_id"]
+        read_only_fields = ["id", "address", "full_name", "enrollments", "certificates", "google_id", "is_institution"]
         
     def get_enrollments(self, obj):
         # 📚 Courses the user has explicitly enrolled in

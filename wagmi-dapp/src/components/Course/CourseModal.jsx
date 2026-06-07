@@ -1,42 +1,24 @@
 import React from 'react';
-import { useAccount, useReadContract } from 'wagmi';
 import LoadingSpinner from '../Feedback/LoadingSpinner';
 import BrutalistButton from '../UI/BrutalistButton';
-import { SCHOOL_ABI, COURSE_CONTRACT_ADDRESS } from '../../web3/constants';
 
 const CourseModal = ({ 
     course, 
     enrollmentStatus, 
     loading, 
-    onEnroll, 
+    onEnroll,
+    onPayFiat,
     onEnterCourse,
     onClose 
 }) => {
-    const { address } = useAccount();
-    const targetContract = course?.school_address || COURSE_CONTRACT_ADDRESS;
-
-    // On-chain fallback — same logic as CourseCard
-    const { data: isOnChainEnrolled } = useReadContract({
-        address: targetContract,
-        abi: SCHOOL_ABI,
-        functionName: 'isEnrolled',
-        args: [address, BigInt(course?.id ?? 0)],
-        query: {
-            enabled: !!address && !!course?.id,
-            staleTime: 60000,
-        }
-    });
-
     if (!course) return null;
 
-    // Combine backend status with on-chain truth
-    const effectiveStatus =
-        enrollmentStatus === 'completed' ? 'completed' :
-        (enrollmentStatus === 'enrolled' || isOnChainEnrolled) ? 'enrolled' :
-        null;
+    const isEnrolled = enrollmentStatus === 'enrolled' || enrollmentStatus === 'completed';
+    const isCompleted = enrollmentStatus === 'completed';
+    const fiatPrice = parseFloat(course.fiat_price || 0);
 
     const renderActionButton = () => {
-        if (effectiveStatus === 'completed') {
+        if (isCompleted) {
              return (
                  <BrutalistButton 
                     onClick={onEnterCourse}
@@ -47,7 +29,7 @@ const CourseModal = ({
              );
         }
         
-        if (effectiveStatus === 'enrolled') {
+        if (isEnrolled) {
              return (
                  <BrutalistButton 
                     onClick={onEnterCourse}
@@ -58,13 +40,25 @@ const CourseModal = ({
              );
         }
 
+        if (fiatPrice === 0) {
+            return (
+                <BrutalistButton 
+                    onClick={() => onEnroll(course)} 
+                    style={{ background: '#3ec636', color: '#000', maxWidth: '400px' }}
+                    disabled={loading}
+                >
+                    {loading ? <LoadingSpinner /> : 'ENROLL FREE'}
+                </BrutalistButton>
+            );
+        }
+
         return (
             <BrutalistButton 
-                onClick={() => onEnroll(course)} 
+                onClick={() => onPayFiat ? onPayFiat(course) : onEnroll(course)} 
                 style={{ maxWidth: '400px' }}
                 disabled={loading}
             >
-                {loading ? <LoadingSpinner /> : `ENROLL FOR ${course.price} ETH`}
+                {loading ? <LoadingSpinner /> : `PAY ₦${parseFloat(fiatPrice).toLocaleString()}`}
             </BrutalistButton>
         );
     };
@@ -87,7 +81,7 @@ const CourseModal = ({
                 background: 'var(--background)',
                 width: '100%',
                 maxHeight: '95vh',
-                maxWidth: '600px', /* Shrunk width for a true popup */
+                maxWidth: '600px',
                 border: '6px solid #000',
                 boxShadow: '12px 12px 0px #000',
                 position: 'relative',
@@ -137,7 +131,7 @@ const CourseModal = ({
                         letterSpacing: '-1px',
                         marginBottom: '1rem'
                     }}>
-                        {course.name}
+                        {course.name || course.title}
                     </h1>
 
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
@@ -155,7 +149,7 @@ const CourseModal = ({
                             </span>
                         )}
                         <span style={{ 
-                            background: 'var(--primary-color)', 
+                            background: fiatPrice === 0 ? '#3ec636' : 'var(--primary-color)', 
                             color: '#000', 
                             padding: '0.3rem 0.6rem', 
                             border: '3px solid #000',
@@ -163,7 +157,7 @@ const CourseModal = ({
                             textTransform: 'uppercase',
                             fontSize: '0.75rem'
                         }}>
-                            PRICE: {course.price} ETH
+                            {fiatPrice === 0 ? 'FREE' : `₦${fiatPrice.toLocaleString()}`}
                         </span>
                     </div>
 

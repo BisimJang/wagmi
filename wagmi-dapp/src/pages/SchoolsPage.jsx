@@ -34,10 +34,8 @@ const SchoolsPage = ({
         isActionLoading 
     } = useSovereignManagement(showMessage);
 
-    const mySchools = schools?.filter(s => 
-        address && 
-        s.instructor_address?.toLowerCase() === address.toLowerCase()
-    ) || [];
+    // Schools are already filtered server-side with ?mine=true
+    const mySchools = schools || [];
 
     const orphanedCourses = courses?.filter(c => 
         c.is_instructor && !c.school_address

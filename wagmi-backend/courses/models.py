@@ -42,7 +42,8 @@ class Course(models.Model):
         on_delete=models.CASCADE,
         related_name="instructed_courses"
     )
-    price = models.DecimalField(max_digits=20, decimal_places=8, default=0.00)
+    price = models.DecimalField(max_digits=20, decimal_places=8, default=0.00) # Web3 Price
+    fiat_price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00) # NGN Price
     image_url = models.URLField(blank=True, null=True)
     division = models.CharField(max_length=20, choices=DIVISION_CHOICES, default='neither')
     category = models.CharField(max_length=100, blank=True, null=True) # e.g. "Software Architecture", "Generative Art"
@@ -107,8 +108,8 @@ class Enrollment(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="enrollments")
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="enrollments")
-    wallet_address = models.CharField(max_length=42)
-    tx_hash = models.CharField(max_length=66, unique=True)
+    wallet_address = models.CharField(max_length=42, blank=True, null=True)
+    tx_hash = models.CharField(max_length=66, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='enrolled')
     enrolled_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)

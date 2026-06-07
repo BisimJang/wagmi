@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
-
 import LoadingSpinner from '../components/Feedback/LoadingSpinner';
 import LessonWorkspace from '../components/Course/LessonWorkspace';
-import { SCHOOL_ABI, COURSE_CONTRACT_ADDRESS } from '../web3/constants';
 import { ArrowLeft, BookOpen, CheckCircle, Play, Shield, Award, ChevronRight, ChevronLeft, X, List } from 'lucide-react';
 import { SOCRATIC_FALLBACK_NODES } from '../data/socratic_content';
 
@@ -22,8 +19,9 @@ const CourseView = ({
     projectGoal,
     user // Add user prop
 }) => {
-    const isInstructor = user?.address?.toLowerCase() === course?.instructor_address?.toLowerCase();
+    const isInstructor = course?.is_instructor;
     const isEnrolled = enrollmentStatus === 'enrolled' || enrollmentStatus === 'completed' || isInstructor;
+    const fiatPrice = parseFloat(course?.fiat_price || 0);
     const [activeLesson, setActiveLesson] = useState(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [expandedSections, setExpandedSections] = useState({});
@@ -290,8 +288,8 @@ const CourseView = ({
                                     onClick={() => onEnroll(course)}
                                     style={{ 
                                         width: '100%', 
-                                        background: '#1a1d23', 
-                                        color: '#fff',
+                                        background: fiatPrice === 0 ? '#3ec636' : '#1a1d23', 
+                                        color: fiatPrice === 0 ? '#000' : '#fff',
                                         padding: '1.5rem', 
                                         fontSize: '1.1rem',
                                         fontWeight: '800',
@@ -301,7 +299,7 @@ const CourseView = ({
                                         cursor: 'pointer'
                                     }}
                                 >
-                                    Enroll for {course.price} ETH
+                                    {fiatPrice === 0 ? 'Enroll Free' : `Pay ₦${fiatPrice.toLocaleString()}`}
                                 </button>
                             )}
                         </div>
@@ -381,7 +379,9 @@ const CourseView = ({
                             
                             {!isEnrolled ? (
                                 <>
-                                    <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#1a1d23', marginBottom: '1.5rem' }}>{course.price} ETH</div>
+                                    <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#1a1d23', marginBottom: '1.5rem' }}>
+                                        {fiatPrice === 0 ? 'FREE' : `₦${fiatPrice.toLocaleString()}`}
+                                    </div>
                                     <button 
                                         disabled={loading}
                                         onClick={() => onEnroll(course)} 

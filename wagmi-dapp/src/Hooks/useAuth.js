@@ -169,5 +169,51 @@ export const useAuth = (showMessage) => {
       }
   }, [showMessage]);
 
-  return { jwt, authLoading, loginWithWallet, loginWithGoogle, loginWithEmail, linkWallet, logout };
+  const registerUser = useCallback(async (email, password, name) => {
+      try {
+          setAuthLoading(true);
+          const data = await apiCall('/auth/register/', {
+              method: 'POST',
+              body: JSON.stringify({ email, password, name }),
+          });
+
+          setJwt(data.access);
+          localStorage.setItem('jwt', data.access);
+          localStorage.setItem('auth_type', 'email');
+
+          showMessage('Account created successfully!', 'success');
+          return true;
+      } catch (error) {
+          console.error('Registration error:', error);
+          showMessage(`Registration failed: ${error.message}`, 'error');
+          return false;
+      } finally {
+          setAuthLoading(false);
+      }
+  }, [showMessage]);
+
+  const registerInstitution = useCallback(async (orgData) => {
+      try {
+          setAuthLoading(true);
+          const data = await apiCall('/auth/register-institution/', {
+              method: 'POST',
+              body: JSON.stringify(orgData),
+          });
+
+          setJwt(data.access);
+          localStorage.setItem('jwt', data.access);
+          localStorage.setItem('auth_type', 'email');
+
+          showMessage('Institution registered successfully!', 'success');
+          return true;
+      } catch (error) {
+          console.error('Institution registration error:', error);
+          showMessage(`Registration failed: ${error.message}`, 'error');
+          return false;
+      } finally {
+          setAuthLoading(false);
+      }
+  }, [showMessage]);
+
+  return { jwt, authLoading, loginWithWallet, loginWithGoogle, loginWithEmail, registerUser, registerInstitution, linkWallet, logout };
 };

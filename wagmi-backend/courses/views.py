@@ -128,79 +128,57 @@ class EnrollmentListCreateView(generics.ListCreateAPIView):
 @api_view(["POST"])
 def enroll_in_course(request, course_id):
     """
-    Record an enrollment after frontend confirms on-chain tx.
-    Expects JSON: { "tx_hash": "0x...", "wallet_address": "0x..." }.
+    Record an enrollment.
+    - Free courses (fiat_price == 0): no tx_hash required.
+    - Paid Web3 courses: tx_hash (0x...) required.
     """
     user = request.user
 
-    # 1) Validate request body
-    tx_hash = request.data.get("tx_hash")
+    tx_hash = request.data.get("tx_hash")  # May be None for free courses
     wallet_address = request.data.get("wallet_address") or getattr(user, "address", None)
 
-    SENTINEL_HASHES = {'on-chain-verified', 'on-chain-sync'}
-    if not tx_hash or not isinstance(tx_hash, str) or (not tx_hash.startswith("0x") and tx_hash not in SENTINEL_HASHES):
-        return Response({"error": "tx_hash (hex string) is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-    if not wallet_address:
-        return Response({"error": "wallet_address is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-    # 2) Load course
+    # Load course
     try:
         course = Course.objects.get(pk=course_id)
     except Course.DoesNotExist:
         return Response({"error": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    # 3) Prevent reuse of the same tx_hash
-    if Enrollment.objects.filter(tx_hash=tx_hash).exists():
-        return Response({"error": "This transaction has already been used for enrollment."},
-                        status=status.HTTP_400_BAD_REQUEST)
+    # For paid courses, require a tx_hash
+    fiat_price = float(course.fiat_price or 0)
+    if fiat_price > 0 and tx_hash is None:
+        # Must go through Paystack — reject direct enrollment
+        return Response({"error": "This is a paid course. Please use the payment flow."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # 4) Prevent duplicate enrollment for same course/user
+    # Prevent duplicate enrollment
     if Enrollment.objects.filter(user=user, course=course, status__in=['enrolled', 'completed']).exists():
-        return Response({"error": "You are already enrolled in this course."},
-                        status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "You are already enrolled in this course."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # 5) Enforce max 20 active enrollments (Lifted from 2 for Phase 2)
+    # Enforce max active enrollments
     active_count = Enrollment.objects.filter(user=user, status='enrolled').count()
     if active_count >= 20:
-        return Response({"error": "Maximum of 20 active enrollments allowed."},
-                        status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Maximum of 20 active enrollments allowed."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Optional: verify tx on-chain here (recommended).
-    try:
-        w3 = Web3(Web3.HTTPProvider(settings.WEB3_PROVIDER_URI))
-        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=2) # Short timeout as we expect it to be mined or close to it
-        
-        if receipt['status'] != 1:
-            return Response({"error": "On-chain transaction failed. Please check your wallet balance/gas."}, 
-                            status=status.HTTP_400_BAD_REQUEST)
-        
-        # Verify the contract address matches
-        school_address = Web3.to_checksum_address(course.school_address)
-        if Web3.to_checksum_address(receipt['to']) != school_address:
-             return Response({"error": "Transaction was sent to the wrong contract."}, 
-                            status=status.HTTP_400_BAD_REQUEST)
-
-    except Exception as e:
-        logger.warning(f"On-chain verification skipped or failed: {str(e)}")
-        # We allow it to proceed if the RPC is down, but ideally we'd fail here.
-        # For now, let's keep it robust but alert.
+    # For Web3 paid courses — check tx_hash uniqueness
+    SENTINEL_HASHES = {'on-chain-verified', 'on-chain-sync'}
+    if tx_hash and isinstance(tx_hash, str) and (tx_hash.startswith("0x") or tx_hash in SENTINEL_HASHES):
+        if Enrollment.objects.filter(tx_hash=tx_hash).exists():
+            return Response({"error": "This transaction has already been used for enrollment."}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         enrollment = Enrollment.objects.create(
             user=user,
             course=course,
-            wallet_address=wallet_address,
+            wallet_address=wallet_address or "",
             tx_hash=tx_hash,
             status='enrolled'
         )
     except Exception as e:
         logger.exception("Failed to create enrollment")
-        return Response({"error": f"Failed to create enrollment: {str(e)}"},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"error": f"Failed to create enrollment: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     serializer = EnrollmentSerializer(enrollment)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 from .paystack import initialize_paystack_transaction, verify_paystack_transaction, convert_sol_to_kobo
 import uuid
@@ -695,9 +673,15 @@ class StudyBubbleViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # Institutions cannot use Study Bubbles
+        if getattr(self.request.user, 'is_institution', False):
+            return StudyBubble.objects.none()
         return StudyBubble.objects.filter(user=self.request.user).order_by('-created_at')
 
     def perform_create(self, serializer):
+        if getattr(self.request.user, 'is_institution', False):
+            from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
+            raise DRFPermissionDenied("Institution accounts cannot create Study Bubbles.")
         serializer.save(user=self.request.user)
 
     @action(detail=False, methods=['post'], url_path='generate')

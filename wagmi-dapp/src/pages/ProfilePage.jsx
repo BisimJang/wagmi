@@ -1,14 +1,11 @@
 // src/pages/ProfilePage.jsx
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useAccount, useBalance, useDisconnect } from 'wagmi';
 import { Settings, BookOpen, Award, Link as LinkIcon, Globe, User, Edit3, CheckCircle, Code, MessageSquare, LogOut, Target, Shield, Zap, Rocket } from 'lucide-react';
 import LoadingSpinner from '../components/Feedback/LoadingSpinner';
 import CourseCard from '../components/Card/CourseCard';
 import NftAvatarSelector from '../components/Profile/NftAvatarSelector';
 import { apiCall } from '../api/api';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 const ProfilePage = ({ 
     user, 
@@ -23,7 +20,6 @@ const ProfilePage = ({
     projectGoal,
     setProjectGoal
 }) => {
-    const { disconnect } = useDisconnect();
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
 
     useEffect(() => {
@@ -33,7 +29,6 @@ const ProfilePage = ({
     }, []);
 
     const handleSignOut = () => {
-        disconnect();
         if (onLogout) onLogout();
     };
 
@@ -61,13 +56,7 @@ const ProfilePage = ({
         }
     }, [user]);
 
-    const { publicKey } = useWallet();
-    
-    useEffect(() => {
-        if (publicKey && formData.address !== publicKey.toString()) {
-            setFormData(prev => ({ ...prev, address: publicKey.toString() }));
-        }
-    }, [publicKey]);
+
 
     const enrolledCourses = useMemo(() => {
         if (!user || !allCourses) return [];
@@ -444,19 +433,11 @@ const ProfilePage = ({
                                     />
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontWeight: '800', fontSize: '0.75rem', color: 'var(--primary-color)', letterSpacing: '1px', marginBottom: '0.8rem', textTransform: 'uppercase' }}>
-                                        SOLANA WALLET (FOR NFT CERTIFICATES)
+                                    <label style={{ display: 'block', fontWeight: '800', fontSize: '0.75rem', color: '#444', letterSpacing: '1px', marginBottom: '0.8rem', textTransform: 'uppercase' }}>
+                                        WALLET (OPTIONAL — FOR NFT CERTIFICATES)
                                     </label>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <WalletMultiButton style={{ background: 'var(--primary-color)', borderRadius: '12px', height: '48px', fontFamily: 'inherit', fontWeight: 'bold' }} />
-                                        {formData.address && (
-                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                                                Linked: {formData.address.slice(0, 6)}...{formData.address.slice(-4)}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <p style={{ marginTop: '0.8rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                                        Securely connect your Phantom wallet. When you complete a course, the Studyverse backend will instantly mint your NFT Certificate to this verified address for free.
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.6' }}>
+                                        Wallet linking will be available soon. Once enabled, you can connect a crypto wallet to receive NFT certificates when you complete courses.
                                     </p>
                                 </div>
                                 <button type="submit" style={{ background: 'var(--primary-color)', alignSelf: 'flex-start', padding: '1rem 3rem' }}>

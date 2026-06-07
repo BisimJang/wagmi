@@ -55,6 +55,11 @@ class WalletUser(AbstractBaseUser, PermissionsMixin):
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    
+    is_institution = models.BooleanField(default=False)
+    org_name = models.CharField(max_length=255, blank=True, null=True)
+    org_type = models.CharField(max_length=100, blank=True, null=True)
+    org_size = models.CharField(max_length=100, blank=True, null=True)
 
     USERNAME_FIELD = "address"
     REQUIRED_FIELDS = []

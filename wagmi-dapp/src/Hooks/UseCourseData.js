@@ -1,12 +1,12 @@
 // src/hooks/useCourseData.js
+// Web3 hooks are imported but dormant — re-enable later by uncommenting
 
 import { useState, useCallback, useEffect } from 'react';
 import { apiCall } from '../api/api';
-import { useWeb3Enrollment } from './useWeb3Enrollment'; 
-import { useWeb3Publish } from './useWeb3Publish';
-import { COURSE_CONTRACT_ADDRESS } from '../web3/constants';
+// import { useWeb3Enrollment } from './useWeb3Enrollment'; // Web3 - disabled
+// import { useWeb3Publish } from './useWeb3Publish'; // Web3 - disabled
 
-export const useCourseData = (address, showMessage, jwt) => {
+export const useCourseData = (showMessage, jwt) => {
     // --- State Initialization ---
     const [user, setUser] = useState(null);
     const [courses, setCourses] = useState([]);
@@ -24,30 +24,9 @@ export const useCourseData = (address, showMessage, jwt) => {
         currentPage: 1
     });
 
-    const [lastMintSchoolAddress, setLastMintSchoolAddress] = useState(null);
-    const [lastMintSchoolName, setLastMintSchoolName] = useState(null);
-    
-    // Web3 State
-    const [courseToEnroll, setCourseToEnroll] = useState(null); 
-    const [courseToMint, setCourseToMint] = useState(null);
-
-    // Wagmi hooks
-    const {
-        writeEnroll, 
-        claimCertificate,
-        isLoading: isWeb3Loading, 
-        isSuccess: isWeb3Success,
-        isReady,
-        txHash
-    } = useWeb3Enrollment(); 
-
-    const {
-        publishCourseOnChain,
-        bulkPublishOnChain,
-        isLoading: isPublishLoading,
-        isSuccess: isPublishSuccess,
-        txHash: publishTxHash
-    } = useWeb3Publish();
+    // Web3 state — kept for future re-enable
+    // const [courseToEnroll, setCourseToEnroll] = useState(null);
+    // const [courseToMint, setCourseToMint] = useState(null);
 
     // --- Core Data Fetching Functions ---
 
@@ -77,7 +56,7 @@ export const useCourseData = (address, showMessage, jwt) => {
         } finally {
             setLoading(false);
         }
-    }, [address, showMessage]);
+    }, [showMessage]);
 
     const loadCourses = useCallback(async (searchQuery = '', page = 1) => {
         try {
@@ -111,8 +90,8 @@ export const useCourseData = (address, showMessage, jwt) => {
 
     const fetchSchools = useCallback(async () => {
         try {
-            const data = await apiCall('/schools/');
-            setSchools(data || []);
+            const data = await apiCall('/schools/?mine=true');
+            setSchools(Array.isArray(data) ? data : (data?.results || []));
         } catch (error) {
             console.error('Error loading schools:', error);
         }
@@ -279,45 +258,48 @@ export const useCourseData = (address, showMessage, jwt) => {
         }
     }, [showMessage]);
 
-    // --- Enrollment Handler (Triggers Web3 Flow) ---
+    // --- Enrollment Handler (Web2 — no wallet needed) ---
     const COGNITIVE_LOAD_LIMIT = 3;
 
     const enrollInCourse = useCallback(async (course) => {
         const token = localStorage.getItem('jwt');
-        if (!token) { showMessage('Please connect and sign in to enroll', 'warning'); return; }
-        if (!address) { showMessage('Please connect your wallet to enroll', 'warning'); return; }
+        if (!token) { showMessage('Please sign in to enroll', 'warning'); return; }
+
+        if (!course || !course.id) {
+            showMessage('Error: Missing course data.', 'error');
+            return;
+        }
 
         // 🧠 Cognitive Load Check
-        const activeEnrollments = user?.enrollments?.filter(e => e.status === 'enrolled') || [];
+        const activeEnrollments = user?.enrollments?.filter(e => e.role === 'student') || [];
         if (activeEnrollments.length >= COGNITIVE_LOAD_LIMIT) {
-            showMessage(`Cognitive Load Reached: You have ${activeEnrollments.length} active nodes. Complete a module to unlock a new mastery slot.`, 'warning');
+            showMessage(`You have ${activeEnrollments.length} active courses. Complete one to unlock a new slot.`, 'warning');
             return;
         }
 
-        if (!course || !course.id || !course.price) {
-            console.error("Enrollment failed: Course data is missing ID or price.", course);
-            showMessage('Error: Missing course price or ID.', 'error');
-            return;
-        }
-        
-        setCourseToEnroll(course); // Keep it strictly for tracking the background API sync effect
-        showMessage('Preparing wallet transaction...', 'info');
-        
-        console.log('--- ENROLLMENT DEBUG ---');
-        console.log('Course ID:', course.id);
-        console.log('Course Price:', course.price);
-        console.log('School Address:', course.school_address);
+        const fiatPrice = parseFloat(course.fiat_price || 0);
 
-        try {
-            if (typeof writeEnroll === 'function') {
-                // Pass the sovereign school address if it exists, otherwise it defaults to legacy in the hook
-                await writeEnroll(course.id, course.price, course.school_address);
+        // Free course — enroll directly via API
+        if (fiatPrice === 0) {
+            try {
+                setLoading(true);
+                await apiCall(`/courses/${course.id}/enroll/`, {
+                    method: 'POST',
+                    body: JSON.stringify({ tx_hash: null, wallet_address: null })
+                });
+                showMessage('Enrolled successfully!', 'success');
+                await loadUserData(token);
+            } catch (error) {
+                showMessage(`Enrollment failed: ${error.message}`, 'error');
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            showMessage(`Transaction submission failed: ${error?.message || 'User rejected.'}`, 'error');
-            setCourseToEnroll(null);
+            return;
         }
-    }, [showMessage, address, writeEnroll]);
+
+        // Paid course — redirect to Paystack
+        await payWithFiat(course);
+    }, [showMessage, user, loadUserData]);
 
     const payWithFiat = useCallback(async (course) => {
         const token = localStorage.getItem('jwt');
@@ -352,66 +334,37 @@ export const useCourseData = (address, showMessage, jwt) => {
     }, [showMessage]);
 
 
-    /**
-     * Bulk Mints multiple courses in one transaction.
-     */
-    const bulkMintCourses = useCallback(async (courseIds, prices, targetAddress) => {
-        if (!address) { showMessage('Please connect your wallet', 'warning'); return; }
-        if (!targetAddress) { showMessage('No school contract found to mint on.', 'error'); return; }
-        
-        setLoading(true);
-        try {
-            const receipt = await bulkPublishOnChain(courseIds, prices, targetAddress);
-            if (receipt) {
-                // Update local state for all courses
-                setCourses(prev => prev.map(c => 
-                    courseIds.includes(c.id) ? { ...c, is_minted: true, school_address: targetAddress } : c
-                ));
 
-                // Notify backend for each course using the correct endpoint
-                await Promise.all(courseIds.map(id => apiCall(`/courses/${id}/confirm_mint/`, { 
-                    method: 'POST',
-                    body: JSON.stringify({ 
-                        tx_hash: receipt.transactionHash || receipt.hash,
-                        school_address: targetAddress,
-                        school_name: targetAddress === course.school_address ? course.school_name : null // Fallback
-                    })
-                })));
-                showMessage(`${courseIds.length} courses verified on-chain!`, 'success');
-                await loadCourses();
-            }
-        } catch (error) {
-            console.error('Bulk minting error:', error);
-            showMessage(`Bulk minting failed: ${error.message}`, 'error');
-        } finally {
-            setLoading(false);
-        }
-    }, [bulkPublishOnChain, address, showMessage, loadCourses]);
+    const mintCourse = useCallback(async () => {
+        // Web3 disabled — re-enable by uncommenting and wiring up publishCourseOnChain
+        showMessage('On-chain minting is not enabled yet.', 'info');
+    }, [showMessage]);
 
-    const mintCourse = useCallback(async (courseId, price, targetAddress, schoolName) => {
+    const bulkMintCourses = useCallback(async () => {
+        // Web3 disabled — re-enable later
+        showMessage('Bulk minting is not enabled yet.', 'info');
+    }, [showMessage]);
+
+    const claimCertificate = useCallback(async () => {
+        // Web3 disabled — re-enable later
+        showMessage('NFT certificate claiming is not enabled yet.', 'info');
+    }, [showMessage]);
+
+    const syncEnrollmentWithBackend = useCallback(async (courseId) => {
         const token = localStorage.getItem('jwt');
-        if (!token) { showMessage('Please sign in to mint a course', 'warning'); return; }
-        if (!address) { showMessage('Please connect your wallet', 'warning'); return; }
-        if (!targetAddress) { showMessage('No school contract found to mint on.', 'error'); return; }
-
-        const course = courses.find(c => c.id === courseId);
-        if (!course) { showMessage('Course not found.', 'error'); return; }
-
-        setCourseToMint(course);
-        setLastMintSchoolAddress(targetAddress);
-        setLastMintSchoolName(schoolName);
-        showMessage('Initializing on-chain minting...', 'info');
-
+        if (!token) return;
         try {
-            // This triggers the useEffect when successful
-            await publishCourseOnChain(courseId, price, targetAddress);
-        } catch (e) {
-            showMessage(`Minting failed: ${e.message}`, 'error');
-            setCourseToMint(null);
-            setLastMintSchoolAddress(null);
-            setLastMintSchoolName(null);
+            await apiCall(`/courses/${courseId}/enroll/`, {
+                method: 'POST',
+                body: JSON.stringify({ tx_hash: null, wallet_address: null })
+            });
+            await loadUserData(token);
+            return true;
+        } catch (error) {
+            console.error('Sync failed:', error);
+            return false;
         }
-    }, [address, courses, showMessage, publishCourseOnChain]);
+    }, [loadUserData]);
 
     const completeCourse = useCallback(async (courseId) => {
         const token = localStorage.getItem('jwt');
@@ -431,109 +384,19 @@ export const useCourseData = (address, showMessage, jwt) => {
         }
     }, [loadUserData, showMessage]);
 
-
-    // (Removed Web3 Submission Effect to prevent StrictMode double-firing)
-
-
-    const syncEnrollmentWithBackend = useCallback(async (courseId, txHash = null) => {
-        const token = localStorage.getItem('jwt');
-        if (!token || !address) return;
-
-        // 🎯 Use a unique dummy hash if none provided to avoid DB collisions
-        const effectiveTxHash = txHash || `verified-${courseId}-${address.toLowerCase()}`;
-
-        try {
-            await apiCall(`/courses/${courseId}/enroll/`, {
-                method: 'POST',
-                body: JSON.stringify({ 
-                    tx_hash: effectiveTxHash,
-                    wallet_address: address,
-                    course_id: courseId
-                })
-            });
-            await loadUserData(token);
-            return true;
-        } catch (error) {
-            console.error('Manual sync failed:', error);
-            return false;
-        }
-    }, [address, loadUserData]);
-
-    // ⚠️ Transaction Backend Sync Effect (Runs only AFTER successful transaction is mined)
-    useEffect(() => {
-        if (!isWeb3Success || !courseToEnroll || !txHash) return;
-
-        (async () => {
-            const token = localStorage.getItem('jwt');
-            if (!token) {
-                showMessage('Session expired. Please re-sign in.', 'error');
-                setCourseToEnroll(null);
-                setLoading(false);
-                return;
-            }
-
-            try {
-                showMessage('Recording enrollment on server...', 'info');
-                await syncEnrollmentWithBackend(courseToEnroll.id, txHash);
-                showMessage('Enrollment confirmed on server!', 'success');
-            } catch (error) {
-                console.error('Backend enrollment error:', error);
-                showMessage(`Server sync failed: ${error?.message || 'Unknown error'}`, 'error');
-            } finally {
-                setCourseToEnroll(null);
-                setLoading(false);
-            }
-        })();
-
-    }, [isWeb3Success, courseToEnroll, txHash, address, showMessage, syncEnrollmentWithBackend]);
-
-
-    useEffect(() => {
-        if (!isPublishSuccess || !courseToMint || !publishTxHash) return;
-
-        (async () => {
-            const token = localStorage.getItem('jwt');
-            if (!token) return;
-
-            try {
-                showMessage('Verifying mint on backend...', 'info');
-                await apiCall(`/courses/${courseToMint.id}/confirm_mint/`, {
-                    method: 'POST',
-                    body: JSON.stringify({ 
-                        tx_hash: publishTxHash,
-                        school_address: lastMintSchoolAddress,
-                        school_name: lastMintSchoolName
-                    })
-                });
-                showMessage('Course successfully minted on-chain!', 'success');
-                await loadCourses();
-            } catch (error) {
-                console.error('Mint sync error:', error);
-                showMessage('Failed to sync mint status to server.', 'error');
-            } finally {
-                setCourseToMint(null);
-                setLastMintSchoolAddress(null);
-                setLastMintSchoolName(null);
-            }
-        })();
-    }, [isPublishSuccess, courseToMint, publishTxHash, lastMintSchoolAddress, showMessage, loadCourses]);
-
-    // --- Initial Load Effect (CRITICAL for courses display) ---
+    // --- Initial Load Effect ---
     useEffect(() => {
         loadCourses();
-    }, [loadCourses]); 
-
-    // --- Final Return ---
-    const combinedLoading = loading || isWeb3Loading || isPublishLoading;
+    }, [loadCourses]);
 
     return {
-        user, 
-        courses, 
-        certificates, 
-        loading: combinedLoading,
-        stats, 
-        loadUserData, 
-        enrollInCourse, 
+        user,
+        courses,
+        certificates,
+        loading,
+        stats,
+        loadUserData,
+        enrollInCourse,
         completeCourse,
         claimCertificate,
         fetchLessonsAndProgress,

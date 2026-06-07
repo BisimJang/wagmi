@@ -1,8 +1,6 @@
 // src/App.jsx
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount } from "wagmi";
 import { Compass, School as SchoolIcon, User, Layout, BookOpen, Sparkles } from 'lucide-react';
 import './App.css';
 
@@ -30,6 +28,7 @@ import SchoolsPage from './pages/SchoolsPage.jsx';
 import MyCoursesPage from './pages/MyCoursesPage.jsx';
 import StudyBubblesPage from './pages/StudyBubblesPage.jsx';
 import InstitutionPage from './pages/InstitutionPage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
 
 // Helper function to convert flat lessons into nested sections
 const groupLessonsBySection = (flatLessons) => {
@@ -56,7 +55,6 @@ const groupLessonsBySection = (flatLessons) => {
 };
 
 function App() {
-  const { address, isConnected } = useAccount();
 
   // --- Theme ---
   const [theme, setTheme] = useState('dark'); // Default to dark for Premium
@@ -95,7 +93,7 @@ function App() {
   // --- Basic Routing Persistence ---
   useEffect(() => {
     const path = window.location.pathname.replace('/', '');
-    const validPages = ['home', 'courses', 'schools', 'my_courses', 'profile', 'instructor', 'study-bubbles', 'institutions'];
+  const validPages = ['home', 'courses', 'schools', 'my_courses', 'profile', 'instructor', 'study-bubbles', 'institutions', 'login'];
     if (validPages.includes(path)) {
       setCurrentPage(path);
     }
@@ -112,6 +110,8 @@ function App() {
     loginWithWallet,
     loginWithGoogle,
     loginWithEmail,
+    registerUser,
+    registerInstitution,
     linkWallet,
     logout
   } = useAuth(showMessage);
@@ -143,7 +143,7 @@ function App() {
     syncEnrollmentWithBackend,
     myCourses,
     payWithFiat
-  } = useCourseData(address, showMessage, jwt);
+  } = useCourseData(showMessage, jwt);
 
   // Trigger Onboarding if no goal set
   useEffect(() => {
@@ -161,14 +161,14 @@ function App() {
   } = useSchoolRegistry(showMessage);
 
   useEffect(() => {
-    if (address) {
+    if (jwt) {
       fetchOwnedSchools();
     }
-  }, [address, fetchOwnedSchools]);
+  }, [jwt, fetchOwnedSchools]);
 
   const loading = dataLoading || authLoading;
   const isImmersivePage = ['course_view', 'study-bubbles'].includes(currentPage);
-  const showGlobalFooter = !['course_view', 'instructor'].includes(currentPage);
+  const showGlobalFooter = !['home', 'course_view', 'instructor'].includes(currentPage);
 
   useEffect(() => {
     if (jwt) {
@@ -220,13 +220,8 @@ function App() {
     if (!user) return null;
     if (user.certificates?.some(cert => cert.course_id === courseId)) return 'completed';
     if (user.enrollments?.some(enrollment => enrollment.course_id === courseId)) return 'enrolled';
-    
-    // 🎯 NEW: Recognize Instructor as a special status (not on-chain enrolled)
     const course = courses.find(c => c.id === courseId);
-    if (course && user.address?.toLowerCase() === course.instructor_address?.toLowerCase()) {
-        return 'instructor';
-    }
-    
+    if (course?.is_instructor) return 'instructor';
     return null;
   };
 
@@ -251,7 +246,8 @@ function App() {
     const showPage = (pageId) => {
         const privatePages = ['instructor', 'my_courses', 'profile'];
         if (privatePages.includes(pageId) && !jwt) {
-            setIsLoginModalOpen(true);
+            setCurrentPage('login');
+            window.history.pushState({}, '', '/login');
             return;
         }
         setCurrentPage(pageId);
@@ -283,7 +279,6 @@ function App() {
                 />;
             case 'schools':
                 return <SchoolsPage 
-                    address={address}
                     user={user}
                     schools={schools}
                     fetchSchools={fetchSchools}
@@ -331,7 +326,6 @@ function App() {
                     syncOnChainEnrollment={syncEnrollmentWithBackend}
                     showMessage={showMessage}
                     linkWallet={linkWallet}
-                    address={address}
                     onLogout={handleLogout}
                     projectGoal={projectGoal}
                     setProjectGoal={setGlobalProjectGoal}
@@ -357,6 +351,18 @@ function App() {
                 return <StudyBubblesPage showPage={showPage} />;
             case 'institutions':
                 return <InstitutionPage showPage={showPage} loginWithEmail={loginWithEmail} />;
+            case 'login':
+                return <LoginPage 
+                    onGoogleSuccess={loginWithGoogle}
+                    onGoogleError={() => showMessage('Google login failed', 'error')}
+                    loginWithWallet={loginWithWallet}
+                    loginWithEmail={loginWithEmail}
+                    registerUser={registerUser}
+                    registerInstitution={registerInstitution}
+                    isAuthorized={!!jwt}
+                    showPage={showPage}
+                    defaultTab='login'
+                />;
             default: return <HomePage stats={stats} user={user} certificates={certificates} showPage={showPage} />;
         }
     };
@@ -390,10 +396,15 @@ function App() {
                   {!isMobile && (
                       <ul className="nav-links nav-module">
                           <li><a onClick={() => showPage('courses')} className={currentPage === 'courses' ? 'active' : ''}>Explore</a></li>
-                          <li><a onClick={() => showPage('my_courses')} className={currentPage === 'my_courses' ? 'active' : ''}>My Courses</a></li>
-                          <li><a onClick={() => showPage('schools')} className={currentPage === 'schools' ? 'active' : ''}>Learning Engine</a></li>
-                          <li><a onClick={() => showPage('study-bubbles')} className={currentPage === 'study-bubbles' ? 'active' : ''}>Bubbles</a></li>
-                          <li><a onClick={() => showPage('institutions')} className={currentPage === 'institutions' ? 'active' : ''} style={{ color: '#fbbf24' }}>For Institutions</a></li>
+                          
+                          {user && (
+                              <li><a onClick={() => showPage('my_courses')} className={currentPage === 'my_courses' ? 'active' : ''}>My Courses</a></li>
+                          )}
+                          
+                          {user && (!user.is_institution) && (
+                              <li><a onClick={() => showPage('study-bubbles')} className={currentPage === 'study-bubbles' ? 'active' : ''}>Bubbles</a></li>
+                          )}
+                          
                           {user && (
                               <li><a onClick={() => showPage('instructor')} className={currentPage === 'instructor' ? 'active' : ''}>Studio</a></li>
                           )}
@@ -402,7 +413,7 @@ function App() {
 
                   <div className="wallet-section nav-module">
                           {!jwt ? (
-                              <button onClick={() => setIsLoginModalOpen(true)} style={{ background: 'var(--primary-color)', color: '#fff', padding: isMobile ? '0.6rem 1.2rem' : '0.8rem 1.6rem', fontSize: isMobile ? '0.8rem' : '1rem' }}>
+                              <button onClick={() => showPage('login')} style={{ background: 'var(--primary-color)', color: '#fff', padding: isMobile ? '0.6rem 1.2rem' : '0.8rem 1.6rem', fontSize: isMobile ? '0.8rem' : '1rem' }}>
                                   Sign In
                               </button>
                           ) : (
@@ -455,18 +466,21 @@ function App() {
                   <Compass size={22} />
                   <span>Explore</span>
                 </a>
-                <a className={`bottom-nav-link ${currentPage === 'my_courses' ? 'active' : ''}`} onClick={() => showPage('my_courses')}>
-                  <BookOpen size={22} />
-                  <span>My Courses</span>
-                </a>
-                <a className={`bottom-nav-link ${currentPage === 'schools' ? 'active' : ''}`} onClick={() => showPage('schools')}>
-                  <SchoolIcon size={22} />
-                  <span>Engine</span>
-                </a>
-                <a className={`bottom-nav-link ${currentPage === 'study-bubbles' ? 'active' : ''}`} onClick={() => showPage('study-bubbles')}>
-                  <Sparkles size={22} />
-                  <span>Bubbles</span>
-                </a>
+                
+                {user && (
+                    <a className={`bottom-nav-link ${currentPage === 'my_courses' ? 'active' : ''}`} onClick={() => showPage('my_courses')}>
+                    <BookOpen size={22} />
+                    <span>My Courses</span>
+                    </a>
+                )}
+                
+                {user && (!user.is_institution) && (
+                    <a className={`bottom-nav-link ${currentPage === 'study-bubbles' ? 'active' : ''}`} onClick={() => showPage('study-bubbles')}>
+                    <Sparkles size={22} />
+                    <span>Bubbles</span>
+                    </a>
+                )}
+
                 {user && (
                   <a className={`bottom-nav-link ${currentPage === 'instructor' ? 'active' : ''}`} onClick={() => showPage('instructor')}>
                     <Layout size={22} />

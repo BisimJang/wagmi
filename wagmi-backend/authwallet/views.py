@@ -233,3 +233,87 @@ class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
 
 
+from rest_framework.permissions import AllowAny
+
+class RegisterUserView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email")
+        password = request.data.get("password")
+        name = request.data.get("name", "")
+
+        if not email or not password:
+            return Response({"error": "Email and password required"}, status=400)
+
+        from .models import WalletUser
+        if WalletUser.objects.filter(email=email).exists():
+            return Response({"error": "Email already exists"}, status=400)
+
+        user = WalletUser.objects.create_user(
+            email=email,
+            password=password,
+            display_name=name
+        )
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "display_name": user.display_name
+            }
+        }, status=201)
+
+class RegisterInstitutionView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email")
+        org_name = request.data.get("org_name")
+        org_type = request.data.get("org_type")
+        org_size = request.data.get("org_size")
+
+        if not email or not org_name:
+            return Response({"error": "Email and Organization Name are required"}, status=400)
+
+        from .models import WalletUser
+        if WalletUser.objects.filter(email=email).exists():
+            return Response({"error": "A user with this email already exists"}, status=400)
+
+        # Create user without password (or generate random since they didn't provide one in institution form)
+        # Wait, the frontend institution form doesn't have a password field. It says "Our team will reach out".
+        # If we want them to log in instantly, we should require a password on the form.
+        # Let's generate a temporary random password. They can reset it later, or they just get created.
+        import secrets
+        temp_password = secrets.token_urlsafe(16)
+
+        user = WalletUser.objects.create_user(
+            email=email,
+            password=temp_password,
+            display_name=org_name,
+            is_institution=True,
+            is_staff=True, # Institutions can create courses
+            org_name=org_name,
+            org_type=org_type,
+            org_size=org_size
+        )
+
+        # Auto-create the sovereign school
+        import uuid
+        from courses.models import SovereignSchool
+        SovereignSchool.objects.create(
+            address=f"0xschool_{uuid.uuid4().hex[:32]}",
+            name=org_name,
+            instructor=user
+        )
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "message": "Institution registered successfully",
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }, status=201)
+
