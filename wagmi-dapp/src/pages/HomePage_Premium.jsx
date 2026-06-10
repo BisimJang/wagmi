@@ -7,162 +7,84 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
   const labelsRef = useRef([]);
 
   useEffect(() => {
-    const SLIDES = 3;
-    const SLIDE_H = 540;
+    const SLIDES  = 3;
+    const track   = document.getElementById('features-track');
     const section = sectionRef.current;
-    const fLeft = fLeftRef.current;
-    const reel = reelRef.current;
-    const labels = labelsRef.current;
+    const fLeft   = fLeftRef.current;
+    const reel    = reelRef.current;   // now the SVG wrapper div
+    const labels  = labelsRef.current;
 
-    if (!section || !fLeft || !reel || labels.length === 0) return;
+    if (!track || !section || !fLeft || !reel || !labels.length) return;
 
-    let current = 0;
-    let busy = false;   // locked during transition animation
-    let jacked = false;   // are we currently intercepting scroll?
-    let cooldown = false;   // brief cooldown after releasing scroll-jack
+    let current = -1;
 
-    /* ── centre text column on active label ── */
     function centreOn(idx, animate) {
       let acc = 0;
       labels.forEach((el, i) => {
         if (!el) return;
         if (i === idx) {
-          const mid = acc + el.offsetHeight / 2;
+          const mid    = acc + el.offsetHeight / 2;
           const pinMid = section.offsetHeight / 2;
-          fLeft.style.transition = animate ? 'transform .65s cubic-bezier(.77,0,.175,1)' : 'none';
+          fLeft.style.transition = animate
+            ? 'transform .6s cubic-bezier(.77,0,.175,1)'
+            : 'none';
           fLeft.style.transform = `translateY(${pinMid - mid}px)`;
         }
         acc += el.offsetHeight;
       });
     }
 
-    /* ── go to slide idx ── */
     function goTo(idx) {
+      if (idx === current) return;
       current = idx;
-      const slides = reel.querySelectorAll('.c-slide');
-      slides.forEach((s, i) => {
-        if (i === idx) s.classList.add('active');
-        else s.classList.remove('active');
+
+      // rotate the compass ring: 120° per step clockwise
+      const deg = idx * 120;
+      reel.style.transition = current === 0 && idx === 0
+        ? 'none'
+        : 'transform .7s cubic-bezier(.77,0,.175,1)';
+      reel.style.transform  = `rotate(${deg}deg)`;
+
+      // counter-rotate each label group so text stays upright
+      reel.querySelectorAll('.compass-label').forEach((g) => {
+        g.style.transition = reel.style.transition;
+        g.style.transform  = `rotate(-${deg}deg)`;
       });
+
+      // highlight active dot
+      reel.querySelectorAll('.compass-dot').forEach((d, i) => {
+        d.classList.toggle('dot-active', i === (idx % SLIDES));
+      });
+
+      // text labels left
       labels.forEach((l, i) => {
-        if (l) {
-          if (i === idx) l.classList.add('active');
-          else l.classList.remove('active');
-        }
+        if (l) l.classList.toggle('active', i === idx);
       });
-      centreOn(idx, true);
+
+      centreOn(idx, idx !== 0);
     }
 
-    /* ── release scroll-jack and move to adjacent section ── */
-    function release(dir) {
-      jacked = false;
-      cooldown = true;
-      const target = dir > 0
-        ? section.nextElementSibling
-        : section.previousElementSibling;
-      if (target) target.scrollIntoView({ behavior: 'smooth' });
-      // cooldown prevents re-entry for 900ms after release
-      setTimeout(() => { cooldown = false; }, 900);
+    function onScroll() {
+      const trackRect = track.getBoundingClientRect();
+      const trackH    = track.offsetHeight;
+      const vpH       = window.innerHeight;
+      const scrolled  = -trackRect.top;
+
+      if (scrolled < 0 || scrolled > trackH - vpH) return;
+
+      const band = (trackH - vpH) / SLIDES;
+      const idx  = Math.min(Math.floor(scrolled / band), SLIDES - 1);
+      goTo(idx);
     }
-
-    /* ── check if features section fully fills the viewport ── */
-    function isActive() {
-      const r = section.getBoundingClientRect();
-      return r.top <= 1 && r.bottom >= window.innerHeight - 1;
-    }
-
-    /* ── wheel ── */
-    function onWheel(e) {
-      if (cooldown) return;
-
-      // entering: section top is scrolling into view from below
-      const r = section.getBoundingClientRect();
-      if (!jacked && r.top > 0 && r.top < window.innerHeight && e.deltaY > 0) {
-        e.preventDefault();
-        jacked = true;
-        goTo(0);
-        section.scrollIntoView({ behavior: 'smooth' });
-        cooldown = true;
-        setTimeout(() => { cooldown = false; }, 700);
-        return;
-      }
-
-      // entering: section bottom is scrolling into view from above
-      if (!jacked && r.bottom > 0 && r.bottom < window.innerHeight && e.deltaY < 0) {
-        e.preventDefault();
-        jacked = true;
-        goTo(SLIDES - 1);
-        section.scrollIntoView({ behavior: 'smooth' });
-        cooldown = true;
-        setTimeout(() => { cooldown = false; }, 700);
-        return;
-      }
-
-      if (!jacked && !isActive()) return;
-
-      // snap section into view if it drifted slightly
-      if (!jacked && isActive()) jacked = true;
-
-      if (!jacked) return;
-      
-      // We must check if the event is cancelable to avoid Chrome errors
-      if (e.cancelable) {
-        e.preventDefault();
-      }
-
-      if (busy) return;
-
-      const dir = e.deltaY > 0 ? 1 : -1;
-      const next = current + dir;
-
-      if (next >= 0 && next < SLIDES) {
-        busy = true;
-        goTo(next);
-        setTimeout(() => { busy = false; }, 750);
-      } else {
-        // exhausted slides — release
-        release(dir);
-      }
-    }
-
-    /* ── touch ── */
-    let ty0 = 0;
-    function onTouchStart(e) { ty0 = e.touches[0].clientY; }
-    function onTouchMove(e) {
-      if (cooldown || !jacked) return;
-      const dy = ty0 - e.touches[0].clientY;
-      if (Math.abs(dy) < 40) return;
-      if (e.cancelable) {
-          e.preventDefault();
-      }
-      onWheel({ deltaY: dy, preventDefault() {}, cancelable: false });
-      ty0 = e.touches[0].clientY;
-    }
-
-    /* ── re-evaluate on native scroll (e.g. keyboard, scrollbar) ── */
-    const onScroll = () => {
-      if (cooldown) return;
-      if (isActive() && !jacked) { jacked = true; }
-      if (!isActive() && jacked) { jacked = false; }
-    };
 
     window.addEventListener('scroll', onScroll, { passive: true });
-    // For wheel and touchmove we need `{ passive: false }` to call preventDefault
-    window.addEventListener('wheel', onWheel, { passive: false });
-    window.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: false });
 
-    /* init */
-    goTo(0);
-    // Use setTimeout instead of requestAnimationFrame for React initial render sync
-    setTimeout(() => centreOn(0, false), 50);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      centreOn(0, false);
+      goTo(0);
+    }));
 
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('wheel', onWheel);
-      window.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchmove', onTouchMove);
-    };
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   return (
@@ -274,61 +196,137 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
         }
         .sv-landing .btn:hover { transform: scale(1.03); }
 
-        /* ── FEATURES (scroll-jacked) ────────────────────── */
-        #features {
+        /* ── FEATURES ────────────────────────────────────────────────────── */
+
+        #features-track {
+          height: 400vh;
           position: relative;
+        }
+
+        #features {
+          position: sticky;
+          top: 0;
           height: 100vh;
           overflow: hidden;
           display: flex;
           align-items: center;
+          background: #fff;
         }
 
-        /* text lives within the left half of the content zone */
         .f-left {
+          position: relative;
+          z-index: 2;
           padding-left: var(--pad);
-          width: calc(var(--pad) + 400px);
-          position: relative; z-index: 2;
-          transition: transform .65s cubic-bezier(.77,0,.175,1);
-        }
-        .f-label {
-          padding: 26px 0; max-width: 300px;
-          transition: filter .5s ease, opacity .5s ease, transform .5s ease;
-          filter: blur(4px); opacity: .18; transform: scale(.93);
-        }
-        .f-label.active { filter: blur(0); opacity: 1; transform: scale(1); }
-        .f-label h3 { font-size: 26px; font-weight: 700; line-height: 1.2; margin-bottom: 8px; }
-        .f-label p { font-size: 13.5px; color: #555; line-height: 1.7; max-width: 260px; }
-
-        /* circle — anchored right, half clipped by section overflow:hidden */
-        .f-circle {
-          position: absolute;
-          right: -260px;
-          top: 50%; transform: translateY(-50%);
-          width: 720px; height: 720px;
-          border-radius: 50%;
-          overflow: hidden;
+          width: calc(var(--pad) + 380px);
           flex-shrink: 0;
         }
-        .c-reel {
-          position: relative; width: 100%; height: 100%;
+
+        .f-label {
+          padding: 28px 0;
+          max-width: 300px;
+          min-height: 120px;
+          transition: filter .5s ease, opacity .5s ease, transform .5s ease;
+          filter: blur(4px);
+          opacity: .18;
+          transform: scale(.93);
         }
-        .c-slide {
-          position: absolute; inset: 0;
-          width: 100%; height: 100%;
-          display: flex; align-items: center; justify-content: center;
-          opacity: 0;
-          transition: opacity .65s ease, transform .65s ease;
-          transform: scale(0.95);
-        }
-        .c-slide.active {
+        .f-label.active {
+          filter: blur(0);
           opacity: 1;
           transform: scale(1);
-          z-index: 1;
         }
-        .c-slide svg { width: 240px; height: 240px; }
-        .s0 { background: #3B5BDB; }
-        .s1 { background: #1a1a2e; }
-        .s2 { background: #1e3a2f; }
+        .f-label h3 {
+          font-size: 26px;
+          font-weight: 700;
+          line-height: 1.2;
+          margin-bottom: 8px;
+        }
+        .f-label p {
+          font-size: 13.5px;
+          color: #555;
+          line-height: 1.7;
+          max-width: 260px;
+        }
+
+        /* Compass circle — dark background so the SVG reads clearly */
+        .f-circle {
+          position: absolute;
+          left: calc(var(--pad) + 420px);
+          top: 50%;
+          transform: translateY(-50%);
+          width: 600px;
+          height: 600px;
+          border-radius: 50%;
+          overflow: hidden;
+          background: #0d0d0d;
+          flex-shrink: 0;
+        }
+
+        /* The reel is now a plain div we rotate */
+        .c-reel {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transform-origin: center center;
+          will-change: transform;
+        }
+
+        .c-reel svg {
+          width: 80%;
+          height: 80%;
+        }
+
+        /* Active dot brightness handled inline via fillOpacity transition */
+
+        @media (max-width: 1200px) {
+          .f-circle {
+            left: calc(var(--pad) + 360px);
+            width: 480px;
+            height: 480px;
+          }
+        }
+
+        @media (max-width: 1024px) {
+          .f-circle {
+            left: calc(var(--pad) + 320px);
+            width: 400px;
+            height: 400px;
+          }
+        }
+
+        @media (max-width: 768px) {
+          #features-track { height: auto; }
+          #features {
+            position: relative;
+            height: auto;
+            flex-direction: column;
+            padding: 80px 0 60px;
+            overflow: visible;
+            background: #fff;
+          }
+          .f-left {
+            width: 100%;
+            padding-right: var(--pad);
+            margin-bottom: 48px;
+          }
+          .f-label {
+            filter: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+            min-height: unset;
+          }
+          .f-circle {
+            position: relative;
+            left: auto;
+            top: auto;
+            transform: none;
+            width: min(300px, 85vw);
+            height: min(300px, 85vw);
+            margin: 0 auto;
+          }
+        }
 
         /* ── INSTITUTIONS ────────────────────────────────── */
         .institutions { display: flex; min-height: 90vh; align-items: center; }
@@ -434,61 +432,147 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
       </section>
 
       {/* FEATURES */}
-      <section id="features" ref={sectionRef}>
-        <div className="f-left" id="fLeft" ref={fLeftRef}>
-          <div className="f-label active" data-i="0" ref={(el) => (labelsRef.current[0] = el)}>
-            <h3>Immersive<br />Learning</h3>
-            <p>Dive deep into subjects through interactive lessons and hands-on projects that keep you engaged and progressing.</p>
-          </div>
-          <div className="f-label" data-i="1" ref={(el) => (labelsRef.current[1] = el)}>
-            <h3>Verifiable<br />Credentials</h3>
-            <p>Your achievements are minted as immutable, cryptographic certificates. Prove your skills to employers with unquestionable authenticity.</p>
-          </div>
-          <div className="f-label" data-i="2" ref={(el) => (labelsRef.current[2] = el)}>
-            <h3>AI Assisted</h3>
-            <p>Leverage AI-powered tutors, adaptive quizzes, and personalised study paths to reach mastery faster than ever.</p>
-          </div>
-        </div>
+      <div id="features-track">
+        <section id="features" ref={sectionRef}>
 
-        <div className="f-circle">
-          <div className="c-reel" id="cReel" ref={reelRef}>
-            <div className="c-slide s0">
-              <svg viewBox="0 0 180 180" fill="none">
-                <rect x="28" y="28" width="38" height="38" rx="7" stroke="white" strokeWidth="3" />
-                <rect x="71" y="71" width="38" height="38" rx="7" stroke="white" strokeWidth="3" />
-                <rect x="114" y="28" width="38" height="38" rx="7" stroke="white" strokeWidth="3" />
-                <rect x="114" y="114" width="38" height="38" rx="7" stroke="white" strokeWidth="3" />
-                <rect x="28" y="114" width="38" height="38" rx="7" stroke="white" strokeWidth="3" />
-                <line x1="47" y1="66" x2="71" y2="83" stroke="white" strokeWidth="2.5" />
-                <line x1="109" y1="83" x2="133" y2="66" stroke="white" strokeWidth="2.5" />
-                <line x1="109" y1="97" x2="133" y2="114" stroke="white" strokeWidth="2.5" />
-                <line x1="71" y1="97" x2="47" y2="114" stroke="white" strokeWidth="2.5" />
-              </svg>
+          {/* Left text column — unchanged structure */}
+          <div className="f-left" ref={fLeftRef}>
+            <div className="f-label active" ref={(el) => (labelsRef.current[0] = el)}>
+              <h3>Immersive<br />Learning</h3>
+              <p>Dive deep into subjects through interactive lessons and hands-on projects that keep you engaged and progressing.</p>
             </div>
-            <div className="c-slide s1">
-              <svg viewBox="0 0 180 180" fill="none">
-                <circle cx="90" cy="76" r="40" stroke="white" strokeWidth="3" />
-                <circle cx="90" cy="76" r="27" stroke="white" strokeWidth="2" />
-                <polyline points="74,76 86,90 110,62" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M68 112 L56 152 L90 136 L124 152 L112 112" stroke="white" strokeWidth="2.5" strokeLinejoin="round" />
-              </svg>
+            <div className="f-label" ref={(el) => (labelsRef.current[1] = el)}>
+              <h3>Verifiable<br />Credentials</h3>
+              <p>Your achievements are minted as immutable, cryptographic certificates. Prove your skills to employers with unquestionable authenticity.</p>
             </div>
-            <div className="c-slide s2">
-              <svg viewBox="0 0 180 180" fill="none">
-                <ellipse cx="90" cy="82" rx="44" ry="40" stroke="white" strokeWidth="3" />
-                <line x1="90" y1="42" x2="90" y2="28" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                <line x1="90" y1="122" x2="90" y2="154" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                <line x1="79" y1="152" x2="101" y2="152" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                <circle cx="72" cy="70" r="7" stroke="white" strokeWidth="2" />
-                <circle cx="108" cy="70" r="7" stroke="white" strokeWidth="2" />
-                <circle cx="90" cy="96" r="7" stroke="white" strokeWidth="2" />
-                <line x1="79" y1="70" x2="83" y2="96" stroke="white" strokeWidth="1.5" />
-                <line x1="101" y1="70" x2="97" y2="96" stroke="white" strokeWidth="1.5" />
+            <div className="f-label" ref={(el) => (labelsRef.current[2] = el)}>
+              <h3>AI Assisted</h3>
+              <p>Leverage AI-powered tutors, adaptive quizzes, and personalised study paths to reach mastery faster than ever.</p>
+            </div>
+          </div>
+
+          {/* Compass circle */}
+          <div className="f-circle">
+            {/*
+              reelRef is now on this div so we can rotate it and access
+              .compass-label and .compass-dot children in the useEffect.
+            */}
+            <div className="c-reel" ref={reelRef}>
+              <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+                {/* ── outer ring ── */}
+                <circle cx="200" cy="200" r="168" stroke="white" strokeWidth="1" strokeOpacity="0.2" />
+                <circle cx="200" cy="200" r="148" stroke="white" strokeWidth="1.5" strokeOpacity="0.35" />
+
+                {/* ── inner hub ── */}
+                <circle cx="200" cy="200" r="28" fill="white" fillOpacity="0.08" stroke="white" strokeWidth="1.5" strokeOpacity="0.5" />
+                <circle cx="200" cy="200" r="5"  fill="white" fillOpacity="0.9" />
+
+                {/* ── tick marks at 30° intervals ── */}
+                {Array.from({ length: 12 }, (_, i) => {
+                  const angle = (i * 30 * Math.PI) / 180;
+                  const r1 = 148, r2 = i % 3 === 0 ? 136 : 141;
+                  return (
+                    <line
+                      key={i}
+                      x1={200 + r1 * Math.sin(angle)}
+                      y1={200 - r1 * Math.cos(angle)}
+                      x2={200 + r2 * Math.sin(angle)}
+                      y2={200 - r2 * Math.cos(angle)}
+                      stroke="white"
+                      strokeWidth={i % 3 === 0 ? 2 : 1}
+                      strokeOpacity={i % 3 === 0 ? 0.7 : 0.3}
+                    />
+                  );
+                })}
+
+                {/* ── spoke lines to each point ── */}
+                {/* E  (0°  from top = north, so E is at 90° = right) → at start, E is top */}
+                {/* Points are at 0° (top/active), 120° (lower-right), 240° (lower-left)   */}
+                {[0, 120, 240].map((deg, i) => {
+                  const rad = (deg * Math.PI) / 180;
+                  const x2  = 200 + 120 * Math.sin(rad);
+                  const y2  = 200 - 120 * Math.cos(rad);
+                  return (
+                    <line
+                      key={i}
+                      x1="200" y1="200"
+                      x2={x2} y2={y2}
+                      stroke="white"
+                      strokeWidth="1"
+                      strokeOpacity="0.2"
+                      strokeDasharray="4 4"
+                    />
+                  );
+                })}
+
+                {/* ── the 3 feature points ── */}
+                {/* 
+                  Point layout (before any rotation):
+                    i=0  deg=0    → top    (12 o'clock) — slide 0 active here
+                    i=1  deg=120  → lower-right          — slide 1
+                    i=2  deg=240  → lower-left           — slide 2
+                  
+                  Compass letters: E, S, W mapped to slides 0, 1, 2
+                  (N is the "active top" position — not a labelled feature point)
+                */}
+                {[
+                  { deg: 0,   letter: 'E', label: 'Learn' },
+                  { deg: 120, letter: 'S', label: 'Prove' },
+                  { deg: 240, letter: 'W', label: 'Assist' },
+                ].map(({ deg, letter, label }, i) => {
+                  const rad  = (deg * Math.PI) / 180;
+                  const cx   = 200 + 148 * Math.sin(rad);
+                  const cy   = 200 - 148 * Math.cos(rad);
+                  const lx   = 200 + 172 * Math.sin(rad);
+                  const ly   = 200 - 172 * Math.cos(rad);
+                  return (
+                    <g key={i} className="compass-label" style={{ transformOrigin: `${cx}px ${cy}px` }}>
+                      {/* dot */}
+                      <circle
+                        cx={cx} cy={cy} r="7"
+                        fill="white" fillOpacity={i === 0 ? 1 : 0.25}
+                        className={`compass-dot${i === 0 ? ' dot-active' : ''}`}
+                        style={{ transition: 'fill-opacity .5s' }}
+                      />
+                      {/* cardinal letter */}
+                      <text
+                        x={lx} y={ly}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fill="white"
+                        fontSize="13"
+                        fontWeight="600"
+                        fontFamily="Poppins, sans-serif"
+                        opacity={i === 0 ? 1 : 0.4}
+                      >
+                        {letter}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* ── N marker (fixed top — the "active" arrival point) ── */}
+                <text
+                  x="200" y="22"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill="white"
+                  fontSize="11"
+                  fontWeight="700"
+                  fontFamily="Poppins, sans-serif"
+                  opacity="0.9"
+                  letterSpacing="2"
+                >
+                  ▲
+                </text>
+
               </svg>
             </div>
           </div>
-        </div>
-      </section>
+
+        </section>
+      </div>
 
       {/* INSTITUTIONS */}
       <section className="institutions">

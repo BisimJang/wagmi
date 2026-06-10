@@ -52,159 +52,175 @@ const BubbleGenesisModal = ({ isOpen, onClose, onGenesis }) => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(10, 11, 14, 0.85)',
-            backdropFilter: 'blur(20px)',
+            background: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
-            padding: '1.5rem'
+            padding: '1.5rem',
+            fontFamily: "'Poppins', sans-serif"
         }}>
             <div style={{
                 width: '100%',
-                maxWidth: '650px',
-                background: '#1a1d23',
-                borderRadius: '40px',
-                border: '1px solid rgba(255,255,255,0.1)',
+                maxWidth: '820px',
+                background: '#fff',
+                borderRadius: '16px',
+                border: '1.5px solid #0d0d0d',
                 padding: '3rem',
                 position: 'relative',
-                boxShadow: '0 40px 100px rgba(0,0,0,0.5)',
-                animation: 'modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                boxShadow: '0 20px 60px rgba(0,0,0,0.08)',
+                animation: 'modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
             }}>
                 <button 
                     onClick={onClose}
-                    style={{ position: 'absolute', top: '2rem', right: '2rem', background: 'none', border: 'none', color: '#666', cursor: 'pointer' }}
+                    style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', color: '#888', cursor: 'pointer', transition: 'color 0.2s' }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#0d0d0d'}
+                    onMouseLeave={e => e.currentTarget.style.color = '#888'}
                 >
                     <X size={24} />
                 </button>
 
-                <div style={{ marginBottom: '2.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', color: 'var(--primary-color)', fontWeight: '800', fontSize: '0.85rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '2px' }}>
-                        <Sparkles size={16} /> Synthesis Chamber
+                <div style={{ marginBottom: '2rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#888', fontWeight: '600', fontSize: '11px', marginBottom: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+                        <Sparkles size={14} /> Synthesis Chamber
                     </div>
-                    <h2 style={{ fontSize: '2.5rem', fontWeight: '900', color: '#fff', letterSpacing: '-1px' }}>Genesis Bubble</h2>
-                    <p style={{ color: '#888', marginTop: '0.5rem' }}>Define a concept or provide a source to expand your mastery ecosystem.</p>
+                    <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#0d0d0d', letterSpacing: '-0.02em', lineHeight: 1.1 }}>Genesis Bubble</h2>
+                    <p style={{ color: '#666', marginTop: '0.6rem', fontSize: '13px', lineHeight: 1.6, maxWidth: '500px' }}>Define a concept or provide a source to expand your mastery ecosystem.</p>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                    {/* INPUT AREA */}
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#555', marginBottom: '0.8rem', textTransform: 'uppercase' }}>Concept or Objective</label>
-                        <textarea 
-                            value={concept}
-                            onChange={(e) => setConcept(e.target.value)}
-                            placeholder="e.g. The impact of L2 scaling on Ethereum's security model..."
-                            style={{
-                                width: '100%',
-                                height: '120px',
-                                background: 'rgba(255,255,255,0.03)',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: '24px',
-                                padding: '1.5rem',
-                                color: '#fff',
-                                fontSize: '1rem',
-                                outline: 'none',
-                                resize: 'none',
-                                transition: 'all 0.3s'
-                            }}
-                            onFocus={e => e.target.style.borderColor = 'var(--primary-color)'}
-                            onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-                        />
-                    </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                    {/* LEFT COLUMN: Input & Upload */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#888', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Concept or Objective</label>
+                            <textarea 
+                                value={concept}
+                                onChange={(e) => setConcept(e.target.value)}
+                                placeholder="e.g. The impact of L2 scaling on Ethereum's security model..."
+                                style={{
+                                    width: '100%',
+                                    height: '110px',
+                                    background: '#fff',
+                                    border: '1.5px solid #e0e0e0',
+                                    borderRadius: '12px',
+                                    padding: '1rem 1.2rem',
+                                    color: '#0d0d0d',
+                                    fontSize: '13px',
+                                    fontFamily: "'Poppins', sans-serif",
+                                    outline: 'none',
+                                    resize: 'none',
+                                    transition: 'border-color 0.2s'
+                                }}
+                                onFocus={e => e.target.style.borderColor = '#0d0d0d'}
+                                onBlur={e => e.target.style.borderColor = '#e0e0e0'}
+                            />
+                        </div>
 
-                    {/* FILE UPLOAD */}
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#555', marginBottom: '0.8rem', textTransform: 'uppercase' }}>Source Materials</label>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#888', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Source Materials</label>
                             <label style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '12px',
-                                padding: '1rem 1.5rem',
-                                background: file ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255,255,255,0.03)',
-                                border: `1px dashed ${file ? '#2ecc71' : 'rgba(255,255,255,0.2)'}`,
-                                borderRadius: '18px',
+                                padding: '1rem 1.2rem',
+                                background: file ? '#f0fdf4' : '#fafafa',
+                                border: file ? '1.5px solid #3EC636' : '1.5px dashed #ccc',
+                                borderRadius: '12px',
                                 cursor: 'pointer',
-                                color: file ? '#2ecc71' : '#888',
-                                fontSize: '0.9rem',
-                                fontWeight: '700'
-                            }}>
-                                <Upload size={18} />
+                                color: file ? '#16a34a' : '#666',
+                                fontSize: '13px',
+                                fontWeight: '500',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={e => { if (!file) { e.currentTarget.style.borderColor = '#0d0d0d'; e.currentTarget.style.color = '#0d0d0d'; } }}
+                            onMouseLeave={e => { if (!file) { e.currentTarget.style.borderColor = '#ccc'; e.currentTarget.style.color = '#666'; } }}
+                            >
+                                <Upload size={16} />
                                 {file ? file.name : 'Upload PDF or TXT'}
                                 <input type="file" onChange={handleFileChange} hidden accept=".pdf,.txt" />
                             </label>
                         </div>
                     </div>
 
-                    {/* MASTERY MODE */}
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#555', marginBottom: '0.8rem', textTransform: 'uppercase' }}>Mastery Mode</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem' }}>
-                            {[
-                                { id: 'strategic', label: 'Strategic', icon: <Target size={16} />, desc: 'Core patterns' },
-                                { id: 'technical', label: 'Technical', icon: <Zap size={16} />, desc: 'Deep dive' },
-                                { id: 'practical', label: 'Practical', icon: <Book size={16} />, desc: 'Build focus' }
-                            ].map(mode => (
-                                <button
-                                    key={mode.id}
-                                    onClick={() => setMasteryGoal(mode.id)}
-                                    style={{
-                                        padding: '1.2rem',
-                                        borderRadius: '20px',
-                                        border: '1px solid',
-                                        borderColor: masteryGoal === mode.id ? 'var(--primary-color)' : 'rgba(255,255,255,0.1)',
-                                        background: masteryGoal === mode.id ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                                        color: masteryGoal === mode.id ? 'var(--primary-color)' : '#888',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s'
-                                    }}
-                                >
-                                    <div style={{ marginBottom: '0.5rem' }}>{mode.icon}</div>
-                                    <div style={{ fontWeight: '800', fontSize: '0.9rem' }}>{mode.label}</div>
-                                    <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>{mode.desc}</div>
-                                </button>
-                            ))}
+                    {/* RIGHT COLUMN: Mode & Action */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', justifyContent: 'space-between' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#888', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mastery Mode</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                                {[
+                                    { id: 'strategic', label: 'Strategic', icon: <Target size={14} />, desc: 'Core patterns' },
+                                    { id: 'technical', label: 'Technical', icon: <Zap size={14} />, desc: 'Deep dive' },
+                                    { id: 'practical', label: 'Practical', icon: <Book size={14} />, desc: 'Build focus' }
+                                ].map(mode => (
+                                    <button
+                                        key={mode.id}
+                                        onClick={() => setMasteryGoal(mode.id)}
+                                        style={{
+                                            padding: '1rem 0.6rem',
+                                            borderRadius: '12px',
+                                            border: '1.5px solid',
+                                            borderColor: masteryGoal === mode.id ? '#0d0d0d' : '#e0e0e0',
+                                            background: masteryGoal === mode.id ? '#fafafa' : '#fff',
+                                            color: masteryGoal === mode.id ? '#0d0d0d' : '#888',
+                                            textAlign: 'center',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            fontFamily: "'Poppins', sans-serif"
+                                        }}
+                                        onMouseEnter={e => { if (masteryGoal !== mode.id) { e.currentTarget.style.borderColor = '#ccc'; e.currentTarget.style.color = '#444'; } }}
+                                        onMouseLeave={e => { if (masteryGoal !== mode.id) { e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.color = '#888'; } }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>{mode.icon}</div>
+                                        <div style={{ fontWeight: '600', fontSize: '12px', marginBottom: '2px' }}>{mode.label}</div>
+                                        <div style={{ fontSize: '10px', color: '#999', lineHeight: 1.2 }}>{mode.desc}</div>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
 
-                    <button 
-                        onClick={handleSubmit}
-                        disabled={isGenerating || (!concept && !file)}
-                        style={{
-                            marginTop: '1rem',
-                            padding: '1.5rem',
-                            background: isGenerating ? 'rgba(79, 70, 229, 0.5)' : 'var(--primary-color)',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '24px',
-                            fontWeight: '900',
-                            fontSize: '1.1rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '12px',
-                            cursor: isGenerating ? 'not-allowed' : 'pointer',
-                            boxShadow: '0 20px 40px rgba(79, 70, 229, 0.3)'
-                        }}
-                    >
-                        {isGenerating ? (
-                            <>
-                                <Loader2 size={24} className="animate-spin" />
-                                SYNTHESIZING KNOWLEDGE...
-                            </>
-                        ) : (
-                            <>
-                                BEGIN SYNTHESIS <ArrowRight size={24} />
-                            </>
-                        )}
-                    </button>
+                        <button 
+                            onClick={handleSubmit}
+                            disabled={isGenerating || (!concept && !file)}
+                            style={{
+                                padding: '16px',
+                                background: isGenerating ? '#333' : '#0d0d0d',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '100px',
+                                fontWeight: '600',
+                                fontSize: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '10px',
+                                cursor: isGenerating || (!concept && !file) ? 'not-allowed' : 'pointer',
+                                opacity: (!concept && !file) ? 0.5 : 1,
+                                transition: 'opacity 0.2s, transform 0.2s',
+                                fontFamily: "'Poppins', sans-serif",
+                                marginTop: 'auto'
+                            }}
+                            onMouseEnter={e => { if (!isGenerating && (concept || file)) e.currentTarget.style.opacity = 0.8; }}
+                            onMouseLeave={e => { if (!isGenerating && (concept || file)) e.currentTarget.style.opacity = 1; }}
+                        >
+                            {isGenerating ? (
+                                <>
+                                    <Loader2 size={18} className="animate-spin" />
+                                    SYNTHESIZING...
+                                </>
+                            ) : (
+                                <>
+                                    Begin Synthesis <ArrowRight size={16} />
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <style dangerouslySetInnerHTML={{ __html: `
                 @keyframes modalSlideUp {
-                    from { transform: translateY(30px); opacity: 0; }
+                    from { transform: translateY(20px); opacity: 0; }
                     to { transform: translateY(0); opacity: 1; }
                 }
                 .animate-spin {

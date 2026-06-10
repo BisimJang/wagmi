@@ -1,7 +1,7 @@
 // src/App.jsx
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Compass, School as SchoolIcon, User, Layout, BookOpen, Sparkles } from 'lucide-react';
+import { Compass, School as SchoolIcon, User, Layout, BookOpen, Sparkles, Settings } from 'lucide-react';
 import './App.css';
 
 // Hooks
@@ -29,6 +29,7 @@ import MyCoursesPage from './pages/MyCoursesPage.jsx';
 import StudyBubblesPage from './pages/StudyBubblesPage.jsx';
 import InstitutionPage from './pages/InstitutionPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
+import SettingsPage from './pages/SettingsPage.jsx';
 
 // Helper function to convert flat lessons into nested sections
 const groupLessonsBySection = (flatLessons) => {
@@ -93,7 +94,7 @@ function App() {
   // --- Basic Routing Persistence ---
   useEffect(() => {
     const path = window.location.pathname.replace('/', '');
-  const validPages = ['home', 'courses', 'schools', 'my_courses', 'profile', 'instructor', 'study-bubbles', 'institutions', 'login'];
+  const validPages = ['home', 'courses', 'schools', 'my_courses', 'profile', 'instructor', 'study-bubbles', 'institutions', 'login', 'settings'];
     if (validPages.includes(path)) {
       setCurrentPage(path);
     }
@@ -167,7 +168,7 @@ function App() {
   }, [jwt, fetchOwnedSchools]);
 
   const loading = dataLoading || authLoading;
-  const isImmersivePage = ['course_view', 'study-bubbles'].includes(currentPage);
+  const isImmersivePage = ['course_view', 'study-bubbles', 'settings'].includes(currentPage);
   const showGlobalFooter = !['home', 'course_view', 'instructor'].includes(currentPage);
 
   useEffect(() => {
@@ -244,7 +245,7 @@ function App() {
     };
 
     const showPage = (pageId) => {
-        const privatePages = ['instructor', 'my_courses', 'profile'];
+        const privatePages = ['instructor', 'my_courses', 'profile', 'settings'];
         if (privatePages.includes(pageId) && !jwt) {
             setCurrentPage('login');
             window.history.pushState({}, '', '/login');
@@ -351,6 +352,16 @@ function App() {
                 return <StudyBubblesPage showPage={showPage} />;
             case 'institutions':
                 return <InstitutionPage showPage={showPage} loginWithEmail={loginWithEmail} />;
+            case 'settings':
+                return <SettingsPage 
+                    user={user} 
+                    showMessage={showMessage}
+                    projectGoal={projectGoal}
+                    setProjectGoal={setGlobalProjectGoal}
+                    linkWallet={linkWallet}
+                    onLogout={handleLogout}
+                    showPage={showPage}
+                />;
             case 'login':
                 return <LoginPage 
                     onGoogleSuccess={loginWithGoogle}
@@ -440,6 +451,15 @@ function App() {
                                               {(user?.display_name?.[0] || user?.address?.[2] || '?').toUpperCase()}
                                           </span>
                                       )}
+                                  </div>
+                                  <div 
+                                      onClick={() => showPage('settings')}
+                                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', transition: 'color 0.2s' }}
+                                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-color)'}
+                                      onMouseLeave={(e) => e.currentTarget.style.color = '#888'}
+                                      title="Settings"
+                                  >
+                                      <Settings size={22} />
                                   </div>
                               </div>
                           )}

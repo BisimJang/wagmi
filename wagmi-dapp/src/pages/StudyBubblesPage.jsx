@@ -1,5 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, Plus, Search, BookOpen, Clock, AlertCircle, Play, CheckCircle2, MoreVertical, Trash2, ArrowUpRight, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Plus, 
+  Search, 
+  ExternalLink, 
+  Trash2, 
+  ArrowLeft
+} from 'lucide-react';
 import BubbleGenesisModal from '../components/Study/BubbleGenesisModal';
 import StudyBubbleView from '../components/Study/StudyBubbleView';
 
@@ -7,6 +13,7 @@ const StudyBubblesPage = ({ showPage }) => {
     const [bubbles, setBubbles] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeFilter, setActiveFilter] = useState('all');
     const [isGenesisOpen, setIsGenesisOpen] = useState(false);
     const [selectedBubble, setSelectedBubble] = useState(null);
     const [openMenuId, setOpenMenuId] = useState(null);
@@ -55,13 +62,40 @@ const StudyBubblesPage = ({ showPage }) => {
         }
     };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'completed': return '#2ecc71';
-            case 'processing': return '#f1c40f';
-            case 'failed': return '#e74c3c';
-            default: return '#95a5a6';
-        }
+    const filteredBubbles = useMemo(() => {
+        return bubbles.filter(b => {
+            const matchQ = (b.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           (b.summary || b.concept || '').toLowerCase().includes(searchQuery.toLowerCase());
+            // The HTML mock used 'ready', 'processing', 'failed', 'pending'
+            // The API uses 'completed', 'processing', 'failed', etc.
+            const apiStatus = b.status === 'completed' ? 'ready' : b.status;
+            const matchF = activeFilter === 'all' || apiStatus === activeFilter;
+            return matchQ && matchF;
+        });
+    }, [bubbles, searchQuery, activeFilter]);
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = () => {
+            if (openMenuId !== null) setOpenMenuId(null);
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [openMenuId]);
+
+    const pipClass = (s) => {
+        const status = s === 'completed' ? 'ready' : s;
+        return status === 'ready' ? 'pip-ready' : status === 'processing' ? 'pip-processing' : status === 'failed' ? 'pip-failed' : 'pip-pending';
+    };
+    
+    const stClass = (s) => {
+        const status = s === 'completed' ? 'ready' : s;
+        return status === 'ready' ? 'st-ready' : status === 'processing' ? 'st-processing' : status === 'failed' ? 'st-failed' : 'st-pending';
+    };
+    
+    const stLabel = (s) => {
+        const status = s === 'completed' ? 'ready' : s;
+        return status === 'ready' ? 'Ready' : status === 'processing' ? 'Processing…' : status === 'failed' ? 'Failed' : 'Queued';
     };
 
     if (selectedBubble) {
@@ -69,255 +103,339 @@ const StudyBubblesPage = ({ showPage }) => {
     }
 
     return (
-        <section className="page" style={{ position: 'relative', overflow: 'hidden', minHeight: '100vh' }}>
-            {/* BACKGROUND DECORATION */}
-            <div style={{
-                position: 'absolute',
-                top: '-10%',
-                right: '-10%',
-                width: '600px',
-                height: '600px',
-                background: 'radial-gradient(circle, rgba(79, 70, 229, 0.05) 0%, transparent 70%)',
-                filter: 'blur(80px)',
-                zIndex: -1
-            }} />
+        <div className="sv">
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+                
+                .sv * {
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding: 0;
+                }
+                
+                .sv {
+                    --green: #3EC636;
+                    --ink: #0d0d0d;
+                    --pad: 22vw;
+                    font-family: 'Poppins', sans-serif;
+                    background: #fff;
+                    color: var(--ink);
+                    min-height: 100vh;
+                    padding: 0 var(--pad);
+                }
+                
+                @media (max-width: 1024px) {
+                    .sv { --pad: 12vw; }
+                }
+                @media (max-width: 768px) {
+                    .sv { --pad: 6vw; }
+                }
 
-            <div className="container">
+                .topbar {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 28px 0 48px;
+                }
 
-                {/* SINGLE TOP BAR */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-                    <button 
-                        onClick={() => showPage('home')}
-                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#888', padding: '0.8rem 1.5rem', borderRadius: '16px', fontSize: '0.85rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
-                    >
-                        <ArrowLeft size={18} /> BACK TO HOME
-                    </button>
+                .btn-back {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    background: none;
+                    border: 1.5px solid var(--ink);
+                    border-radius: 100px;
+                    padding: 9px 20px;
+                    font-family: 'Poppins', sans-serif;
+                    font-size: 12px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    color: var(--ink);
+                    transition: opacity .2s;
+                }
+                .btn-back:hover { opacity: .45; }
 
-                    <button 
-                        onClick={() => setIsGenesisOpen(true)}
-                        style={{ padding: '1rem 2rem', background: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '20px', fontWeight: '900', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', boxShadow: '0 10px 30px rgba(79, 70, 229, 0.3)' }}
-                    >
-                        <Plus size={22} /> GENESIS BUBBLE
-                    </button>
-                </div>
+                .btn-genesis {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    background: var(--ink);
+                    color: #fff;
+                    border: none;
+                    border-radius: 100px;
+                    padding: 10px 24px;
+                    font-family: 'Poppins', sans-serif;
+                    font-size: 12px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: opacity .2s;
+                }
+                .btn-genesis:hover { opacity: .7; }
 
-                {/* PAGE TITLE */}
-                <div style={{ marginBottom: '3rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', color: 'var(--primary-color)', fontWeight: '800', fontSize: '0.85rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '2px' }}>
-                        <Sparkles size={16} /> Personalized Synthesis
-                    </div>
-                    <h1 className="gradient-text" style={{ fontSize: '4rem', fontWeight: '900', letterSpacing: '-2px', marginBottom: '1rem' }}>
-                        Study Bubbles
-                    </h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '600px', lineHeight: '1.6' }}>
-                        Your unique knowledge ecosystem. Upload concepts or files to synthesize custom learning nodes tailored to your mastery goals.
-                    </p>
-                </div>
+                .hero-label {
+                    font-size: 11px;
+                    font-weight: 600;
+                    letter-spacing: .12em;
+                    text-transform: uppercase;
+                    color: #888;
+                    margin-bottom: 14px;
+                }
 
+                .hero-title {
+                    font-size: clamp(52px, 9vw, 96px);
+                    font-weight: 700;
+                    line-height: .93;
+                    letter-spacing: -.03em;
+                    margin-bottom: 22px;
+                }
+                .hero-title span { color: var(--green); }
 
-                {/* MODAL */}
-                <BubbleGenesisModal 
-                    isOpen={isGenesisOpen} 
-                    onClose={() => setIsGenesisOpen(false)} 
-                    onGenesis={handleGenesis} 
-                />
+                .hero-sub {
+                    font-size: 14px;
+                    font-weight: 300;
+                    color: #444;
+                    max-width: 320px;
+                    line-height: 1.7;
+                    margin-bottom: 48px;
+                }
 
-                {/* SEARCH & FILTERS */}
-                <div style={{ marginBottom: '3rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ flex: 1, position: 'relative' }}>
-                        <Search size={20} style={{ position: 'absolute', left: '1.5rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
-                        <input 
-                            type="text" 
-                            placeholder="Search your knowledge ecosystem..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            style={{
-                                width: '100%',
-                                padding: '1.2rem 1.5rem 1.2rem 3.5rem',
-                                background: 'rgba(255,255,255,0.03)',
-                                border: '1px solid rgba(255,255,255,0.08)',
-                                borderRadius: '18px',
-                                color: '#fff',
-                                fontSize: '1rem',
-                                outline: 'none',
-                                backdropFilter: 'blur(10px)'
-                            }}
-                        />
-                    </div>
-                </div>
+                .search-bar {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-bottom: 56px;
+                    max-width: 560px;
+                }
 
-                {isLoading ? (
-                    <div style={{ display: 'flex', justifyContent: 'center', padding: '5rem' }}>
-                        <div className="loader" />
-                    </div>
-                ) : bubbles.length === 0 ? (
-                    <div style={{ 
-                        padding: '6rem 2rem', 
-                        textAlign: 'center', 
-                        background: 'rgba(255,255,255,0.02)', 
-                        borderRadius: '40px', 
-                        border: '2px dashed rgba(255,255,255,0.05)',
-                        marginTop: '2rem'
-                    }}>
-                        <div style={{ width: '80px', height: '80px', background: 'rgba(79, 70, 229, 0.1)', borderRadius: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', color: 'var(--primary-color)' }}>
-                            <BookOpen size={40} />
-                        </div>
-                        <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1rem' }}>The ecosystem is silent.</h2>
-                        <p style={{ color: 'var(--text-secondary)', maxWidth: '450px', margin: '0 auto 2.5rem' }}>
-                            You haven't synthesized any bubbles yet. Start by providing a concept or uploading a research paper.
-                        </p>
-                        <button style={{ color: 'var(--primary-color)', fontWeight: '800', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>
-                            Synthesize your first node →
-                        </button>
-                    </div>
-                ) : (
-                    <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', 
-                        gap: '2.5rem' 
-                    }}>
-                        {bubbles.map(bubble => (
-                            <div 
-                                key={bubble.id}
-                                onClick={() => bubble.status === 'completed' && setSelectedBubble(bubble)}
-                                style={{
-                                    background: 'rgba(255,255,255,0.03)',
-                                    borderRadius: '32px',
-                                    padding: '2rem',
-                                    border: '1px solid rgba(255,255,255,0.08)',
-                                    backdropFilter: 'blur(20px)',
-                                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                                    cursor: 'pointer',
-                                    position: 'relative',
-                                    overflow: 'hidden',
-                                    display: 'flex',
-                                    flexDirection: 'column'
-                                }}
-                                onMouseEnter={e => {
-                                    e.currentTarget.style.transform = 'translateY(-10px)';
-                                    e.currentTarget.style.borderColor = 'rgba(79, 70, 229, 0.3)';
-                                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                                }}
-                                onMouseLeave={e => {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
-                                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-                                }}
-                            >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', gap: '1rem' }}>
-                                    <div style={{ 
-                                        padding: '0.5rem 1rem', 
-                                        borderRadius: '100px', 
-                                        background: `${getStatusColor(bubble.status)}15`, 
-                                        color: getStatusColor(bubble.status),
-                                        fontSize: '0.65rem',
-                                        fontWeight: '900',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '1px',
-                                        flexShrink: 0
-                                    }}>
-                                        {bubble.status === 'processing' && <Clock size={12} />}
-                                        {bubble.status === 'completed' && <CheckCircle2 size={12} />}
-                                        {bubble.status === 'failed' && <AlertCircle size={12} />}
-                                        {bubble.status}
-                                    </div>
-                                    <div style={{ height: '1px', flex: 1, background: 'rgba(255,255,255,0.05)' }} />
-                                    {/* ELLIPSIS MENU */}
-                                    <div style={{ position: 'relative' }}>
-                                        <button 
-                                            onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === bubble.id ? null : bubble.id); }}
-                                            style={{ color: '#555', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', borderRadius: '8px', display: 'flex' }}
-                                        >
-                                            <MoreVertical size={18} />
-                                        </button>
-                                        {openMenuId === bubble.id && (
-                                            <div style={{
-                                                position: 'absolute',
-                                                top: '110%',
-                                                right: 0,
-                                                background: '#1a1d23',
-                                                border: '1px solid rgba(255,255,255,0.1)',
-                                                borderRadius: '16px',
-                                                padding: '0.5rem',
-                                                zIndex: 100,
-                                                minWidth: '160px',
-                                                boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
-                                            }}>
-                                                <button
-                                                    onClick={e => deleteBubble(bubble.id, e)}
-                                                    style={{
-                                                        width: '100%',
-                                                        padding: '0.8rem 1.2rem',
-                                                        background: 'none',
-                                                        border: 'none',
-                                                        color: '#e74c3c',
-                                                        fontSize: '0.85rem',
-                                                        fontWeight: '700',
-                                                        cursor: 'pointer',
-                                                        borderRadius: '12px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '10px',
-                                                        textAlign: 'left'
-                                                    }}
-                                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(231, 76, 60, 0.1)'}
-                                                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                                                >
-                                                    <Trash2 size={15} /> Delete Bubble
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                .search-wrap {
+                    flex: 1;
+                    position: relative;
+                }
 
-                                <h3 style={{ fontSize: '1.4rem', fontWeight: '900', marginBottom: '0.8rem', lineHeight: '1.2', color: '#fff' }}>{bubble.title}</h3>
-                                <div style={{ color: bubble.status === 'failed' ? '#e74c3c' : '#888', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '1.5rem', flex: 1, overflow: 'hidden' }}>
-                                    {bubble.status === 'failed' ? (
-                                        <div style={{ fontSize: '0.8rem', opacity: 0.8, background: 'rgba(231, 76, 60, 0.05)', padding: '1rem', borderRadius: '16px', border: '1px solid rgba(231, 76, 60, 0.1)' }}>
-                                            <strong>Synthesis Error:</strong> {bubble.summary || bubble.concept}
-                                        </div>
-                                    ) : (
-                                        <p style={{ display: '-webkit-box', WebkitLineClamp: '3', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                            {bubble.summary || bubble.concept}
-                                        </p>
-                                    )}
-                                </div>
+                .search-wrap input {
+                    width: 100%;
+                    padding: 13px 16px 13px 42px;
+                    border: 1.5px solid #e0e0e0;
+                    border-radius: 100px;
+                    font-family: 'Poppins', sans-serif;
+                    font-size: 13px;
+                    font-weight: 400;
+                    color: var(--ink);
+                    outline: none;
+                    transition: border-color .2s;
+                }
+                .search-wrap input:focus { border-color: var(--ink); }
+                .search-wrap input::placeholder { color: #aaa; }
 
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                                    <div style={{ color: '#444', fontSize: '0.8rem', fontWeight: '700' }}>
-                                        {new Date(bubble.created_at).toLocaleDateString()}
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        {bubble.audio_url && <div style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}><Play size={16} /></div>}
-                                        <div style={{ 
-                                            width: '44px', 
-                                            height: '44px', 
-                                            borderRadius: '16px', 
-                                            background: bubble.status === 'completed' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)', 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            justifyContent: 'center', 
-                                            color: '#fff' 
-                                        }}>
-                                            <ArrowUpRight size={20} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-            
-            <style dangerouslySetInnerHTML={{ __html: `
+                .search-ico {
+                    position: absolute;
+                    left: 16px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    color: #aaa;
+                }
+
+                .filter-pill {
+                    padding: 10px 18px;
+                    border-radius: 100px;
+                    border: 1.5px solid #e0e0e0;
+                    background: none;
+                    font-family: 'Poppins', sans-serif;
+                    font-size: 12px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    color: #888;
+                    transition: all .2s;
+                    white-space: nowrap;
+                }
+                .filter-pill.on {
+                    border-color: var(--ink);
+                    color: var(--ink);
+                }
+
+                .rule {
+                    width: 100%;
+                    height: 1px;
+                    background: #f0f0f0;
+                    margin-bottom: 40px;
+                }
+
+                .bubble-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+                    gap: 1px;
+                    border: 1px solid #f0f0f0;
+                    border-radius: 0;
+                    margin-bottom: 4rem;
+                }
+
+                .bubble-cell {
+                    padding: 28px 24px;
+                    border-right: 1px solid #f0f0f0;
+                    border-bottom: 1px solid #f0f0f0;
+                    cursor: pointer;
+                    transition: background .2s;
+                    display: flex;
+                    flex-direction: column;
+                    min-height: 200px;
+                }
+                .bubble-cell:hover { background: #fafafa; }
+
+                .cell-top {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 20px;
+                }
+
+                .cell-num {
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: #ccc;
+                    letter-spacing: .06em;
+                }
+
+                .status-pip {
+                    width: 7px;
+                    height: 7px;
+                    border-radius: 50%;
+                    margin-top: 3px;
+                }
+                .pip-ready { background: #3EC636; }
+                .pip-processing { background: #F0A500; }
+                .pip-failed { background: #E53935; }
+                .pip-pending { background: #ccc; }
+
+                .cell-title {
+                    font-size: 15px;
+                    font-weight: 600;
+                    line-height: 1.35;
+                    color: var(--ink);
+                    margin-bottom: 8px;
+                }
+
+                .cell-desc {
+                    font-size: 12px;
+                    font-weight: 300;
+                    color: #666;
+                    line-height: 1.65;
+                    flex: 1;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                }
+
+                .cell-footer {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-top: 18px;
+                    padding-top: 16px;
+                    border-top: 1px solid #f0f0f0;
+                }
+
+                .cell-status {
+                    font-size: 11px;
+                    font-weight: 600;
+                    letter-spacing: .05em;
+                    text-transform: uppercase;
+                }
+                .st-ready { color: #3EC636; }
+                .st-processing { color: #F0A500; }
+                .st-failed { color: #E53935; }
+                .st-pending { color: #bbb; }
+
+                .cell-cards {
+                    font-size: 11px;
+                    color: #bbb;
+                    font-weight: 500;
+                }
+
+                .open-arrow {
+                    font-size: 15px;
+                    color: #ccc;
+                    transition: color .2s;
+                }
+                .bubble-cell:hover .open-arrow { color: var(--ink); }
+
+                .empty {
+                    text-align: center;
+                    padding: 5rem 2rem;
+                    grid-column: 1 / -1;
+                }
+                .empty-big {
+                    font-size: clamp(36px, 5vw, 56px);
+                    font-weight: 700;
+                    line-height: 1;
+                    letter-spacing: -.02em;
+                    color: #e8e8e8;
+                    margin-bottom: 1rem;
+                }
+                .empty-sub {
+                    font-size: 13px;
+                    color: #aaa;
+                    font-weight: 300;
+                }
+
+                .menu-btn {
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    color: #bbb;
+                    padding: 2px;
+                    line-height: 1;
+                    font-size: 16px;
+                    transition: color .2s;
+                    display: flex;
+                }
+                .menu-btn:hover { color: var(--ink); }
+
+                .rel { position: relative; }
+
+                .dropdown {
+                    position: absolute;
+                    top: 1.8rem;
+                    right: 0;
+                    background: #fff;
+                    border: 1.5px solid var(--ink);
+                    border-radius: 12px;
+                    overflow: hidden;
+                    z-index: 10;
+                    min-width: 130px;
+                }
+
+                .dd-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 10px 14px;
+                    font-size: 12px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    color: var(--ink);
+                    font-family: 'Poppins', sans-serif;
+                    background: none;
+                    border: none;
+                    width: 100%;
+                    text-align: left;
+                }
+                .dd-item:hover { background: #f5f5f5; }
+
+                .dd-del { color: #E53935; }
+                .dd-del:hover { background: #fff5f5; }
+                
+                .loader-container {
+                    grid-column: 1 / -1;
+                    display: flex;
+                    justify-content: center;
+                    padding: 5rem;
+                }
                 .loader {
-                    width: 48px;
-                    height: 48px;
-                    border: 5px solid rgba(79, 70, 229, 0.1);
-                    border-bottom-color: var(--primary-color);
+                    width: 40px;
+                    height: 40px;
+                    border: 3px solid #f0f0f0;
+                    border-bottom-color: var(--ink);
                     border-radius: 50%;
                     display: inline-block;
                     box-sizing: border-box;
@@ -327,8 +445,116 @@ const StudyBubblesPage = ({ showPage }) => {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
                 }
-            `}} />
-        </section>
+            `}</style>
+
+            <div className="topbar">
+                <button className="btn-back" onClick={() => showPage('home')}>
+                    <ArrowLeft size={14} /> Home
+                </button>
+                <button className="btn-genesis" onClick={() => setIsGenesisOpen(true)}>
+                    <Plus size={14} /> New bubble
+                </button>
+            </div>
+
+            <div className="hero-label">Personalized synthesis</div>
+            <h1 className="hero-title">Study<br/><span>bubbles.</span></h1>
+            <p className="hero-sub">Your personal knowledge nodes. Upload a concept or file to build a learning environment shaped around your goals.</p>
+
+            <div className="search-bar">
+                <div className="search-wrap">
+                    <Search className="search-ico" size={16} />
+                    <input 
+                        type="text" 
+                        placeholder="Search bubbles…" 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+                <button 
+                    className={`filter-pill ${activeFilter === 'all' ? 'on' : ''}`} 
+                    onClick={() => setActiveFilter('all')}
+                >All</button>
+                <button 
+                    className={`filter-pill ${activeFilter === 'ready' ? 'on' : ''}`} 
+                    onClick={() => setActiveFilter('ready')}
+                >Ready</button>
+                <button 
+                    className={`filter-pill ${activeFilter === 'processing' ? 'on' : ''}`} 
+                    onClick={() => setActiveFilter('processing')}
+                >Processing</button>
+            </div>
+
+            <div className="rule"></div>
+            
+            <div className="bubble-grid">
+                {isLoading ? (
+                    <div className="loader-container">
+                        <div className="loader" />
+                    </div>
+                ) : filteredBubbles.length === 0 ? (
+                    <div className="empty">
+                        <div className="empty-big">Nothing<br/>here.</div>
+                        <p className="empty-sub">Try a different search or create a new bubble.</p>
+                    </div>
+                ) : (
+                    filteredBubbles.map((bubble, i) => (
+                        <div 
+                            key={bubble.id} 
+                            className="bubble-cell" 
+                            onClick={() => bubble.status === 'completed' && setSelectedBubble(bubble)}
+                        >
+                            <div className="cell-top">
+                                <span className="cell-num">{String(i + 1).padStart(2, '0')}</span>
+                                <div className="rel">
+                                    <button 
+                                        className="menu-btn" 
+                                        onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === bubble.id ? null : bubble.id); }}
+                                        aria-label="Options"
+                                    >
+                                        &#8942;
+                                    </button>
+                                    
+                                    {openMenuId === bubble.id && (
+                                        <div className="dropdown" onClick={e => e.stopPropagation()}>
+                                            {bubble.status === 'completed' && (
+                                                <button className="dd-item" onClick={() => setSelectedBubble(bubble)}>
+                                                    <ExternalLink size={14} /> Open
+                                                </button>
+                                            )}
+                                            <button className="dd-item dd-del" onClick={(e) => deleteBubble(bubble.id, e)}>
+                                                <Trash2 size={14} /> Delete
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
+                                <span className={`status-pip ${pipClass(bubble.status)}`} style={{ marginTop: '5px', flexShrink: 0 }}></span>
+                                <p className="cell-title">{bubble.title}</p>
+                            </div>
+                            
+                            <p className="cell-desc">{bubble.summary || bubble.concept}</p>
+                            
+                            <div className="cell-footer">
+                                <span className={`cell-status ${stClass(bubble.status)}`}>{stLabel(bubble.status)}</span>
+                                {bubble.cards ? (
+                                    <span className="cell-cards">{bubble.cards} cards</span>
+                                ) : (
+                                    <span className="open-arrow">&#8599;</span>
+                                )}
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+            
+            <BubbleGenesisModal 
+                isOpen={isGenesisOpen} 
+                onClose={() => setIsGenesisOpen(false)} 
+                onGenesis={handleGenesis} 
+            />
+        </div>
     );
 };
 
