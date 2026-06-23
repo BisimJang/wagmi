@@ -83,10 +83,10 @@ const BubbleGenesisModal = ({ isOpen, onClose, onGenesis }) => {
 
                 <div style={{ marginBottom: '2rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#888', fontWeight: '600', fontSize: '11px', marginBottom: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-                        <Sparkles size={14} /> Synthesis Chamber
+                        <Sparkles size={14} /> Study Workspace
                     </div>
-                    <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#0d0d0d', letterSpacing: '-0.02em', lineHeight: 1.1 }}>Genesis Bubble</h2>
-                    <p style={{ color: '#666', marginTop: '0.6rem', fontSize: '13px', lineHeight: 1.6, maxWidth: '500px' }}>Define a concept or provide a source to expand your mastery ecosystem.</p>
+                    <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#0d0d0d', letterSpacing: '-0.02em', lineHeight: 1.1 }}>Create Study Bubble</h2>
+                    <p style={{ color: '#666', marginTop: '0.6rem', fontSize: '13px', lineHeight: 1.6, maxWidth: '500px' }}>Define a topic or provide source materials to generate your AI-guided study session.</p>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
@@ -97,7 +97,7 @@ const BubbleGenesisModal = ({ isOpen, onClose, onGenesis }) => {
                             <textarea 
                                 value={concept}
                                 onChange={(e) => setConcept(e.target.value)}
-                                placeholder="e.g. The impact of L2 scaling on Ethereum's security model..."
+                                placeholder="e.g. Principles of Thermodynamics, History of Rome, Intro to Machine Learning..."
                                 style={{
                                     width: '100%',
                                     height: '110px',
@@ -146,12 +146,12 @@ const BubbleGenesisModal = ({ isOpen, onClose, onGenesis }) => {
                     {/* RIGHT COLUMN: Mode & Action */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', justifyContent: 'space-between' }}>
                         <div>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#888', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mastery Mode</label>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#888', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Study Mode</label>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                                 {[
-                                    { id: 'strategic', label: 'Strategic', icon: <Target size={14} />, desc: 'Core patterns' },
+                                    { id: 'strategic', label: 'Conceptual', icon: <Target size={14} />, desc: 'Core ideas' },
                                     { id: 'technical', label: 'Technical', icon: <Zap size={14} />, desc: 'Deep dive' },
-                                    { id: 'practical', label: 'Practical', icon: <Book size={14} />, desc: 'Build focus' }
+                                    { id: 'practical', label: 'Practical', icon: <Book size={14} />, desc: 'Application' }
                                 ].map(mode => (
                                     <button
                                         key={mode.id}
@@ -206,11 +206,11 @@ const BubbleGenesisModal = ({ isOpen, onClose, onGenesis }) => {
                             {isGenerating ? (
                                 <>
                                     <Loader2 size={18} className="animate-spin" />
-                                    SYNTHESIZING...
+                                    GENERATING...
                                 </>
                             ) : (
                                 <>
-                                    Begin Synthesis <ArrowRight size={16} />
+                                    Create Bubble <ArrowRight size={16} />
                                 </>
                             )}
                         </button>

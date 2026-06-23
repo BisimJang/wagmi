@@ -16,7 +16,7 @@ const CoursesPage = ({
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedSchool, setSelectedSchool] = useState(null);
-    const [selectedDivision, setSelectedDivision] = useState(null);
+    const [selectedTag, setSelectedTag] = useState(null);
 
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -88,34 +88,32 @@ const CoursesPage = ({
             result = result.filter(c => c.school_name === selectedSchool);
         }
         
-        if (selectedDivision) {
-            if (selectedDivision === 'builders') {
-                result = result.filter(c => c.division === 'builders' || c.division === 'both');
-            } else if (selectedDivision === 'creatives') {
-                result = result.filter(c => c.division === 'creatives' || c.division === 'both');
-            } else if (selectedDivision === 'neither') {
-                result = result.filter(c => c.division === 'neither');
-            }
+        if (selectedTag) {
+            result = result.filter(c => c.tags && c.tags.includes(selectedTag));
         }
         
         return result;
-    }, [courses, selectedSchool, selectedDivision]);
+    }, [courses, selectedSchool, selectedTag]);
 
-    const hasFilters = searchQuery || selectedSchool || selectedDivision;
+    const hasFilters = searchQuery || selectedSchool || selectedTag;
 
     return (
-        <section className="page">
-            <div className="container">
-                <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-                    <h1 className="gradient-text" style={{ fontSize: '4rem', fontWeight: '900', marginBottom: '1.5rem', letterSpacing: '-1px' }}>
-                        Curriculum Grid
-                    </h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', marginBottom: '3rem' }}>
-                        Access high-performance modules deployed across the network.
-                    </p>
-
-                    {/* SEARCH BAR */}
-                    <div style={{ maxWidth: '600px', margin: '0 auto', position: 'relative' }}>
+        <div style={{ fontFamily: "'Poppins', sans-serif", background: '#fafafa', minHeight: '100vh', paddingBottom: '4rem', color: '#333' }}>
+            <div className="container" style={{ paddingTop: '120px' }}>
+                
+                {/* SEARCH & FILTERS BAR */}
+                <div style={{ 
+                    display: 'flex', 
+                    gap: '1rem', 
+                    justifyContent: 'center', 
+                    alignItems: 'center',
+                    marginBottom: '4rem', 
+                    flexWrap: 'wrap',
+                    maxWidth: '800px',
+                    margin: '0 auto 4rem auto'
+                }}>
+                    {/* SEARCH INPUT */}
+                    <div style={{ flex: '1', minWidth: '300px', position: 'relative' }}>
                         <input
                             type="text"
                             placeholder="Search by module name or instructor..."
@@ -123,114 +121,79 @@ const CoursesPage = ({
                             onChange={(e) => setSearchQuery(e.target.value)}
                             style={{
                                 width: '100%',
-                                padding: '1.2rem 2rem',
-                                fontSize: '1rem',
-                                background: 'rgba(255,255,255,0.03)',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                padding: '1.08rem 1.8rem',
+                                fontSize: '0.9rem',
+                                background: '#fff',
+                                border: '1px solid #eaeaea',
                                 borderRadius: '100px',
-                                color: '#fff',
+                                color: '#333',
                                 outline: 'none',
-                                backdropFilter: 'blur(10px)',
                                 textAlign: 'center',
-                                transition: 'all 0.3s'
+                                transition: 'all 0.3s',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
                             }}
                         />
                     </div>
-                </div>
 
-                {/* DIVISION FILTER */}
-                <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'center', marginBottom: '3rem', flexWrap: 'wrap' }}>
-                    {[
-                        { id: null, label: 'ALL MODULES' },
-                        { id: 'builders', label: 'BUILDERS' },
-                        { id: 'creatives', label: 'CREATIVES' },
-                        { id: 'neither', label: 'CORE' }
-                    ].map(div => (
-                        <button
-                            key={div.id}
-                            onClick={() => setSelectedDivision(div.id)}
+                    {/* TAG FILTER */}
+                    <select
+                        value={selectedTag || ''}
+                        onChange={(e) => setSelectedTag(e.target.value || null)}
+                        style={{
+                            padding: '0.9rem 1.35rem',
+                            fontSize: '0.81rem',
+                            fontWeight: '600',
+                            border: '1px solid #eaeaea',
+                            background: '#fff',
+                            color: '#333',
+                            borderRadius: '100px',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                            minWidth: '180px'
+                        }}
+                    >
+                        <option value="">All Niches</option>
+                        <option value="web3">Web3</option>
+                        <option value="frontend">Frontend</option>
+                        <option value="backend">Backend</option>
+                        <option value="ai">AI & ML</option>
+                        <option value="design">Design</option>
+                        <option value="business">Business</option>
+                    </select>
+
+                    {/* SCHOOL FILTER */}
+                    {availableSchools.length > 0 && (
+                        <select
+                            value={selectedSchool || ''}
+                            onChange={(e) => setSelectedSchool(e.target.value || null)}
                             style={{
-                                padding: '0.6rem 1.5rem',
-                                fontSize: '0.75rem',
-                                fontWeight: '800',
-                                border: '1px solid',
-                                borderColor: selectedDivision === div.id ? 'var(--primary-color)' : 'rgba(255,255,255,0.1)',
-                                background: selectedDivision === div.id ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                                color: selectedDivision === div.id ? 'var(--primary-color)' : 'var(--text-secondary)',
+                                padding: '0.9rem 1.35rem',
+                                fontSize: '0.81rem',
+                                fontWeight: '600',
+                                border: '1px solid #eaeaea',
+                                background: '#fff',
+                                color: '#333',
                                 borderRadius: '100px',
+                                cursor: 'pointer',
+                                outline: 'none',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                minWidth: '180px'
                             }}
                         >
-                            {div.label}
-                        </button>
-                    ))}
+                            <option value="">Global Issuers</option>
+                            {availableSchools.map(name => (
+                                <option key={name} value={name}>{name}</option>
+                            ))}
+                        </select>
+                    )}
                 </div>
-
-                {/* SCHOOL FILTER CHIPS */}
-                {availableSchools.length > 0 && (
-                    <div style={{
-                        display: 'flex',
-                        flexWrap: 'nowrap',
-                        overflowX: 'auto',
-                        gap: '0.6rem',
-                        alignItems: 'center',
-                        marginBottom: '4rem',
-                        paddingBottom: '1rem',
-                        scrollbarWidth: 'none'
-                    }}>
-                        <span style={{ 
-                            fontSize: '0.7rem', 
-                            fontWeight: '800', 
-                            color: '#444',
-                            marginRight: '0.5rem',
-                            flexShrink: 0
-                        }}>
-                            ISSUERS:
-                        </span>
-
-                        <button
-                            onClick={() => setSelectedSchool(null)}
-                            style={{
-                                padding: '0.4rem 1.2rem',
-                                fontSize: '0.75rem',
-                                fontWeight: '700',
-                                border: '1px solid',
-                                borderColor: selectedSchool === null ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
-                                background: selectedSchool === null ? 'rgba(255,255,255,0.05)' : 'transparent',
-                                color: selectedSchool === null ? '#fff' : '#444',
-                                borderRadius: '100px',
-                                flexShrink: 0
-                            }}
-                        >
-                            Global
-                        </button>
-
-                        {availableSchools.map(name => (
-                            <button
-                                key={name}
-                                onClick={() => setSelectedSchool(prev => prev === name ? null : name)}
-                                style={{
-                                    padding: '0.4rem 1.2rem',
-                                    fontSize: '0.75rem',
-                                    fontWeight: '700',
-                                    border: '1px solid',
-                                    borderColor: selectedSchool === name ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
-                                    background: selectedSchool === name ? 'rgba(255,255,255,0.05)' : 'transparent',
-                                    color: selectedSchool === name ? '#fff' : '#444',
-                                    borderRadius: '100px',
-                                    flexShrink: 0
-                                }}
-                            >
-                                {name}
-                            </button>
-                        ))}
-                    </div>
-                )}
 
                 {/* GRID */}
                 {filteredCourses.length === 0 ? (
-                    <div className="glass-panel" style={{ textAlign: 'center', padding: '6rem' }}>
-                        <h2 style={{ marginBottom: '1rem' }}>No modules detected.</h2>
-                        <p style={{ color: 'var(--text-secondary)' }}>Try adjusting your search query or filters.</p>
+                    <div style={{ textAlign: 'center', padding: '6rem', background: '#fff', borderRadius: '24px', border: '1px dashed #ccc' }}>
+                        <h2 style={{ marginBottom: '1rem', color: '#111' }}>No modules detected.</h2>
+                        <p style={{ color: '#666' }}>Try adjusting your search query or filters.</p>
                     </div>
                 ) : (
                     <>
@@ -277,7 +240,7 @@ const CoursesPage = ({
                     </>
                 )}
             </div>
-        </section>
+        </div>
     );
 };
 

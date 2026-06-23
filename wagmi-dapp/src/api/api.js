@@ -26,7 +26,7 @@ export const apiCall = async (endpoint, options = {}) => {
     let errorDetail = `API Error: ${response.status} - ${response.statusText}`;
     try {
         const errorBody = await response.json();
-        errorDetail = errorBody.detail || JSON.stringify(errorBody);
+        errorDetail = errorBody.detail || errorBody.error || JSON.stringify(errorBody);
     } catch {
         // Ignore if body isn't JSON
     }

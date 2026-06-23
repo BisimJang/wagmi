@@ -198,6 +198,112 @@ class StudentProvisioningView(APIView):
             "email": email
         }, status=201)
 
+import csv
+import io
+import secrets
+from rest_framework.parsers import MultiPartParser
+
+class BulkStudentProvisioningView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        user = request.user
+        
+        if not user.is_staff:
+            return Response({"error": "Only instructors/institutions can provision students."}, status=403)
+            
+        from courses.models import SovereignSchool, SchoolMembership
+        school = SovereignSchool.objects.filter(instructor=user).first()
+        
+        if not school:
+            return Response({"error": "You must create a school before provisioning students."}, status=400)
+            
+        if 'file' not in request.FILES:
+            return Response({"error": "No file provided. Please upload a CSV file."}, status=400)
+            
+        file = request.FILES['file']
+        if not file.name.endswith('.csv'):
+            return Response({"error": "Only CSV files are supported."}, status=400)
+            
+        try:
+            decoded_file = file.read().decode('utf-8')
+            io_string = io.StringIO(decoded_file)
+            reader = csv.reader(io_string)
+            
+            created_count = 0
+            existing_count = 0
+            results = []
+            
+            first_row = next(reader, None)
+            if first_row and "email" not in str(first_row[0]).lower():
+                io_string.seek(0)
+                reader = csv.reader(io_string)
+                
+            for row in reader:
+                if not row or not row[0].strip():
+                    continue
+                email = row[0].strip().lower()
+                
+                student = WalletUser.objects.filter(email=email).first()
+                password = secrets.token_urlsafe(10)
+                
+                if student:
+                    existing_count += 1
+                    status_text = "Already exists"
+                else:
+                    student = WalletUser.objects.create_user(
+                        email=email,
+                        password=password,
+                        must_change_password=True
+                    )
+                    created_count += 1
+                    status_text = "Created & Emailed"
+                    
+                    # Automatically send welcome email with credentials
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+                    
+                    subject = f"You've been invited to {school.name} on Studyverse"
+                    message = f"""Hello!
+                    
+You have been invited to join {school.name}'s private classes on Studyverse.
+
+Your account has been created automatically. You can log in using the following credentials:
+Email: {email}
+Password: {password}
+
+Please log in at: http://localhost:5173/login
+
+Welcome to your learning journey!
+"""
+                    try:
+                        send_mail(
+                            subject,
+                            message,
+                            getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@studyverse.com'),
+                            [email],
+                            fail_silently=True,
+                        )
+                    except Exception as e:
+                        print(f"Failed to send email to {email}: {e}")
+                
+                membership, m_created = SchoolMembership.objects.get_or_create(user=student, school=school)
+                
+                results.append({
+                    "email": email,
+                    "status": status_text,
+                    "password": password if status_text == "Created" else "N/A"
+                })
+                
+            return Response({
+                "message": f"Processed successfully. Created: {created_count}, Existing: {existing_count}.",
+                "results": results
+            }, status=200)
+            
+        except Exception as e:
+            return Response({"error": f"Error processing file: {str(e)}"}, status=500)
+
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -316,4 +422,20 @@ class RegisterInstitutionView(APIView):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }, status=201)
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        new_password = request.data.get("new_password")
+        
+        if not new_password or len(new_password) < 6:
+            return Response({"error": "Password must be at least 6 characters long"}, status=400)
+            
+        user.set_password(new_password)
+        user.must_change_password = False
+        user.save()
+        
+        return Response({"message": "Password updated successfully"}, status=200)
 

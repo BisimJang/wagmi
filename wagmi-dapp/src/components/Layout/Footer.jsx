@@ -4,116 +4,59 @@ import React from 'react';
 
 const Footer = ({ showPage }) => {
     return (
-        <footer style={{
-            background: '#08080a',
-            color: '#fff',
-            padding: '8rem 2rem 4rem 2rem',
-            borderTop: '1px solid rgba(255, 255, 255, 0.05)'
-        }}>
-            <div className="container" style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                gap: '4rem',
-                maxWidth: '1200px',
-                marginBottom: '6rem'
-            }}>
-                {/* BRANDING */}
-                <div>
-                    <h2 style={{
-                        fontSize: '2rem',
-                        fontWeight: '800',
-                        marginBottom: '1.5rem',
-                        background: 'linear-gradient(135deg, #fff 0%, var(--primary-color) 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                    }}>
-                        Study Verse
-                    </h2>
-                    <p style={{ fontSize: '1rem', color: '#94a3b8', lineHeight: '1.7', marginBottom: '2rem' }}>
-                        High-performance infrastructure for the next generation of decentralized learning.
-                    </p>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                        <a href="#" style={{ 
-                            background: 'rgba(255,255,255,0.05)', 
-                            color: '#fff', 
-                            padding: '0.6rem 1.2rem', 
-                            fontWeight: '600', 
-                            borderRadius: '100px', 
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            fontSize: '0.8rem'
-                        }}>X / TWITTER</a>
-                        <a href="#" style={{ 
-                            background: 'rgba(255,255,255,0.05)', 
-                            color: '#fff', 
-                            padding: '0.6rem 1.2rem', 
-                            fontWeight: '600', 
-                            borderRadius: '100px', 
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            fontSize: '0.8rem'
-                        }}>DISCORD</a>
+        <>
+            <style>
+                {`
+                .global-footer {
+                    display: grid;
+                    grid-template-columns: 2fr 1fr 2fr;
+                    gap: 40px;
+                    padding: 80px clamp(1.5rem, 6vw, 3.5rem);
+                    background: #fff;
+                    border-top: 1px solid #eee;
+                    font-family: 'Poppins', sans-serif;
+                }
+                @media (max-width: 900px) {
+                    .global-footer { grid-template-columns: 1fr; gap: 48px; }
+                }
+                .footer-brand h4 { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #0d0d0d; }
+                .social-grid { display: flex; gap: 12px; }
+                .soc { width: 32px; height: 32px; background: #f0f0f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .2s; }
+                .soc:hover { background: #e0e0e0; }
+                .soc svg { width: 16px; height: 16px; fill: #0d0d0d; }
+
+                .footer-links h5 { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #999; margin-bottom: 14px; }
+                .footer-links a { display: block; color: #0d0d0d; font-size: 13px; margin-bottom: 10px; transition: opacity .2s; text-decoration: none; font-weight: 500; }
+                .footer-links a:hover { opacity: .45; }
+                .footer-links a span.ul-rest { text-decoration: underline; }
+                .footer-contact p { font-size: 13px; color: #666; line-height: 1.6; margin-bottom: 14px; }
+                .btn-mail { background: transparent; border: 1.5px solid #0d0d0d; color: #0d0d0d; padding: 10px 24px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; border-radius: 100px; cursor: pointer; transition: opacity .2s; }
+                .btn-mail:hover { opacity: .5; }
+                `}
+            </style>
+            <footer className="global-footer">
+                <div className="footer-brand">
+                    <h4>Study Verse</h4>
+                    <div className="social-grid">
+                        <div className="soc"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
+                        <div className="soc"><svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></div>
+                        <div className="soc"><svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></div>
+                        <div className="soc"><svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></div>
                     </div>
                 </div>
-
-                {/* NAVIGATION */}
-                <div>
-                    <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1.5rem', color: '#fff' }}>
-                        Protocol
-                    </h3>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <li><a href="#" onClick={(e) => { e.preventDefault(); showPage('courses'); }} style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: '500' }}>The Grid</a></li>
-                        <li><a href="#" onClick={(e) => { e.preventDefault(); showPage('instructor'); }} style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: '500' }}>Studio</a></li>
-                        <li><a href="#" onClick={(e) => { e.preventDefault(); showPage('schools'); }} style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: '500' }}>Learning Engine</a></li>
-                        <li><a href="#" onClick={(e) => { e.preventDefault(); showPage('profile'); }} style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: '500' }}>Portfolio</a></li>
-                    </ul>
+                <div className="footer-links">
+                    <h5>Protocol</h5>
+                    <a href="#" onClick={(e) => { e.preventDefault(); showPage('courses'); }}>T<span className="ul-rest">he Grid</span></a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); showPage('instructor'); }}>S<span className="ul-rest">tudio</span></a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); showPage('schools'); }}>L<span className="ul-rest">earning Engine</span></a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); showPage('profile'); }}>P<span className="ul-rest">ortfolio</span></a>
                 </div>
-
-                {/* NEWSLETTER */}
-                <div>
-                    <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1.5rem', color: '#fff' }}>
-                        Intelligence
-                    </h3>
-                    <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-                        Get the latest updates on protocol changes and new curriculum deployments.
-                    </p>
-                    <form style={{ display: 'flex', gap: '0.5rem' }} onSubmit={(e) => e.preventDefault()}>
-                        <input 
-                            type="email" 
-                            placeholder="Email address" 
-                            style={{ 
-                                padding: '0.8rem 1.2rem', 
-                                borderRadius: '100px',
-                                border: '1px solid rgba(255,255,255,0.1)', 
-                                background: 'rgba(255,255,255,0.03)', 
-                                color: '#fff', 
-                                fontSize: '0.9rem',
-                                outline: 'none',
-                                flex: 1
-                            }} 
-                        />
-                        <button 
-                            type="submit" 
-                            style={{ 
-                                padding: '0.8rem 1.5rem', 
-                                background: 'var(--primary-color)', 
-                                color: '#fff', 
-                                fontWeight: '700', 
-                                fontSize: '0.9rem', 
-                                border: 'none',
-                                borderRadius: '100px',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            Join
-                        </button>
-                    </form>
+                <div className="footer-contact">
+                    <p>Something else? Specify by sending us a mail</p>
+                    <button className="btn-mail" onClick={() => window.location.href = 'mailto:hello@studyverse.com'}>Mail us</button>
                 </div>
-            </div>
-
-            {/* COPYRIGHT */}
-            <div style={{ textAlign: 'center', fontSize: '0.85rem', fontWeight: '500', color: '#444' }}>
-                &copy; {new Date().getFullYear()} Study Verse Protocol. Sovereign Learning.
-            </div>
-        </footer>
+            </footer>
+        </>
     );
 };
 

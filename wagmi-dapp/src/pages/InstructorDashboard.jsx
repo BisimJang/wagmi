@@ -30,8 +30,12 @@ const InstructorDashboard = ({
         description: '',
         fiat_price: '',
         image_url: '',
-        school_address: ''
+        image_url: '',
+        school_address: '',
+        is_public: true
     });
+    const [csvFile, setCsvFile] = useState(null);
+    const [csvResults, setCsvResults] = useState(null);
     const [createdCourse, setCreatedCourse] = useState(null);
 
     // Curriculum
@@ -89,7 +93,9 @@ const InstructorDashboard = ({
             description: course.description || '',
             fiat_price: course.fiat_price || '',
             image_url: course.image_url || '',
-            school_address: course.school_address || ''
+            school_address: course.school_address || '',
+            tags: course.tags || [],
+            is_public: course.is_public !== undefined ? course.is_public : true
         });
         setView('editor');
         
@@ -103,7 +109,7 @@ const InstructorDashboard = ({
 
     const handleCreateNewCourse = () => {
         setCreatedCourse(null);
-        setFormData({ title: '', description: '', fiat_price: '', image_url: '', school_address: hasSchool ? ownedSchools[0].address : '' });
+        setFormData({ title: '', description: '', fiat_price: '', image_url: '', school_address: hasSchool ? ownedSchools[0].address : '', tags: [], is_public: true });
         setSections([]);
         setView('editor');
     };
@@ -200,16 +206,29 @@ const InstructorDashboard = ({
     };
 
     return (
-        <section className="page" style={{ padding: 0 }}>
-            <div style={{ display: 'flex', minHeight: '100vh', background: '#08080a', position: 'relative' }}>
+        <section className="page studio-page" style={{ padding: 0 }}>
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+                .studio-page { font-family: 'Poppins', sans-serif; color: #0d0d0d; }
+                .studio-page .glass-panel {
+                    background: #fff !important;
+                    border: 1px solid #eaeaea !important;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+                    border-radius: 16px;
+                }
+                .studio-page button {
+                    font-family: 'Poppins', sans-serif;
+                }
+            `}</style>
+            <div style={{ display: 'flex', minHeight: '100vh', background: '#fafafa', position: 'relative' }}>
                 
                 {/* STUDIO SIDEBAR */}
                 <div style={{ 
                     width: isSidebarOpen ? '280px' : '0px', 
-                    borderRight: isSidebarOpen ? '1px solid rgba(255,255,255,0.05)' : 'none', 
+                    borderRight: isSidebarOpen ? '1px solid #eaeaea' : 'none', 
                     padding: isSidebarOpen ? '8rem 2rem 2rem 2rem' : '0', 
                     display: 'flex', flexDirection: 'column', gap: '2rem', 
-                    background: 'rgba(13, 13, 15, 0.98)',
+                    background: '#fff',
                     position: isMobile ? 'fixed' : 'relative',
                     top: 0, left: 0, height: '100vh', zIndex: 3500,
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -219,23 +238,23 @@ const InstructorDashboard = ({
                         <>
                             <button 
                                 onClick={() => setIsSidebarOpen(false)}
-                                style={{ position: 'absolute', top: '2rem', right: '1.5rem', background: 'none', border: 'none', color: '#444', cursor: 'pointer' }}
+                                style={{ position: 'absolute', top: '2rem', right: '1.5rem', background: 'none', border: 'none', color: '#666', cursor: 'pointer' }}
                             >
                                 <X size={isMobile ? 24 : 20} />
                             </button>
-                            <div style={{ fontSize: '0.6rem', fontWeight: '900', color: '#444', letterSpacing: '1px' }}>WORKSPACE</div>
+                            <div style={{ fontSize: '0.6rem', fontWeight: '900', color: '#666', letterSpacing: '1px' }}>WORKSPACE</div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                 <button 
                                     onClick={() => { setActiveTab('courses'); setView('list'); if(isMobile) setIsSidebarOpen(false); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem 1.2rem', background: activeTab === 'courses' ? 'rgba(79, 70, 229, 0.1)' : 'transparent', border: 'none', color: activeTab === 'courses' ? '#fff' : '#666', borderRadius: '12px', textAlign: 'left', fontWeight: '700' }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem 1.2rem', background: activeTab === 'courses' ? 'rgba(79, 70, 229, 0.1)' : 'transparent', border: 'none', color: activeTab === 'courses' ? 'var(--primary-color)' : '#666', borderRadius: '12px', textAlign: 'left', fontWeight: '700' }}
                                 >
-                                    <Layout size={18} /> Courses
+                                    <Layout size={18} /> {user?.is_institution ? 'Classes' : 'Courses'}
                                 </button>
                                 <button 
                                     onClick={() => { setActiveTab('institutions'); if(isMobile) setIsSidebarOpen(false); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem 1.2rem', background: activeTab === 'institutions' ? 'rgba(79, 70, 229, 0.1)' : 'transparent', border: 'none', color: activeTab === 'institutions' ? '#fff' : '#666', borderRadius: '12px', textAlign: 'left', fontWeight: '700' }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem 1.2rem', background: activeTab === 'institutions' ? 'rgba(79, 70, 229, 0.1)' : 'transparent', border: 'none', color: activeTab === 'institutions' ? 'var(--primary-color)' : '#666', borderRadius: '12px', textAlign: 'left', fontWeight: '700' }}
                                 >
-                                    <Building2 size={18} /> Institutions
+                                    <Building2 size={18} /> {user?.is_institution ? 'Students' : 'Institutions'}
                                 </button>
                             </div>
                         </>
@@ -259,36 +278,97 @@ const InstructorDashboard = ({
 
                     {activeTab === 'institutions' ? (
                         <div style={{ maxWidth: '800px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4rem' }}>
-                                <div>
-                                    <h1 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem' }}>Institutions</h1>
-                                    <p style={{ color: 'var(--text-secondary)' }}>Manage your organisations and web3 nodes.</p>
-                                </div>
-                            </div>
-
-                            <div className="glass-panel" style={{ padding: '2rem', marginBottom: '3rem', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                                <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1rem' }}>Create New Institution</h3>
-                                <div style={{ display: 'flex', gap: '1rem' }}>
-                                    <input 
-                                        type="text" 
-                                        placeholder="Institution Name" 
-                                        value={schoolName} 
-                                        onChange={(e) => setSchoolName(e.target.value)} 
-                                        style={{ flex: 1, padding: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff' }} 
-                                    />
-                                    <button onClick={handleLaunchSchool} disabled={isSchoolLoading} style={{ background: 'var(--primary-color)', padding: '0 2rem', borderRadius: '10px', fontWeight: '700' }}>
-                                        {isSchoolLoading ? 'Creating...' : 'Create'}
-                                    </button>
-                                </div>
-                            </div>
+                            {user?.is_institution ? (
+                                <>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4rem' }}>
+                                        <div>
+                                            <h1 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem' }}>Students</h1>
+                                            <p style={{ color: 'var(--text-secondary)' }}>Manage and provision students for your organization.</p>
+                                        </div>
+                                    </div>
+                                    <div className="glass-panel" style={{ padding: '2rem', marginBottom: '3rem', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                                        <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1rem' }}>Bulk Invite via CSV</h3>
+                                        <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1.5rem' }}>Upload a CSV file containing student emails to auto-provision their accounts.</p>
+                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                            <input 
+                                                type="file" 
+                                                accept=".csv"
+                                                onChange={(e) => setCsvFile(e.target.files[0])} 
+                                                style={{ flex: 1, padding: '0.8rem', background: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#0d0d0d' }} 
+                                            />
+                                            <button onClick={async () => {
+                                                if (!csvFile) return;
+                                                setIsUploading(true);
+                                                const uploadData = new FormData();
+                                                uploadData.append('file', csvFile);
+                                                try {
+                                                    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/auth/provision-bulk/`, {
+                                                        method: 'POST',
+                                                        headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt')}` },
+                                                        body: uploadData
+                                                    });
+                                                    const data = await response.json();
+                                                    if (!response.ok) throw new Error(data.error || 'Upload failed');
+                                                    setCsvResults(data);
+                                                    showMessage('Students provisioned successfully', 'success');
+                                                } catch (error) {
+                                                    showMessage(error.message || 'Failed to upload CSV', 'error');
+                                                } finally {
+                                                    setIsUploading(false);
+                                                }
+                                            }} disabled={isUploading || !csvFile} style={{ background: 'var(--primary-color)', padding: '0.8rem 2rem', borderRadius: '10px', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                                                {isUploading ? 'Uploading...' : 'Upload & Provision'}
+                                            </button>
+                                        </div>
+                                        {csvResults && (
+                                            <div style={{ marginTop: '2rem', padding: '1rem', background: 'rgba(57, 255, 20, 0.05)', border: '1px solid #39ff14', borderRadius: '10px' }}>
+                                                <h4 style={{ color: '#39ff14', marginBottom: '0.5rem' }}>{csvResults.message}</h4>
+                                                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                                                    {csvResults.results.map((r, i) => (
+                                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                            <span>{r.email}</span>
+                                                            <span style={{ color: r.status === 'Created' ? '#39ff14' : '#888' }}>{r.status} {r.password !== 'N/A' && `(PW: ${r.password})`}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4rem' }}>
+                                        <div>
+                                            <h1 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem' }}>Institutions</h1>
+                                            <p style={{ color: 'var(--text-secondary)' }}>Manage your organisations and web3 nodes.</p>
+                                        </div>
+                                    </div>
+        
+                                    <div className="glass-panel" style={{ padding: '2rem', marginBottom: '3rem', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                                        <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1rem' }}>Create New Institution</h3>
+                                        <div style={{ display: 'flex', gap: '1rem' }}>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Institution Name" 
+                                                value={schoolName} 
+                                                onChange={(e) => setSchoolName(e.target.value)} 
+                                                style={{ flex: 1, padding: '1rem', background: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#0d0d0d' }} 
+                                            />
+                                            <button onClick={handleLaunchSchool} disabled={isSchoolLoading} style={{ background: 'var(--primary-color)', padding: '0 2rem', borderRadius: '10px', fontWeight: '700' }}>
+                                                {isSchoolLoading ? 'Creating...' : 'Create'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
 
                             {hasSchool && (
                                 <div style={{ marginBottom: '2rem' }}>
-                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>SELECT INSTITUTION TO MANAGE</label>
+                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#666', marginBottom: '0.8rem' }}>SELECT INSTITUTION TO MANAGE</label>
                                     <select 
                                         value={selectedSchoolIndex}
                                         onChange={(e) => setSelectedSchoolIndex(parseInt(e.target.value))}
-                                        style={{ width: '100%', padding: '1rem 1.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', fontSize: '1rem', cursor: 'pointer' }}
+                                        style={{ width: '100%', padding: '1rem 1.5rem', background: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#0d0d0d', fontSize: '1rem', cursor: 'pointer' }}
                                     >
                                         {ownedSchools.map((school, idx) => (
                                             <option key={idx} value={idx} style={{color: '#000'}}>{school.name} {school.address.startsWith('0x') ? `(${school.address.slice(0,6)}...)` : ''}</option>
@@ -332,16 +412,16 @@ const InstructorDashboard = ({
                         <>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4rem' }}>
                                 <div>
-                                    <h1 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '0.5rem' }}>Courses</h1>
+                                    <h1 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '0.5rem' }}>{user?.is_institution ? 'Classes' : 'Courses'}</h1>
                                     <p style={{ color: 'var(--text-secondary)' }}>Manage and deploy your learning modules.</p>
                                 </div>
-                                <button onClick={handleCreateNewCourse} style={{ background: 'var(--primary-color)', padding: '0.8rem 2rem' }}>+ Create Course</button>
+                                <button onClick={handleCreateNewCourse} style={{ background: 'var(--primary-color)', padding: '0.8rem 2rem' }}>+ Create {user?.is_institution ? 'Class' : 'Course'}</button>
                             </div>
                             <div className="course-grid" style={{ padding: 0 }}>
                                 {Array.isArray(courses) && courses.filter(c => c.is_instructor).map(course => (
                                     <div key={course.id} className="glass-panel" style={{ padding: '2rem' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                                            <span style={{ fontSize: '0.6rem', fontWeight: '900', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px', color: course.is_minted ? 'var(--primary-color)' : '#444' }}>{course.is_minted ? 'ON-CHAIN' : 'DRAFT'}</span>
+                                            <span style={{ fontSize: '0.6rem', fontWeight: '900', background: 'rgba(0,0,0,0.05)', padding: '4px 8px', borderRadius: '4px', color: course.is_minted ? 'var(--primary-color)' : '#444' }}>{course.is_minted ? 'ON-CHAIN' : 'DRAFT'}</span>
                                             <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#3ec636' }}>₦ {course.fiat_price || 0}</span>
                                         </div>
                                         <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem' }}>{course.title}</h3>
@@ -353,7 +433,7 @@ const InstructorDashboard = ({
                     ) : (
                         <div style={{ maxWidth: '900px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: isMobile ? '2rem' : '4rem' }}>
-                                <button onClick={() => setView('list')} style={{ background: 'rgba(255,255,255,0.05)', padding: '0.6rem', borderRadius: '10px' }}><ArrowLeft size={18} /></button>
+                                <button onClick={() => setView('list')} style={{ background: 'rgba(0,0,0,0.05)', padding: '0.6rem', borderRadius: '10px' }}><ArrowLeft size={18} /></button>
                                 <h1 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{formData.title || 'New Course'}</h1>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr', gap: isMobile ? '2rem' : '4rem' }}>
@@ -370,16 +450,16 @@ const InstructorDashboard = ({
                                         <form onSubmit={handleCourseSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                             <div className="glass-panel" style={{ padding: '2.5rem' }}>
                                                 <div style={{ marginBottom: '2rem' }}>
-                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>COURSE TITLE</label>
-                                                    <input type="text" name="title" value={formData.title} onChange={handleChange} style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#fff' }} required />
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#666', marginBottom: '0.8rem' }}>COURSE TITLE</label>
+                                                    <input type="text" name="title" value={formData.title} onChange={handleChange} style={{ width: '100%', padding: '1rem', background: '#fafafa', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#0d0d0d' }} required />
                                                 </div>
                                                 <div style={{ marginBottom: '2rem' }}>
-                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>PRICE (₦)</label>
-                                                    <input type="number" step="0.01" name="fiat_price" value={formData.fiat_price} onChange={handleChange} placeholder="0.00" style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#fff' }} />
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#666', marginBottom: '0.8rem' }}>PRICE (₦)</label>
+                                                    <input type="number" step="0.01" name="fiat_price" value={formData.fiat_price} onChange={handleChange} placeholder="0.00" style={{ width: '100%', padding: '1rem', background: '#fafafa', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#0d0d0d' }} />
                                                 </div>
                                                 <div style={{ marginBottom: '2rem' }}>
-                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>ASSOCIATED INSTITUTION</label>
-                                                    <select name="school_address" value={formData.school_address || ''} onChange={handleChange} style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#fff' }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#666', marginBottom: '0.8rem' }}>ASSOCIATED INSTITUTION</label>
+                                                    <select name="school_address" value={formData.school_address || ''} onChange={handleChange} style={{ width: '100%', padding: '1rem', background: '#fafafa', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#0d0d0d' }}>
                                                         <option value="" style={{ color: '#000' }}>-- Select an Institution --</option>
                                                         {ownedSchools && ownedSchools.map(s => (
                                                             <option key={s.address} value={s.address} style={{ color: '#000' }}>{s.name}</option>
@@ -387,15 +467,37 @@ const InstructorDashboard = ({
                                                     </select>
                                                 </div>
                                                 <div style={{ marginBottom: '2rem' }}>
-                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>DESCRIPTION</label>
-                                                    <textarea rows="5" name="description" value={formData.description} onChange={handleChange} style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#fff' }} />
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#666', marginBottom: '0.8rem' }}>TAGS / NICHE (Multi-Select)</label>
+                                                    <select multiple name="tags" value={formData.tags || []} onChange={(e) => {
+                                                        const values = Array.from(e.target.selectedOptions, option => option.value);
+                                                        setFormData({...formData, tags: values});
+                                                    }} style={{ width: '100%', padding: '1rem', background: '#fafafa', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#0d0d0d', height: '150px' }}>
+                                                        <option value="web3" style={{ color: '#000' }}>Web3</option>
+                                                        <option value="frontend" style={{ color: '#000' }}>Frontend</option>
+                                                        <option value="backend" style={{ color: '#000' }}>Backend</option>
+                                                        <option value="ai" style={{ color: '#000' }}>AI & ML</option>
+                                                        <option value="design" style={{ color: '#000' }}>Design</option>
+                                                        <option value="business" style={{ color: '#000' }}>Business</option>
+                                                    </select>
+                                                    <span style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginTop: '0.5rem' }}>Hold Ctrl/Cmd to select multiple.</span>
                                                 </div>
                                                 <div style={{ marginBottom: '2rem' }}>
-                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.8rem' }}>COVER IMAGE</label>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.9rem', fontWeight: '800', color: '#0d0d0d', cursor: 'pointer' }}>
+                                                        <input type="checkbox" name="is_public" checked={!formData.is_public} onChange={(e) => setFormData({...formData, is_public: !e.target.checked})} style={{ width: '20px', height: '20px' }} />
+                                                        Make this class private (Hidden from public Explore page)
+                                                    </label>
+                                                    <span style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginTop: '0.5rem' }}>Only students under your organization will be able to see and access this.</span>
+                                                </div>
+                                                <div style={{ marginBottom: '2rem' }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#666', marginBottom: '0.8rem' }}>DESCRIPTION</label>
+                                                    <textarea rows="5" name="description" value={formData.description} onChange={handleChange} style={{ width: '100%', padding: '1rem', background: '#fafafa', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#0d0d0d' }} />
+                                                </div>
+                                                <div style={{ marginBottom: '2rem' }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: '#666', marginBottom: '0.8rem' }}>COVER IMAGE</label>
                                                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                                         {formData.image_url && <img src={formData.image_url} alt="Course" style={{ width: '60px', height: '60px', borderRadius: '10px', objectFit: 'cover' }} />}
                                                         <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'course')} style={{ display: 'none' }} id="course-image-upload" />
-                                                        <label htmlFor="course-image-upload" style={{ background: 'rgba(255,255,255,0.05)', padding: '0.8rem 1.5rem', borderRadius: '10px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: '800' }}>{isUploading ? 'Uploading...' : 'Upload Image'}</label>
+                                                        <label htmlFor="course-image-upload" style={{ background: 'rgba(0,0,0,0.05)', padding: '0.8rem 1.5rem', borderRadius: '10px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: '800' }}>{isUploading ? 'Uploading...' : 'Upload Image'}</label>
                                                     </div>
                                                 </div>
                                             </div>
@@ -405,12 +507,12 @@ const InstructorDashboard = ({
                                         <div className="glass-panel" style={{ padding: '2.5rem' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
                                                 <h2 style={{ fontSize: '1.2rem', fontWeight: '800' }}>Curriculum</h2>
-                                                <button onClick={() => { setAddingSection(true); setExpandedSectionId('new'); }} style={{ background: 'rgba(255,255,255,0.05)', fontSize: '0.7rem', padding: '0.5rem 1rem' }}>+ Add Section</button>
+                                                <button onClick={() => { setAddingSection(true); setExpandedSectionId('new'); }} style={{ background: 'rgba(0,0,0,0.05)', fontSize: '0.7rem', padding: '0.5rem 1rem' }}>+ Add Section</button>
                                             </div>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                                 {addingSection && (
                                                     <div className="glass-panel" style={{ padding: '1.5rem', border: '1px solid var(--primary-color)' }}>
-                                                        <input type="text" placeholder="Section Title" value={newSectionTitle} onChange={(e) => setNewSectionTitle(e.target.value)} autoFocus style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', marginBottom: '1rem' }} />
+                                                        <input type="text" placeholder="Section Title" value={newSectionTitle} onChange={(e) => setNewSectionTitle(e.target.value)} autoFocus style={{ width: '100%', padding: '0.8rem', background: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#0d0d0d', marginBottom: '1rem' }} />
                                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                             <button onClick={handleAddSection} style={{ background: 'var(--primary-color)', fontSize: '0.7rem' }}>Save Section</button>
                                                             <button onClick={() => setAddingSection(false)} style={{ background: 'transparent', fontSize: '0.7rem' }}>Cancel</button>
@@ -418,7 +520,7 @@ const InstructorDashboard = ({
                                                     </div>
                                                 )}
                                                 {sections.map((section, idx) => (
-                                                    <div key={section.id} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.03)', borderRadius: '12px', overflow: 'hidden' }}>
+                                                    <div key={section.id} style={{ background: '#fff', border: '1px solid rgba(255,255,255,0.03)', borderRadius: '12px', overflow: 'hidden' }}>
                                                         <div onClick={() => setExpandedSectionId(expandedSectionId === section.id ? null : section.id)} style={{ padding: '1.2rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
                                                             <span style={{ fontWeight: '700' }}>{idx + 1}. {section.title}</span>
                                                             <ChevronRight size={16} style={{ transform: expandedSectionId === section.id ? 'rotate(90deg)' : 'none' }} />
@@ -426,12 +528,12 @@ const InstructorDashboard = ({
                                                         {expandedSectionId === section.id && (
                                                             <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                                                    {section.lessons?.map(lesson => <div key={lesson.id} style={{ padding: '0.8rem 1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '0.9rem' }}>{lesson.title}</div>)}
+                                                                    {section.lessons?.map(lesson => <div key={lesson.id} style={{ padding: '0.8rem 1rem', background: '#fafafa', borderRadius: '8px', fontSize: '0.9rem' }}>{lesson.title}</div>)}
                                                                     {activeLessonSectionId === section.id && (
                                                                         <div className="glass-panel" style={{ padding: '1.5rem', border: '1px solid var(--primary-color)', marginTop: '1rem' }}>
-                                                                            <input type="text" placeholder="Lesson Title" value={lessonData.title} onChange={(e) => setLessonData({ ...lessonData, title: e.target.value })} style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', marginBottom: '1rem' }} />
-                                                                            <textarea rows="4" placeholder="Lesson Content (Markdown)" value={lessonData.content} onChange={(e) => setLessonData({ ...lessonData, content: e.target.value })} style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', marginBottom: '1rem' }} />
-                                                                            <input type="text" placeholder="Video URL" value={lessonData.video_url} onChange={(e) => setLessonData({ ...lessonData, video_url: e.target.value })} style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', marginBottom: '1rem' }} />
+                                                                            <input type="text" placeholder="Lesson Title" value={lessonData.title} onChange={(e) => setLessonData({ ...lessonData, title: e.target.value })} style={{ width: '100%', padding: '0.8rem', background: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#0d0d0d', marginBottom: '1rem' }} />
+                                                                            <textarea rows="4" placeholder="Lesson Content (Markdown)" value={lessonData.content} onChange={(e) => setLessonData({ ...lessonData, content: e.target.value })} style={{ width: '100%', padding: '0.8rem', background: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#0d0d0d', marginBottom: '1rem' }} />
+                                                                            <input type="text" placeholder="Video URL" value={lessonData.video_url} onChange={(e) => setLessonData({ ...lessonData, video_url: e.target.value })} style={{ width: '100%', padding: '0.8rem', background: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#0d0d0d', marginBottom: '1rem' }} />
                                                                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                                                 <button onClick={handleAddLesson} style={{ background: 'var(--primary-color)', fontSize: '0.7rem' }}>Save Lesson</button>
                                                                                 <button onClick={() => setActiveLessonSectionId(null)} style={{ background: 'transparent', fontSize: '0.7rem' }}>Cancel</button>

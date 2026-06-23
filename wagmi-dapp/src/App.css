@@ -368,3 +368,48 @@ main {
     padding: 0;
     color: inherit;
 }
+
+/* ── GLOBAL NAV ─────────────────────────────────────────── */
+.global-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+  display: flex; align-items: center; justify-content: center; gap: 36px;
+  padding: 18px 22vw;
+  background: rgba(255,255,255,.93); backdrop-filter: blur(10px);
+}
+@media (max-width: 1024px) {
+    .global-nav { padding: 18px 12vw; }
+}
+@media (max-width: 768px) {
+    .global-nav { padding: 18px 6vw; gap: 16px; }
+}
+
+.global-nav a { color: #0d0d0d; font-size: 13px; transition: opacity .2s; font-weight: 500; text-decoration: none; cursor: pointer; }
+.global-nav a:hover { opacity: .4; }
+.global-nav a.active { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+
+.nav-avatar {
+  position: absolute; right: 22vw;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #0d0d0d; color: #fff; font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+@media (max-width: 1024px) {
+    .nav-avatar { right: 12vw; }
+}
+@media (max-width: 768px) {
+    .nav-avatar { right: 6vw; }
+}
+
+.nav-signin {
+  position: absolute; right: 22vw;
+  padding: 8px 20px; border-radius: 100px;
+  background: #0d0d0d; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: opacity .2s;
+}
+@media (max-width: 1024px) {
+    .nav-signin { right: 12vw; }
+}
+@media (max-width: 768px) {
+    .nav-signin { right: 6vw; }
+}
+.nav-signin:hover { opacity: .7; }

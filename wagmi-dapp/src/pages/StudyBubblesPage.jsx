@@ -172,32 +172,7 @@ const StudyBubblesPage = ({ showPage }) => {
                 }
                 .btn-genesis:hover { opacity: .7; }
 
-                .hero-label {
-                    font-size: 11px;
-                    font-weight: 600;
-                    letter-spacing: .12em;
-                    text-transform: uppercase;
-                    color: #888;
-                    margin-bottom: 14px;
-                }
 
-                .hero-title {
-                    font-size: clamp(52px, 9vw, 96px);
-                    font-weight: 700;
-                    line-height: .93;
-                    letter-spacing: -.03em;
-                    margin-bottom: 22px;
-                }
-                .hero-title span { color: var(--green); }
-
-                .hero-sub {
-                    font-size: 14px;
-                    font-weight: 300;
-                    color: #444;
-                    max-width: 320px;
-                    line-height: 1.7;
-                    margin-bottom: 48px;
-                }
 
                 .search-bar {
                     display: flex;
@@ -456,9 +431,7 @@ const StudyBubblesPage = ({ showPage }) => {
                 </button>
             </div>
 
-            <div className="hero-label">Personalized synthesis</div>
-            <h1 className="hero-title">Study<br/><span>bubbles.</span></h1>
-            <p className="hero-sub">Your personal knowledge nodes. Upload a concept or file to build a learning environment shaped around your goals.</p>
+
 
             <div className="search-bar">
                 <div className="search-wrap">

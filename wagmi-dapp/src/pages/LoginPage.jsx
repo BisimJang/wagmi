@@ -39,14 +39,14 @@ const LoginPage = ({
       return;
     }
     setLoading(true);
-    let success = false;
+    let result;
     if (mode === 'signup') {
-      success = await registerUser(email, password, displayName);
+      result = await registerUser(email, password, displayName);
     } else {
-      success = await loginWithEmail(email, password);
+      result = await loginWithEmail(email, password);
     }
     setLoading(false);
-    if (!success) setError('Authentication failed. Please check your credentials.');
+    if (!result.success) setError(result.error || 'Authentication failed. Please check your credentials.');
     else showPage('home');
   };
 
@@ -54,7 +54,7 @@ const LoginPage = ({
     e.preventDefault();
     setError('');
     setLoading(true);
-    const success = await registerInstitution({
+    const result = await registerInstitution({
       email,
       org_name: orgName,
       org_type: orgType,
@@ -62,12 +62,29 @@ const LoginPage = ({
       website: orgWebsite
     });
     setLoading(false);
-    if (success) {
+    if (result.success) {
       setInstSent(true);
       setTimeout(() => showPage('home'), 3000);
     } else {
-      setError('Failed to register institution. Please check your details.');
+      setError(result.error || 'Failed to register institution. Please check your details.');
     }
+  };
+
+  const handleGoogleSuccess = async (response) => {
+    setError('');
+    setLoading(true);
+    const result = await onGoogleSuccess(response);
+    setLoading(false);
+    if (!result.success) {
+      setError(result.error || 'Google authentication failed. Please try again.');
+    } else {
+      showPage('home');
+    }
+  };
+
+  const handleGoogleFail = () => {
+    setError('Google login could not be initialized. Please check your connection.');
+    if (onGoogleError) onGoogleError();
   };
 
   return (
@@ -334,7 +351,15 @@ const LoginPage = ({
               <div className="lp-divider">or continue with</div>
 
               <div className="lp-google-wrap">
-                <GoogleLogin onSuccess={onGoogleSuccess} onError={onGoogleError} useOneTap={false} theme="outline" shape="pill" width="360" text={mode === 'signup' ? 'signup_with' : 'signin_with'} />
+                <GoogleLogin 
+                  onSuccess={handleGoogleSuccess} 
+                  onError={handleGoogleFail} 
+                  useOneTap={false} 
+                  theme="outline" 
+                  shape="pill" 
+                  width="360" 
+                  text={mode === 'signup' ? 'signup_with' : 'signin_with'} 
+                />
               </div>
 
               <ConnectButton.Custom>

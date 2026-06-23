@@ -149,6 +149,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5174",
 ]
 
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'unsafe-none'
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
@@ -174,4 +176,6 @@ GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
 # PAYMENTS CONFIGURATION
 PAYSTACK_SECRET_KEY = env('PAYSTACK_SECRET_KEY', default='')
 
+# GOOGLE LOGIN
+GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='')
 

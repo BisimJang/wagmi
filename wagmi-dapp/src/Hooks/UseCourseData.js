@@ -305,8 +305,8 @@ export const useCourseData = (showMessage, jwt) => {
         const token = localStorage.getItem('jwt');
         if (!token) { showMessage('Please connect and sign in to enroll', 'warning'); return; }
 
-        if (!course || !course.id || !course.price) {
-            showMessage('Error: Missing course price or ID.', 'error');
+        if (!course || !course.id || !course.fiat_price) {
+            showMessage('Error: Missing course fiat price or ID.', 'error');
             return;
         }
 

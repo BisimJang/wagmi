@@ -12,9 +12,11 @@ import { useSchoolRegistry } from './hooks/useSchoolRegistry';
 // Components
 import Message from './components/Feedback/Message';
 import LoadingSpinner from './components/Feedback/LoadingSpinner';
+import GlobalVeraModal from './components/Feedback/GlobalVeraModal';
 import Footer from './components/Layout/Footer';
 import LoginModal from './components/Auth/LoginModal';
 import MasterySetupModal from './components/Auth/MasterySetupModal';
+import ForceChangePasswordModal from './components/Auth/ForceChangePasswordModal';
 
 // Pages
 import HomePage from './pages/HomePage_Premium.jsx';
@@ -83,6 +85,20 @@ function App() {
   const [lessonProgress, setLessonProgress] = useState({});
   const [projectGoal, setProjectGoal] = useState(localStorage.getItem('studyverse_project_goal') || "");
   const [isMasteryModalOpen, setIsMasteryModalOpen] = useState(false);
+  const [isGlobalVeraOpen, setIsGlobalVeraOpen] = useState(false);
+  const [veraPosition, setVeraPosition] = useState(null);
+
+  useEffect(() => {
+    const handleDoubleClick = (e) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(e.target.tagName)) return;
+      if (!isGlobalVeraOpen) {
+          setVeraPosition({ x: e.clientX, y: e.clientY });
+      }
+      setIsGlobalVeraOpen(prev => !prev);
+    };
+    window.addEventListener('dblclick', handleDoubleClick);
+    return () => window.removeEventListener('dblclick', handleDoubleClick);
+  }, [isGlobalVeraOpen]);
 
   const setGlobalProjectGoal = (goal) => {
     setProjectGoal(goal);
@@ -169,7 +185,26 @@ function App() {
 
   const loading = dataLoading || authLoading;
   const isImmersivePage = ['course_view', 'study-bubbles', 'settings'].includes(currentPage);
-  const showGlobalFooter = !['home', 'course_view', 'instructor'].includes(currentPage);
+  const showGlobalFooter = !['course_view', 'instructor'].includes(currentPage);
+
+  // Scroll to top on page navigation
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentPage]);
+
+  // Dynamically set body background to prevent "black stripes" below the footer on light pages
+  useEffect(() => {
+    const lightPages = ['home', 'study-bubbles', 'profile', 'courses', 'my_courses'];
+    if (lightPages.includes(currentPage)) {
+      document.body.style.backgroundColor = '#ffffff';
+    } else {
+      document.body.style.backgroundColor = '#08080a';
+    }
+    
+    return () => {
+      document.body.style.backgroundColor = '#08080a';
+    };
+  }, [currentPage]);
 
   useEffect(() => {
     if (jwt) {
@@ -229,8 +264,8 @@ function App() {
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
     const handleGoogleLoginSuccess = async (response) => {
-        const success = await loginWithGoogle(response);
-        if (success) setIsLoginModalOpen(false);
+        const result = await loginWithGoogle(response);
+        if (result && result.success) setIsLoginModalOpen(false);
     };
 
     const handleGoogleLoginError = () => {
@@ -399,72 +434,30 @@ function App() {
             />
 
             {!isImmersivePage && (
-              <header style={{ height: isMobile ? '5rem' : '6rem' }}>
-                  <div className="logo nav-module" style={{ fontSize: isMobile ? '1.2rem' : '1.5rem' }}>
-                      <a onClick={() => showPage('home')}>Study Verse</a>
-                  </div>
-                  
-                  {!isMobile && (
-                      <ul className="nav-links nav-module">
-                          <li><a onClick={() => showPage('courses')} className={currentPage === 'courses' ? 'active' : ''}>Explore</a></li>
-                          
-                          {user && (
-                              <li><a onClick={() => showPage('my_courses')} className={currentPage === 'my_courses' ? 'active' : ''}>My Courses</a></li>
-                          )}
-                          
-                          {user && (!user.is_institution) && (
-                              <li><a onClick={() => showPage('study-bubbles')} className={currentPage === 'study-bubbles' ? 'active' : ''}>Bubbles</a></li>
-                          )}
-                          
-                          {user && (
-                              <li><a onClick={() => showPage('instructor')} className={currentPage === 'instructor' ? 'active' : ''}>Studio</a></li>
-                          )}
-                      </ul>
-                  )}
+              <nav className="global-nav">
+                <a href="#" onClick={(e) => { e.preventDefault(); showPage('home'); }} className={currentPage === 'home' ? 'active ul-rest' : ''}>Home</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); showPage('courses'); }} className={currentPage === 'courses' ? 'active ul-rest' : ''}>Explore</a>
 
-                  <div className="wallet-section nav-module">
-                          {!jwt ? (
-                              <button onClick={() => showPage('login')} style={{ background: 'var(--primary-color)', color: '#fff', padding: isMobile ? '0.6rem 1.2rem' : '0.8rem 1.6rem', fontSize: isMobile ? '0.8rem' : '1rem' }}>
-                                  Sign In
-                              </button>
-                          ) : (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                  <div 
-                                      onClick={() => showPage('profile')}
-                                      style={{ 
-                                          width: isMobile ? '36px' : '42px', 
-                                          height: isMobile ? '36px' : '42px', 
-                                          background: 'var(--surface)', 
-                                          border: '1px solid var(--glass-border)', 
-                                          borderRadius: '50%',
-                                          cursor: 'pointer',
-                                          overflow: 'hidden',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center'
-                                      }}
-                                  >
-                                      {user?.profile_image ? (
-                                          <img src={user.profile_image} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                      ) : (
-                                          <span style={{ fontSize: isMobile ? '0.8rem' : '1rem', fontWeight: '800' }}>
-                                              {(user?.display_name?.[0] || user?.address?.[2] || '?').toUpperCase()}
-                                          </span>
-                                      )}
-                                  </div>
-                                  <div 
-                                      onClick={() => showPage('settings')}
-                                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', transition: 'color 0.2s' }}
-                                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-color)'}
-                                      onMouseLeave={(e) => e.currentTarget.style.color = '#888'}
-                                      title="Settings"
-                                  >
-                                      <Settings size={22} />
-                                  </div>
-                              </div>
-                          )}
-                      </div>
-              </header>
+                {user && (
+                  <a href="#" onClick={(e) => { e.preventDefault(); showPage('my_courses'); }} className={currentPage === 'my_courses' ? 'active ul-rest' : ''}>My Courses</a>
+                )}
+
+                {user && (!user.is_institution) && (
+                  <a href="#" onClick={(e) => { e.preventDefault(); showPage('study-bubbles'); }} className={currentPage === 'study-bubbles' ? 'active ul-rest' : ''}>Study Bubble</a>
+                )}
+
+                {user && (
+                  <a href="#" onClick={(e) => { e.preventDefault(); showPage('instructor'); }} className={currentPage === 'instructor' ? 'active ul-rest' : ''}>Studio</a>
+                )}
+
+                {user ? (
+                  <div className="nav-avatar" onClick={() => showPage('profile')}>
+                    {user?.display_name?.[0]?.toUpperCase() || user?.address?.[2]?.toUpperCase() || 'U'}
+                  </div>
+                ) : (
+                  <button className="nav-signin" onClick={() => showPage('login')}>Sign In</button>
+                )}
+              </nav>
             )}
 
             <main>
@@ -509,6 +502,19 @@ function App() {
                 )}
               </nav>
             )}
+
+            <GlobalVeraModal 
+                isOpen={isGlobalVeraOpen} 
+                onClose={() => setIsGlobalVeraOpen(false)} 
+                userName={user?.display_name || user?.address || 'Student'}
+                position={veraPosition}
+            />
+
+            <ForceChangePasswordModal
+                isOpen={user?.must_change_password}
+                onSuccess={() => loadUserData(jwt)}
+                showMessage={showMessage}
+            />
         </>
     );
 }

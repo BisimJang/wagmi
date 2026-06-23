@@ -45,11 +45,13 @@ export const useAuth = (showMessage) => {
           localStorage.setItem('auth_type', 'wallet');
 
           showMessage('Successfully logged in with wallet!', 'success');
+          return { success: true };
       } catch (error) {
           console.error('Login error:', error);
           showMessage(`Login failed: ${error.message || 'Check console.'}`, 'error');
           setJwt(null);
           localStorage.removeItem('jwt');
+          return { success: false, error: error.message };
       } finally {
           setAuthLoading(false);
       }
@@ -68,11 +70,11 @@ export const useAuth = (showMessage) => {
           localStorage.setItem('auth_type', 'google');
 
           showMessage('Successfully logged in with Google!', 'success');
-          return true;
+          return { success: true };
       } catch (error) {
           console.error('Google login error:', error);
           showMessage(`Google login failed: ${error.message}`, 'error');
-          return false;
+          return { success: false, error: error.message };
       } finally {
           setAuthLoading(false);
       }
@@ -159,11 +161,11 @@ export const useAuth = (showMessage) => {
           localStorage.setItem('auth_type', 'email');
 
           showMessage('Successfully logged in with email!', 'success');
-          return true;
+          return { success: true };
       } catch (error) {
           console.error('Email login error:', error);
           showMessage(`Email login failed: ${error.message || 'Check credentials.'}`, 'error');
-          return false;
+          return { success: false, error: error.message };
       } finally {
           setAuthLoading(false);
       }
@@ -182,11 +184,11 @@ export const useAuth = (showMessage) => {
           localStorage.setItem('auth_type', 'email');
 
           showMessage('Account created successfully!', 'success');
-          return true;
+          return { success: true };
       } catch (error) {
           console.error('Registration error:', error);
           showMessage(`Registration failed: ${error.message}`, 'error');
-          return false;
+          return { success: false, error: error.message };
       } finally {
           setAuthLoading(false);
       }
@@ -205,11 +207,11 @@ export const useAuth = (showMessage) => {
           localStorage.setItem('auth_type', 'email');
 
           showMessage('Institution registered successfully!', 'success');
-          return true;
+          return { success: true };
       } catch (error) {
           console.error('Institution registration error:', error);
           showMessage(`Registration failed: ${error.message}`, 'error');
-          return false;
+          return { success: false, error: error.message };
       } finally {
           setAuthLoading(false);
       }

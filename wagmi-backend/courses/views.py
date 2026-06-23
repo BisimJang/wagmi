@@ -180,7 +180,7 @@ def enroll_in_course(request, course_id):
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-from .paystack import initialize_paystack_transaction, verify_paystack_transaction, convert_sol_to_kobo
+from .paystack import initialize_paystack_transaction, verify_paystack_transaction
 import uuid
 
 @api_view(["POST"])
@@ -199,7 +199,7 @@ def initialize_fiat_payment(request, course_id):
     if Enrollment.objects.filter(user=user, course=course, status__in=['enrolled', 'completed']).exists():
         return Response({"error": "You are already enrolled in this course."}, status=status.HTTP_400_BAD_REQUEST)
 
-    amount_in_kobo = convert_sol_to_kobo(course.price)
+    amount_in_kobo = int(course.fiat_price * 100)
     if amount_in_kobo <= 0:
         return Response({"error": "Course is free or invalid price. Use standard enrollment."}, status=status.HTTP_400_BAD_REQUEST)
 

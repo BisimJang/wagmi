@@ -47,6 +47,7 @@ class Course(models.Model):
     image_url = models.URLField(blank=True, null=True)
     division = models.CharField(max_length=20, choices=DIVISION_CHOICES, default='neither')
     category = models.CharField(max_length=100, blank=True, null=True) # e.g. "Software Architecture", "Generative Art"
+    tags = models.JSONField(default=list, blank=True)
     is_minted = models.BooleanField(default=False)
     tx_hash = models.CharField(max_length=66, blank=True, null=True)
     school = models.ForeignKey(SovereignSchool, on_delete=models.SET_NULL, null=True, blank=True, related_name="courses")

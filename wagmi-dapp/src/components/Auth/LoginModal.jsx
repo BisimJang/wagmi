@@ -1,10 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { X, Shield, Globe, Zap, ArrowRight } from 'lucide-react';
+import { X, Shield, Globe, Zap, ArrowRight, AlertCircle } from 'lucide-react';
 
 const LoginModal = ({ isOpen, onClose, onGoogleSuccess, onGoogleError, loginWithWallet, isAuthorized }) => {
+    const [error, setError] = useState('');
+
     if (!isOpen) return null;
+
+    const handleGoogleSuccessWrap = async (response) => {
+        setError('');
+        try {
+            await onGoogleSuccess(response);
+        } catch (err) {
+            setError('Google login failed. Please try again.');
+        }
+    };
+
+    const handleGoogleErrorWrap = () => {
+        setError('Google login could not be initialized. Check your connection.');
+        if (onGoogleError) onGoogleError();
+    };
 
     return (
         <div style={{
@@ -120,8 +136,8 @@ const LoginModal = ({ isOpen, onClose, onGoogleSuccess, onGoogleError, loginWith
                                     if (!connected) {
                                         if (openConnectModal) openConnectModal();
                                     } else if (!isAuthorized) {
-                                        const success = await loginWithWallet();
-                                        if (success) onClose();
+                                        const result = await loginWithWallet();
+                                        if (result && result.success) onClose();
                                     }
                                 };
 
@@ -172,10 +188,28 @@ const LoginModal = ({ isOpen, onClose, onGoogleSuccess, onGoogleError, loginWith
                                 Access the network through standard social identity providers for a fast, gasless experience.
                             </p>
                         </div>
-                        <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            {error && (
+                                <div style={{ 
+                                    background: 'rgba(220, 38, 38, 0.1)', 
+                                    border: '1px solid rgba(220, 38, 38, 0.2)', 
+                                    color: '#f87171', 
+                                    padding: '0.8rem 1rem', 
+                                    borderRadius: '8px', 
+                                    fontSize: '0.85rem', 
+                                    marginBottom: '1rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    width: '100%'
+                                }}>
+                                    <AlertCircle size={16} />
+                                    {error}
+                                </div>
+                            )}
                             <GoogleLogin
-                                onSuccess={onGoogleSuccess}
-                                onError={onGoogleError}
+                                onSuccess={handleGoogleSuccessWrap}
+                                onError={handleGoogleErrorWrap}
                                 useOneTap={false}
                                 theme="filled_black"
                                 shape="pill"

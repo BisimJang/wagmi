@@ -60,6 +60,8 @@ class WalletUser(AbstractBaseUser, PermissionsMixin):
     org_name = models.CharField(max_length=255, blank=True, null=True)
     org_type = models.CharField(max_length=100, blank=True, null=True)
     org_size = models.CharField(max_length=100, blank=True, null=True)
+    
+    must_change_password = models.BooleanField(default=False)
 
     USERNAME_FIELD = "address"
     REQUIRED_FIELDS = []

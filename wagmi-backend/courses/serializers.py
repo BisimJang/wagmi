@@ -50,7 +50,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "id", "title", "name", "description", "instructor", "instructor_address", "price", "fiat_price",
             "created_at", "sections", "imageUrl", "image_url", 
             "is_minted", "tx_hash", "school_address", "school_name",
-            "is_instructor"
+            "is_instructor", "tags", "is_public"
         ]
 
     def get_imageUrl(self, obj):
@@ -108,36 +108,52 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "is_institution",
             "org_name",
             "org_type",
-            "org_size"
+            "org_size",
+            "must_change_password"
         ]
         read_only_fields = ["id", "address", "full_name", "enrollments", "certificates", "google_id", "is_institution"]
         
     def get_enrollments(self, obj):
         # 📚 Courses the user has explicitly enrolled in
         enrolled = Enrollment.objects.filter(user=obj)
-        enrolled_list = [
-            {
+        enrolled_list = []
+        for e in enrolled:
+            total_lessons = Lesson.objects.filter(section__course=e.course).count()
+            completed_lessons = LessonProgress.objects.filter(user=obj, lesson__section__course=e.course, completed=True).count()
+            progress_pct = (completed_lessons / total_lessons * 100) if total_lessons > 0 else 0.0
+
+            enrolled_list.append({
                 "course": e.course.title,
                 "course_id": e.course.id,
                 "enrolled_at": e.enrolled_at,
                 "tx_hash": e.tx_hash,
-                "role": "student"
-            }
-            for e in enrolled
-        ]
+                "role": "student",
+                "progress": round(progress_pct, 1),
+                "description": e.course.description,
+                "imageUrl": e.course.image_url if e.course.image_url else f"https://picsum.photos/seed/{e.course.id}/300/200",
+                "fiat_price": e.course.fiat_price,
+                "is_minted": e.course.is_minted,
+                "name": e.course.title
+            })
         
         # 🎓 Courses the user is an instructor for (they are implicitly enrolled as the Master)
         teaching = Course.objects.filter(instructor=obj)
-        teaching_list = [
-            {
-                "course": c.title,
-                "course_id": c.id,
-                "enrolled_at": c.created_at,
-                "tx_hash": c.tx_hash,
-                "role": "instructor"
-            }
-            for c in teaching if not enrolled.filter(course=c).exists() # Avoid duplicates
-        ]
+        teaching_list = []
+        for c in teaching:
+            if not enrolled.filter(course=c).exists():
+                teaching_list.append({
+                    "course": c.title,
+                    "course_id": c.id,
+                    "enrolled_at": c.created_at,
+                    "tx_hash": c.tx_hash,
+                    "role": "instructor",
+                    "progress": 100.0,
+                    "description": c.description,
+                    "imageUrl": c.image_url if c.image_url else f"https://picsum.photos/seed/{c.id}/300/200",
+                    "fiat_price": c.fiat_price,
+                    "is_minted": c.is_minted,
+                    "name": c.title
+                })
         
         return enrolled_list + teaching_list
 

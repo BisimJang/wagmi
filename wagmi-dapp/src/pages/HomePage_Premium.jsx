@@ -7,12 +7,12 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
   const labelsRef = useRef([]);
 
   useEffect(() => {
-    const SLIDES  = 3;
-    const track   = document.getElementById('features-track');
+    const SLIDES = 3;
+    const track = document.getElementById('features-track');
     const section = sectionRef.current;
-    const fLeft   = fLeftRef.current;
-    const reel    = reelRef.current;   // now the SVG wrapper div
-    const labels  = labelsRef.current;
+    const fLeft = fLeftRef.current;
+    const reel = reelRef.current;   // now the SVG wrapper div
+    const labels = labelsRef.current;
 
     if (!track || !section || !fLeft || !reel || !labels.length) return;
 
@@ -23,7 +23,7 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
       labels.forEach((el, i) => {
         if (!el) return;
         if (i === idx) {
-          const mid    = acc + el.offsetHeight / 2;
+          const mid = acc + el.offsetHeight / 2;
           const pinMid = section.offsetHeight / 2;
           fLeft.style.transition = animate
             ? 'transform .6s cubic-bezier(.77,0,.175,1)'
@@ -43,12 +43,12 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
       reel.style.transition = current === 0 && idx === 0
         ? 'none'
         : 'transform .7s cubic-bezier(.77,0,.175,1)';
-      reel.style.transform  = `rotate(${deg}deg)`;
+      reel.style.transform = `rotate(${deg}deg)`;
 
       // counter-rotate each label group so text stays upright
       reel.querySelectorAll('.compass-label').forEach((g) => {
         g.style.transition = reel.style.transition;
-        g.style.transform  = `rotate(-${deg}deg)`;
+        g.style.transform = `rotate(-${deg}deg)`;
       });
 
       // highlight active dot
@@ -66,14 +66,14 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
 
     function onScroll() {
       const trackRect = track.getBoundingClientRect();
-      const trackH    = track.offsetHeight;
-      const vpH       = window.innerHeight;
-      const scrolled  = -trackRect.top;
+      const trackH = track.offsetHeight;
+      const vpH = window.innerHeight;
+      const scrolled = -trackRect.top;
 
       if (scrolled < 0 || scrolled > trackH - vpH) return;
 
       const band = (trackH - vpH) / SLIDES;
-      const idx  = Math.min(Math.floor(scrolled / band), SLIDES - 1);
+      const idx = Math.min(Math.floor(scrolled / band), SLIDES - 1);
       goTo(idx);
     }
 
@@ -92,8 +92,7 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
 
-        /* Hide global header so this page is standalone */
-        header { display: none !important; }
+        /* Hide bottom nav so this page is standalone */
         .bottom-nav { display: none !important; }
 
         .sv-landing {
@@ -126,33 +125,6 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
                 --pad: 6vw;
             }
         }
-
-        /* ── NAV ─────────────────────────────────────────── */
-        .sv-landing nav {
-          position: fixed; top: 0; left: 0; right: 0; z-index: 999;
-          display: flex; align-items: center; justify-content: center; gap: 36px;
-          padding: 18px var(--pad);
-          background: rgba(255,255,255,.93); backdrop-filter: blur(10px);
-        }
-        .sv-landing nav a { color: #0d0d0d; font-size: 13px; transition: opacity .2s; font-weight: 500; text-decoration: none; }
-        .sv-landing nav a:hover { opacity: .4; }
-        .ul-rest { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
-        .nav-avatar {
-          position: absolute; right: var(--pad);
-          width: 32px; height: 32px; border-radius: 50%;
-          background: #0d0d0d; color: #fff; font-size: 13px; font-weight: 600;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer;
-        }
-        .nav-signin {
-          position: absolute; right: var(--pad);
-          padding: 8px 20px; border-radius: 100px;
-          background: #0d0d0d; color: #fff;
-          font-size: 12px; font-weight: 600;
-          font-family: 'Poppins', sans-serif;
-          border: none; cursor: pointer; transition: opacity .2s;
-        }
-        .nav-signin:hover { opacity: .75; }
 
         /* ── HERO ────────────────────────────────────────── */
         .hero { position: relative; min-height: 100vh; overflow: hidden; }
@@ -360,57 +332,10 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
           object-position: center center;
           display: block;
         }
-
-        /* ── FOOTER ──────────────────────────────────────── */
-        .sv-landing footer {
-          border-top: 1px solid #eee;
-          padding-top: 60px; padding-bottom: 60px;
-          padding-left: var(--pad); padding-right: var(--pad);
-          display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 40px;
-        }
-        .footer-brand h4 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
-        .social-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 76px; }
-        .soc {
-          width: 32px; height: 32px; background: #0d0d0d; border-radius: 6px;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer; transition: opacity .2s;
-        }
-        .soc:hover { opacity: .6; }
-        .soc svg { width: 15px; height: 15px; fill: #fff; }
-        .footer-links h5 { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #999; margin-bottom: 14px; }
-        .footer-links a { display: block; color: #0d0d0d; font-size: 13px; margin-bottom: 10px; transition: opacity .2s; text-decoration: none; }
-        .footer-links a:hover { opacity: .45; }
-        .footer-contact p { font-size: 13px; color: #666; line-height: 1.6; margin-bottom: 14px; }
-        .btn-mail {
-          padding: 9px 20px; border: 1.5px solid #0d0d0d; border-radius: 100px;
-          background: transparent; font-family: 'Poppins', sans-serif; font-size: 13px;
           cursor: pointer; transition: all .2s;
         }
         .btn-mail:hover { background: #0d0d0d; color: #fff; }
       `}</style>
-
-      {/* NAV */}
-      <nav>
-        <a href="#" onClick={(e) => { e.preventDefault(); showPage('home'); }}>Home</a>
-        <a href="#" onClick={(e) => { e.preventDefault(); showPage('courses'); }}>Explore</a>
-        
-        {user && (
-          <a href="#" onClick={(e) => { e.preventDefault(); showPage('my_courses'); }}>My Courses</a>
-        )}
-        
-        {user && (!user.is_institution) && (
-          <a href="#" onClick={(e) => { e.preventDefault(); showPage('study-bubbles'); }}>Study Bubble</a>
-        )}
-
-        {user && (
-          <a href="#" onClick={(e) => { e.preventDefault(); showPage('instructor'); }}>Studio</a>
-        )}
-        
-        {user
-          ? <div className="nav-avatar" onClick={() => showPage('profile')}>{user?.display_name?.[0]?.toUpperCase() || user?.address?.[2]?.toUpperCase() || 'U'}</div>
-          : <button className="nav-signin" onClick={() => showPage('login')}>Sign In</button>
-        }
-      </nav>
 
       {/* HERO */}
       <section className="hero">
@@ -423,8 +348,8 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
 
       {/* TAGLINE */}
       <section className="tagline">
-        <h2><span className="hl">Learn</span>, Build, and<br />Prove Your <span className="ul">Mastery</span>.</h2>
-        <p>Studyverse is an innovative platform designed for builders and creatives. It enables users to master new skills, earn verifiable certificates, and establish their own independent institutions.</p>
+        <h2><span className="hl">Learn</span>, Build, and<br />Track Your <span className="ul">Growth</span>.</h2>
+        <p>Studyverse is an innovative platform designed for anyone. It enables users to learn master new skills, earn verifiable certificates, and establish their own independent institutions.</p>
         <div className="btn-row">
           <button className="btn" onClick={() => showPage('study-bubbles')}>Quick study bubble</button>
           <button className="btn" onClick={() => showPage(user ? 'instructor' : 'profile')}>Deploy School</button>
@@ -466,7 +391,7 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
 
                 {/* ── inner hub ── */}
                 <circle cx="200" cy="200" r="28" fill="white" fillOpacity="0.08" stroke="white" strokeWidth="1.5" strokeOpacity="0.5" />
-                <circle cx="200" cy="200" r="5"  fill="white" fillOpacity="0.9" />
+                <circle cx="200" cy="200" r="5" fill="white" fillOpacity="0.9" />
 
                 {/* ── tick marks at 30° intervals ── */}
                 {Array.from({ length: 12 }, (_, i) => {
@@ -491,8 +416,8 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
                 {/* Points are at 0° (top/active), 120° (lower-right), 240° (lower-left)   */}
                 {[0, 120, 240].map((deg, i) => {
                   const rad = (deg * Math.PI) / 180;
-                  const x2  = 200 + 120 * Math.sin(rad);
-                  const y2  = 200 - 120 * Math.cos(rad);
+                  const x2 = 200 + 120 * Math.sin(rad);
+                  const y2 = 200 - 120 * Math.cos(rad);
                   return (
                     <line
                       key={i}
@@ -517,15 +442,15 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
                   (N is the "active top" position — not a labelled feature point)
                 */}
                 {[
-                  { deg: 0,   letter: 'E', label: 'Learn' },
+                  { deg: 0, letter: 'E', label: 'Learn' },
                   { deg: 120, letter: 'S', label: 'Prove' },
                   { deg: 240, letter: 'W', label: 'Assist' },
                 ].map(({ deg, letter, label }, i) => {
-                  const rad  = (deg * Math.PI) / 180;
-                  const cx   = 200 + 148 * Math.sin(rad);
-                  const cy   = 200 - 148 * Math.cos(rad);
-                  const lx   = 200 + 172 * Math.sin(rad);
-                  const ly   = 200 - 172 * Math.cos(rad);
+                  const rad = (deg * Math.PI) / 180;
+                  const cx = 200 + 148 * Math.sin(rad);
+                  const cy = 200 - 148 * Math.cos(rad);
+                  const lx = 200 + 172 * Math.sin(rad);
+                  const ly = 200 - 172 * Math.cos(rad);
                   return (
                     <g key={i} className="compass-label" style={{ transformOrigin: `${cx}px ${cy}px` }}>
                       {/* dot */}
@@ -574,6 +499,35 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
         </section>
       </div>
 
+      {/* STUDY BUBBLES PROMO */}
+      <section className="sb-promo" style={{ display: 'flex', flexWrap: 'wrap', minHeight: '60vh', background: '#fff' }}>
+        {/* Left side: Green solid block */}
+        <div style={{ flex: '1 1 50%', background: 'var(--green)', minHeight: '300px' }}></div>
+        
+        {/* Right side: Text content */}
+        <div style={{ flex: '1 1 50%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '100px 8vw', minWidth: '300px' }}>
+            <div style={{ fontSize: '11px', fontWeight: '600', letterSpacing: '.12em', textTransform: 'uppercase', color: '#888', marginBottom: '14px' }}>
+              PERSONALIZED SYNTHESIS
+            </div>
+            <h2 style={{ fontSize: 'clamp(48px, 7vw, 84px)', fontWeight: '700', lineHeight: '.93', letterSpacing: '-.03em', marginBottom: '22px' }}>
+              Study<br/><span style={{ color: 'var(--green)' }}>bubbles.</span>
+            </h2>
+            <p style={{ fontSize: '14px', fontWeight: '300', color: '#444', maxWidth: '320px', lineHeight: '1.7', marginBottom: '32px' }}>
+              Your personal knowledge nodes. Upload a concept or file to build a learning environment shaped around your goals.
+            </p>
+            <div>
+              <button 
+                onClick={() => showPage('study-bubbles')} 
+                style={{ padding: '12px 28px', background: '#0d0d0d', color: '#fff', borderRadius: '100px', fontWeight: '500', fontSize: '13px', cursor: 'pointer', border: 'none', transition: 'opacity 0.2s' }}
+                onMouseOver={(e) => e.currentTarget.style.opacity = '0.7'}
+                onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+              >
+                Open Study Bubbles
+              </button>
+            </div>
+        </div>
+      </section>
+
       {/* INSTITUTIONS */}
       <section className="institutions">
         <div className="inst-text">
@@ -586,30 +540,6 @@ const HomePage_Premium = ({ stats, user, certificates, showPage }) => {
           <img src="/sv-institutions.png" alt="Building" />
         </div>
       </section>
-
-      {/* FOOTER */}
-      <footer>
-        <div className="footer-brand">
-          <h4>Study Verse</h4>
-          <div className="social-grid">
-            <div className="soc"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
-            <div className="soc"><svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></div>
-            <div className="soc"><svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></div>
-            <div className="soc"><svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></div>
-          </div>
-        </div>
-        <div className="footer-links">
-          <h5>Protocol</h5>
-          <a href="#" onClick={(e) => { e.preventDefault(); showPage('courses'); }}>T<span className="ul-rest">he Grid</span></a>
-          <a href="#" onClick={(e) => { e.preventDefault(); showPage('instructor'); }}>S<span className="ul-rest">tudio</span></a>
-          <a href="#" onClick={(e) => { e.preventDefault(); showPage('schools'); }}>L<span className="ul-rest">earning Engine</span></a>
-          <a href="#" onClick={(e) => { e.preventDefault(); showPage('profile'); }}>P<span className="ul-rest">ortfolio</span></a>
-        </div>
-        <div className="footer-contact">
-          <p>Something else? Specify by sending us a mail</p>
-          <button className="btn-mail" onClick={() => window.location.href = 'mailto:hello@studyverse.com'}>Mail us</button>
-        </div>
-      </footer>
     </div>
   );
 };

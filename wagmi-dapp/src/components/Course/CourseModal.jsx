@@ -16,6 +16,7 @@ const CourseModal = ({
     const isEnrolled = enrollmentStatus === 'enrolled' || enrollmentStatus === 'completed';
     const isCompleted = enrollmentStatus === 'completed';
     const fiatPrice = parseFloat(course.fiat_price || 0);
+    const solPrice = parseFloat(course.price || 0);
 
     const renderActionButton = () => {
         if (isCompleted) {
@@ -53,13 +54,31 @@ const CourseModal = ({
         }
 
         return (
-            <BrutalistButton 
-                onClick={() => onPayFiat ? onPayFiat(course) : onEnroll(course)} 
-                style={{ maxWidth: '400px' }}
-                disabled={loading}
-            >
-                {loading ? <LoadingSpinner /> : `PAY ₦${parseFloat(fiatPrice).toLocaleString()}`}
-            </BrutalistButton>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxWidth: '400px', margin: '0 auto' }}>
+                {fiatPrice > 0 && (
+                    <BrutalistButton 
+                        onClick={() => onPayFiat ? onPayFiat(course) : null} 
+                        style={{ background: 'var(--primary-color)', color: '#fff' }}
+                        disabled={loading}
+                    >
+                        {loading ? <LoadingSpinner /> : `PAY ₦${fiatPrice.toLocaleString()}`}
+                    </BrutalistButton>
+                )}
+                {/* Crypto payments hidden from UI for now
+                {solPrice > 0 && (
+                    <BrutalistButton 
+                        onClick={() => {
+                            alert("Crypto payments coming soon!");
+                            // onEnroll(course); // Web3 hook disabled currently
+                        }} 
+                        style={{ background: '#000', color: '#fff', border: '3px solid #666' }}
+                        disabled={loading}
+                    >
+                        {loading ? <LoadingSpinner /> : `PAY ${solPrice} SOL`}
+                    </BrutalistButton>
+                )}
+                */}
+            </div>
         );
     };
 
@@ -150,7 +169,7 @@ const CourseModal = ({
                         )}
                         <span style={{ 
                             background: fiatPrice === 0 ? '#3ec636' : 'var(--primary-color)', 
-                            color: '#000', 
+                            color: fiatPrice === 0 ? '#000' : '#fff', 
                             padding: '0.3rem 0.6rem', 
                             border: '3px solid #000',
                             fontWeight: '900',

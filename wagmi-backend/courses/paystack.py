@@ -2,22 +2,6 @@ import requests
 from django.conf import settings
 from decimal import Decimal
 
-def convert_sol_to_kobo(sol_amount):
-    """
-    Converts a SOL decimal amount to NGN Kobo.
-    Assumes:
-    1 SOL = $150 USD
-    1 USD = 1500 NGN
-    1 NGN = 100 Kobo
-    """
-    try:
-        sol = Decimal(str(sol_amount))
-        # 1 SOL = 150 * 1500 * 100 = 22,500,000 Kobo
-        kobo_per_sol = Decimal('22500000')
-        kobo = int(sol * kobo_per_sol)
-        return kobo
-    except:
-        return 0
 
 def initialize_paystack_transaction(email, amount_in_kobo, reference=None, callback_url=None):
     """
