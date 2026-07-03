@@ -10,23 +10,29 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 from datetime import timedelta
+import environ
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+env = environ.Env()
+environ.Env.read_env(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-kd2lel$!t&%5!&pua9qf%!la5g)#jhd!00y^%p+8t2q#-3x(ly'
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-kd2lel$!t&%5!&pua9qf%!la5g)#jhd!00y^%p+8t2q#-3x(ly')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=["*"])
 
 
 # Application definition
@@ -49,6 +55,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -81,13 +88,11 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-        'OPTIONS': {
-            'timeout': 20,  # Increase timeout to 20 seconds
-        }
-    }
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 
@@ -133,6 +138,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -144,10 +150,11 @@ AUTH_USER_MODEL = "authwallet.WalletUser"
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-CORS_ALLOWED_ORIGINS = [
+CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=False)
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
     "http://localhost:5173",  # React app
     "http://localhost:5174",
-]
+])
 
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'unsafe-none'
 
@@ -160,10 +167,6 @@ SIMPLE_JWT = {
 }
 
 # WEB3 CONFIGURATION
-import environ
-
-env = environ.Env()
-environ.Env.read_env(BASE_DIR / '.env')
 
 WEB3_PROVIDER_URI = env('SEPOLIA_RPC_URL', default='https://eth-sepolia.g.alchemy.com/v2/rTJTDkjJ0l8pHbi1tIDCp')
 WEB3_CONTRACT_ADDRESS = env('CONTRACT_ADDRESS', default='0xee905bF7719F83968A4B6287AF1651f7EF47b084')
