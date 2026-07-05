@@ -5,9 +5,9 @@ import { Compass, School as SchoolIcon, User, Layout, BookOpen, Sparkles, Settin
 import './App.css';
 
 // Hooks
-import { useAuth } from './hooks/useAuth';
-import { useCourseData } from './hooks/useCourseData';
-import { useSchoolRegistry } from './hooks/useSchoolRegistry';
+import { useAuth } from './shared-hooks/useAuth';
+import { useCourseData } from './shared-hooks/useCourseData';
+import { useSchoolRegistry } from './shared-hooks/useSchoolRegistry';
 
 // Components
 import Message from './components/Feedback/Message';

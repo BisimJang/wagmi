@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Video, Book, PenTool, Bot, Plus, X, ChevronRight, Send, List, MessageSquare, BookOpen, Notebook, Play, Pause, Volume2, Music, Eye, Headphones, FileText, Sparkles } from 'lucide-react';
-import { useStudyVerseAI } from '../../hooks/useStudyVerseAI';
+import { useStudyVerseAI } from '../../shared-hooks/useStudyVerseAI';
 import ReactMarkdown from 'react-markdown';
 
 const getEmbedUrl = (url) => {

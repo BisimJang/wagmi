@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bot, Send, X } from 'lucide-react';
-import { useStudyVerseAI } from '../../hooks/useStudyVerseAI';
+import { useStudyVerseAI } from '../../shared-hooks/useStudyVerseAI';
 
 const GlobalVeraModal = ({ isOpen, onClose, userName, position }) => {
     const { askVera, isLoading } = useStudyVerseAI();

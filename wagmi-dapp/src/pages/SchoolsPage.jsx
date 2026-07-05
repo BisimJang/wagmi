@@ -1,7 +1,7 @@
 // src/pages/SchoolsPage.jsx
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useSovereignManagement } from '../hooks/useSovereignManagement';
+import { useSovereignManagement } from '../shared-hooks/useSovereignManagement';
 import { Shield, Coins, Activity, Plus, ArrowLeft, ExternalLink, Cpu } from 'lucide-react';
 
 const SchoolsPage = ({ 

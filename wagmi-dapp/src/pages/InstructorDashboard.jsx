@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSovereignManagement } from '../hooks/useSovereignManagement';
+import { useSovereignManagement } from '../shared-hooks/useSovereignManagement';
 import { Layout, Plus, Settings, List, CheckCircle, ChevronRight, ArrowLeft, Layers, Building2, X } from 'lucide-react';
 
 const InstructorDashboard = ({ 
