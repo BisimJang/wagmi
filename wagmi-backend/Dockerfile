@@ -21,5 +21,8 @@ COPY . /app/
 # Expose port
 EXPOSE 8000
 
-# Run migrations and start gunicorn
-CMD python manage.py migrate && gunicorn --bind 0.0.0.0:${PORT:-8000} core.wsgi:application
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+# Start the application
+CMD ["/app/start.sh"]
