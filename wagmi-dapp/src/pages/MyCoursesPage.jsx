@@ -95,7 +95,7 @@ const MyCoursesPage = ({ user, allCourses, loading, onViewCourse, showPage }) =>
                                         transition: 'opacity 0.3s ease',
                                         zIndex: 10
                                     }}>
-                                        <h4 style={{ color: '#fff', fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>About</h4>
+                                        <h4 style={{ color: '#111', fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>About</h4>
                                         <p style={{ color: '#ccc', fontSize: '0.8rem', lineHeight: '1.5', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                             {course.description || "No description available."}
                                         </p>
@@ -152,7 +152,7 @@ const MyCoursesPage = ({ user, allCourses, loading, onViewCourse, showPage }) =>
                             onClick={() => showPage('courses')}
                             style={{
                                 background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))',
-                                color: '#fff',
+                                color: '#111',
                                 padding: '1rem 2.5rem',
                                 borderRadius: '100px',
                                 fontSize: '1rem',

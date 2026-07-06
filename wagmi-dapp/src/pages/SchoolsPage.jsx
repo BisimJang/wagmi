@@ -127,7 +127,7 @@ const SchoolsPage = ({
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4rem' }}>
                             <div>
                                 <h1 style={{ fontSize: '3rem', fontWeight: '900', marginBottom: '0.5rem' }}>{selectedSchool.name}</h1>
-                                <code style={{ color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.03)', padding: '0.5rem 1rem', borderRadius: '8px' }}>{selectedSchool.address}</code>
+                                <code style={{ color: 'var(--text-secondary)', background: '#fff', padding: '0.5rem 1rem', borderRadius: '8px' }}>{selectedSchool.address}</code>
                             </div>
                             <div style={{ textAlign: 'right' }}>
                                 <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#444', display: 'block', marginBottom: '0.5rem' }}>TREASURY BALANCE</span>
@@ -144,15 +144,15 @@ const SchoolsPage = ({
 
                         {/* Node Status */}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginBottom: '4rem' }}>
-                            <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px' }}>
+                            <div style={{ padding: '1.5rem', background: '#fff', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px' }}>
                                 <Shield size={20} color="var(--primary-color)" style={{ marginBottom: '1rem' }} />
                                 <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.5rem' }}>IDENTITY SIGNER</div>
-                                <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#fff', wordBreak: 'break-all' }}>{contractSigner || 'Loading...'}</div>
+                                <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#111', wordBreak: 'break-all' }}>{contractSigner || 'Loading...'}</div>
                             </div>
-                            <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px' }}>
+                            <div style={{ padding: '1.5rem', background: '#fff', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px' }}>
                                 <Activity size={20} color="var(--primary-color)" style={{ marginBottom: '1rem' }} />
                                 <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.5rem' }}>ACTIVE MODULES</div>
-                                <div style={{ fontSize: '1.2rem', fontWeight: '900', color: '#fff' }}>{schoolCourses.length}</div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: '900', color: '#111' }}>{schoolCourses.length}</div>
                             </div>
                         </div>
 
@@ -187,7 +187,7 @@ const SchoolsPage = ({
                                                 step="0.01" 
                                                 id={`price-${course.id}`}
                                                 defaultValue={course.price}
-                                                style={{ flex: 1, padding: '0.6rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '0.9rem' }}
+                                                style={{ flex: 1, padding: '0.6rem 1rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#111', fontSize: '0.9rem' }}
                                             />
                                             <button 
                                                 onClick={async () => {
@@ -228,14 +228,14 @@ const SchoolsPage = ({
                             <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#444', marginBottom: '0.5rem' }}>SOVEREIGN NODE</div>
                             <h3 style={{ fontSize: '1.8rem', fontWeight: '900', marginBottom: '2rem' }}>{school.name}</h3>
                             
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '16px', marginBottom: '2rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '1.5rem', borderRadius: '16px', marginBottom: '2rem' }}>
                                 <span style={{ fontSize: '0.8rem', color: '#444', fontWeight: '700' }}>TREASURY</span>
                                 <span style={{ fontWeight: '900', color: 'var(--primary-color)', fontSize: '1.4rem' }}>{balances[school.address] || '0'} ETH</span>
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <button onClick={() => setSelectedSchool(school)} style={{ background: 'var(--primary-color)' }}>Manage</button>
-                                <button style={{ background: 'rgba(255,255,255,0.05)' }} onClick={() => window.open(`https://sepolia.etherscan.io/address/${school.address}`, '_blank')}>Scan</button>
+                                <button style={{ background: '#fff' }} onClick={() => window.open(`https://sepolia.etherscan.io/address/${school.address}`, '_blank')}>Scan</button>
                             </div>
                         </div>
                     ))}
@@ -253,10 +253,10 @@ const SchoolsPage = ({
                             gap: '1.5rem',
                             cursor: 'pointer',
                             transition: 'all 0.3s',
-                            background: 'rgba(255,255,255,0.01)'
+                            background: '#fff'
                         }}
                     >
-                        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <Plus size={32} color="#444" />
                         </div>
                         <span style={{ fontWeight: '800', fontSize: '0.8rem', color: '#444', letterSpacing: '1px' }}>INITIALIZE NEW NODE</span>
@@ -279,14 +279,14 @@ const SchoolsPage = ({
                                     placeholder="e.g. Creative Forge / Neural Academy" 
                                     value={newSchoolName}
                                     onChange={(e) => setNewSchoolName(e.target.value)}
-                                    style={{ width: '100%', padding: '1.2rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', fontSize: '1rem' }}
+                                    style={{ width: '100%', padding: '1.2rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', color: '#111', fontSize: '1rem' }}
                                 />
                             </div>
 
                             {orphanedCourses.length > 0 && (
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '800', color: '#444', marginBottom: '1.5rem' }}>SELECT INITIAL MODULES</label>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '16px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: '#fff', padding: '1.5rem', borderRadius: '16px' }}>
                                         {orphanedCourses.map(course => (
                                             <label key={course.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer' }}>
                                                 <input type="checkbox" checked={selectedOrphanIds.includes(course.id)} onChange={() => setSelectedOrphanIds(prev => prev.includes(course.id) ? prev.filter(id => id !== course.id) : [...prev, course.id])} />

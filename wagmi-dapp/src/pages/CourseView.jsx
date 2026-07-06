@@ -248,7 +248,7 @@ const CourseView = ({
                                 {enrollmentStatus !== 'enrolled' && (
                                     <button 
                                         onClick={() => onEnroll(course)} 
-                                        style={{ marginTop: '1.5rem', background: 'var(--primary-color)', padding: '0.8rem 2rem', fontWeight: '800', border: 'none', borderRadius: '12px', color: '#fff', cursor: 'pointer' }}
+                                        style={{ marginTop: '1.5rem', background: 'var(--primary-color)', padding: '0.8rem 2rem', fontWeight: '800', border: 'none', borderRadius: '12px', color: '#111', cursor: 'pointer' }}
                                     >
                                         {enrollmentStatus === 'completed' ? 'Re-Enroll On-Chain (Required for NFT Test)' : 'Enroll as Student (Test Mode)'}
                                     </button>
@@ -266,7 +266,7 @@ const CourseView = ({
                                     style={{ 
                                         width: '100%', 
                                         background: 'var(--primary-color)', 
-                                        color: '#fff',
+                                        color: '#111',
                                         padding: '1.5rem', 
                                         fontSize: '1.1rem',
                                         fontWeight: '800',
@@ -388,7 +388,7 @@ const CourseView = ({
                                         style={{ 
                                             width: '100%', 
                                             background: 'var(--primary-color)', 
-                                            color: '#fff',
+                                            color: '#111',
                                             padding: '1.2rem', 
                                             fontSize: '1.1rem',
                                             fontWeight: '800',
@@ -413,7 +413,7 @@ const CourseView = ({
                                         <button 
                                             disabled={loading}
                                             onClick={() => onComplete(course.id)} 
-                                            style={{ width: '100%', background: 'var(--success)', color: '#fff', padding: '1.2rem', fontWeight: '800', borderRadius: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 10px 25px rgba(16, 185, 129, 0.2)' }}
+                                            style={{ width: '100%', background: 'var(--success)', color: '#111', padding: '1.2rem', fontWeight: '800', borderRadius: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 10px 25px rgba(16, 185, 129, 0.2)' }}
                                         >
                                             GENERATE CERTIFICATE
                                         </button>
@@ -423,7 +423,7 @@ const CourseView = ({
                                         <button 
                                             disabled={loading}
                                             onClick={() => onClaim(certificate.id)} 
-                                            style={{ width: '100%', background: 'var(--primary-color)', color: '#fff', padding: '1.2rem', fontWeight: '800', borderRadius: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 10px 25px rgba(79, 70, 229, 0.2)' }}
+                                            style={{ width: '100%', background: 'var(--primary-color)', color: '#111', padding: '1.2rem', fontWeight: '800', borderRadius: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 10px 25px rgba(79, 70, 229, 0.2)' }}
                                         >
                                             CLAIM NFT CERTIFICATE
                                         </button>
@@ -446,7 +446,7 @@ const CourseView = ({
                     <div className="glass-panel" style={{ maxWidth: '600px', width: '100%', textAlign: 'center', background: '#fff', color: '#1a1d23', position: 'relative' }}>
                         <button onClick={() => setShowCompletionModal(false)} style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'transparent', border: 'none', cursor: 'pointer', color: '#868e96' }}><X size={24} /></button>
                         
-                        <div style={{ width: '100px', height: '100px', background: 'var(--success)', borderRadius: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', margin: '0 auto 2.5rem' }}>
+                        <div style={{ width: '100px', height: '100px', background: 'var(--success)', borderRadius: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111', margin: '0 auto 2.5rem' }}>
                             <Award size={56} />
                         </div>
 
@@ -462,7 +462,7 @@ const CourseView = ({
                                     onComplete(course.id);
                                     setShowCompletionModal(false);
                                 }}
-                                style={{ width: '100%', background: 'var(--primary-color)', color: '#fff', padding: '1.5rem', borderRadius: '18px', border: 'none', fontSize: '1.1rem', fontWeight: '800', cursor: 'pointer', boxShadow: '0 20px 40px rgba(79, 70, 229, 0.2)' }}
+                                style={{ width: '100%', background: 'var(--primary-color)', color: '#111', padding: '1.5rem', borderRadius: '18px', border: 'none', fontSize: '1.1rem', fontWeight: '800', cursor: 'pointer', boxShadow: '0 20px 40px rgba(79, 70, 229, 0.2)' }}
                             >
                                 GENERATE MASTER SHARD
                             </button>

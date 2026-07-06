@@ -294,7 +294,7 @@ const InstructorDashboard = ({
                                                 type="file" 
                                                 accept=".csv"
                                                 onChange={(e) => setCsvFile(e.target.files[0])} 
-                                                style={{ flex: 1, padding: '0.8rem', background: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#0d0d0d' }} 
+                                                style={{ flex: 1, padding: '0.8rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', color: '#0d0d0d' }} 
                                             />
                                             <button onClick={async () => {
                                                 if (!csvFile) return;
@@ -352,7 +352,7 @@ const InstructorDashboard = ({
                                                 placeholder="Institution Name" 
                                                 value={schoolName} 
                                                 onChange={(e) => setSchoolName(e.target.value)} 
-                                                style={{ flex: 1, padding: '1rem', background: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#0d0d0d' }} 
+                                                style={{ flex: 1, padding: '1rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', color: '#0d0d0d' }} 
                                             />
                                             <button onClick={handleLaunchSchool} disabled={isSchoolLoading} style={{ background: 'var(--primary-color)', padding: '0 2rem', borderRadius: '10px', fontWeight: '700' }}>
                                                 {isSchoolLoading ? 'Creating...' : 'Create'}
@@ -368,7 +368,7 @@ const InstructorDashboard = ({
                                     <select 
                                         value={selectedSchoolIndex}
                                         onChange={(e) => setSelectedSchoolIndex(parseInt(e.target.value))}
-                                        style={{ width: '100%', padding: '1rem 1.5rem', background: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#0d0d0d', fontSize: '1rem', cursor: 'pointer' }}
+                                        style={{ width: '100%', padding: '1rem 1.5rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', color: '#0d0d0d', fontSize: '1rem', cursor: 'pointer' }}
                                     >
                                         {ownedSchools.map((school, idx) => (
                                             <option key={idx} value={idx} style={{color: '#000'}}>{school.name} {school.address.startsWith('0x') ? `(${school.address.slice(0,6)}...)` : ''}</option>
@@ -512,7 +512,7 @@ const InstructorDashboard = ({
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                                 {addingSection && (
                                                     <div className="glass-panel" style={{ padding: '1.5rem', border: '1px solid var(--primary-color)' }}>
-                                                        <input type="text" placeholder="Section Title" value={newSectionTitle} onChange={(e) => setNewSectionTitle(e.target.value)} autoFocus style={{ width: '100%', padding: '0.8rem', background: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#0d0d0d', marginBottom: '1rem' }} />
+                                                        <input type="text" placeholder="Section Title" value={newSectionTitle} onChange={(e) => setNewSectionTitle(e.target.value)} autoFocus style={{ width: '100%', padding: '0.8rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#0d0d0d', marginBottom: '1rem' }} />
                                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                             <button onClick={handleAddSection} style={{ background: 'var(--primary-color)', fontSize: '0.7rem' }}>Save Section</button>
                                                             <button onClick={() => setAddingSection(false)} style={{ background: 'transparent', fontSize: '0.7rem' }}>Cancel</button>
@@ -531,9 +531,9 @@ const InstructorDashboard = ({
                                                                     {section.lessons?.map(lesson => <div key={lesson.id} style={{ padding: '0.8rem 1rem', background: '#fafafa', borderRadius: '8px', fontSize: '0.9rem' }}>{lesson.title}</div>)}
                                                                     {activeLessonSectionId === section.id && (
                                                                         <div className="glass-panel" style={{ padding: '1.5rem', border: '1px solid var(--primary-color)', marginTop: '1rem' }}>
-                                                                            <input type="text" placeholder="Lesson Title" value={lessonData.title} onChange={(e) => setLessonData({ ...lessonData, title: e.target.value })} style={{ width: '100%', padding: '0.8rem', background: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#0d0d0d', marginBottom: '1rem' }} />
-                                                                            <textarea rows="4" placeholder="Lesson Content (Markdown)" value={lessonData.content} onChange={(e) => setLessonData({ ...lessonData, content: e.target.value })} style={{ width: '100%', padding: '0.8rem', background: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#0d0d0d', marginBottom: '1rem' }} />
-                                                                            <input type="text" placeholder="Video URL" value={lessonData.video_url} onChange={(e) => setLessonData({ ...lessonData, video_url: e.target.value })} style={{ width: '100%', padding: '0.8rem', background: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#0d0d0d', marginBottom: '1rem' }} />
+                                                                            <input type="text" placeholder="Lesson Title" value={lessonData.title} onChange={(e) => setLessonData({ ...lessonData, title: e.target.value })} style={{ width: '100%', padding: '0.8rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#0d0d0d', marginBottom: '1rem' }} />
+                                                                            <textarea rows="4" placeholder="Lesson Content (Markdown)" value={lessonData.content} onChange={(e) => setLessonData({ ...lessonData, content: e.target.value })} style={{ width: '100%', padding: '0.8rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#0d0d0d', marginBottom: '1rem' }} />
+                                                                            <input type="text" placeholder="Video URL" value={lessonData.video_url} onChange={(e) => setLessonData({ ...lessonData, video_url: e.target.value })} style={{ width: '100%', padding: '0.8rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#0d0d0d', marginBottom: '1rem' }} />
                                                                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                                                 <button onClick={handleAddLesson} style={{ background: 'var(--primary-color)', fontSize: '0.7rem' }}>Save Lesson</button>
                                                                                 <button onClick={() => setActiveLessonSectionId(null)} style={{ background: 'transparent', fontSize: '0.7rem' }}>Cancel</button>

@@ -67,7 +67,7 @@ const InstitutionPage = ({ showPage, loginWithEmail }) => {
                                 borderRadius: '12px',
                                 border: '1px solid var(--glass-border)',
                                 background: 'rgba(0,0,0,0.2)',
-                                color: '#fff',
+                                color: '#111',
                                 outline: 'none'
                             }}
                         />
@@ -82,7 +82,7 @@ const InstitutionPage = ({ showPage, loginWithEmail }) => {
                                 borderRadius: '12px',
                                 border: '1px solid var(--glass-border)',
                                 background: 'rgba(0,0,0,0.2)',
-                                color: '#fff',
+                                color: '#111',
                                 outline: 'none'
                             }}
                         />
@@ -127,7 +127,7 @@ const InstitutionPage = ({ showPage, loginWithEmail }) => {
                     
                     <a href="mailto:contact@studyverse.com" style={{ 
                         background: 'var(--primary-color)',
-                        color: '#fff',
+                        color: '#111',
                         padding: '1rem',
                         borderRadius: '12px',
                         fontWeight: '800',
