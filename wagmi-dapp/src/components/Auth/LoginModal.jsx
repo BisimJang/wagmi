@@ -101,11 +101,13 @@ const LoginModal = ({ isOpen, onClose, onGoogleSuccess, onGoogleError, loginWith
 
                 <div style={{ 
                     display: 'grid', 
-                    gridTemplateColumns: '1fr 1fr', 
-                    gap: '2.5rem'
+                    gridTemplateColumns: '1fr', 
+                    gap: '2.5rem',
+                    maxWidth: '500px',
+                    margin: '0 auto'
                 }}>
                     
-                    {/* WEB3 OPTION */}
+                    {/* WEB3 OPTION (Temporarily Disabled)
                     <div style={{ 
                         padding: '3rem', 
                         background: 'rgba(255,255,255,0.02)', 
@@ -168,6 +170,7 @@ const LoginModal = ({ isOpen, onClose, onGoogleSuccess, onGoogleError, loginWith
                             }}
                         </ConnectButton.Custom>
                     </div>
+                    */}
 
                     {/* WEB2 OPTION */}
                     <div style={{ 
