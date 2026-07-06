@@ -61,6 +61,12 @@ class WalletUser(AbstractBaseUser, PermissionsMixin):
     org_type = models.CharField(max_length=100, blank=True, null=True)
     org_size = models.CharField(max_length=100, blank=True, null=True)
     
+    # Adi-Sanlo Subscription Fields
+    adisanlo_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    subscription_status = models.CharField(max_length=50, default='inactive')
+    subscription_end_date = models.DateTimeField(blank=True, null=True)
+    is_premium = models.BooleanField(default=False)
+    
     must_change_password = models.BooleanField(default=False)
 
     USERNAME_FIELD = "address"

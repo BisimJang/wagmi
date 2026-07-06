@@ -5,6 +5,7 @@ from .views import (
     StudentProvisioningView, BulkStudentProvisioningView, EmailTokenObtainPairView,
     RegisterUserView, RegisterInstitutionView, ChangePasswordView
 )
+from .billing_views import BillingPlansView, BillingSubscribeView, BillingStatusView
 
 urlpatterns = [
     path("nonce/", NonceView.as_view(), name="nonce"),
@@ -18,4 +19,9 @@ urlpatterns = [
     path("change-password/", ChangePasswordView.as_view(), name="change_password"),
     path("register/", RegisterUserView.as_view(), name="register_user"),
     path("register-institution/", RegisterInstitutionView.as_view(), name="register_institution"),
+    
+    # Billing
+    path("billing/plans/", BillingPlansView.as_view(), name="billing_plans"),
+    path("billing/subscribe/", BillingSubscribeView.as_view(), name="billing_subscribe"),
+    path("billing/status/", BillingStatusView.as_view(), name="billing_status"),
 ]

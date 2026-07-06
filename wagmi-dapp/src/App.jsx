@@ -32,6 +32,8 @@ import StudyBubblesPage from './pages/StudyBubblesPage.jsx';
 import InstitutionPage from './pages/InstitutionPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
+import PricingPage from './pages/PricingPage.jsx';
+import PaymentSuccessPage from './pages/PaymentSuccessPage.jsx';
 
 // Helper function to convert flat lessons into nested sections
 const groupLessonsBySection = (flatLessons) => {
@@ -110,7 +112,7 @@ function App() {
   // --- Basic Routing Persistence ---
   useEffect(() => {
     const path = window.location.pathname.replace('/', '');
-  const validPages = ['home', 'courses', 'schools', 'my_courses', 'profile', 'instructor', 'study-bubbles', 'institutions', 'login', 'settings'];
+  const validPages = ['home', 'courses', 'schools', 'my_courses', 'profile', 'instructor', 'study-bubbles', 'institutions', 'login', 'settings', 'pricing', 'payment-success'];
     if (validPages.includes(path)) {
       setCurrentPage(path);
     }
@@ -194,15 +196,10 @@ function App() {
 
   // Dynamically set body background to prevent "black stripes" below the footer on light pages
   useEffect(() => {
-    const lightPages = ['home', 'study-bubbles', 'profile', 'courses', 'my_courses'];
-    if (lightPages.includes(currentPage)) {
-      document.body.style.backgroundColor = '#ffffff';
-    } else {
-      document.body.style.backgroundColor = '#08080a';
-    }
+    document.body.style.backgroundColor = '#ffffff';
     
     return () => {
-      document.body.style.backgroundColor = '#08080a';
+      document.body.style.backgroundColor = '#ffffff';
     };
   }, [currentPage]);
 
@@ -409,6 +406,10 @@ function App() {
                     showPage={showPage}
                     defaultTab='login'
                 />;
+            case 'pricing':
+                return <PricingPage showPage={showPage} user={user} />;
+            case 'payment-success':
+                return <PaymentSuccessPage showPage={showPage} />;
             default: return <HomePage stats={stats} user={user} certificates={certificates} showPage={showPage} />;
         }
     };
@@ -437,6 +438,7 @@ function App() {
               <nav className="global-nav">
                 <a href="#" onClick={(e) => { e.preventDefault(); showPage('home'); }} className={currentPage === 'home' ? 'active ul-rest' : ''}>Home</a>
                 <a href="#" onClick={(e) => { e.preventDefault(); showPage('courses'); }} className={currentPage === 'courses' ? 'active ul-rest' : ''}>Explore</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); showPage('pricing'); }} className={currentPage === 'pricing' ? 'active ul-rest' : ''}>Pricing</a>
 
                 {user && (
                   <a href="#" onClick={(e) => { e.preventDefault(); showPage('my_courses'); }} className={currentPage === 'my_courses' ? 'active ul-rest' : ''}>My Courses</a>

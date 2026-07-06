@@ -29,6 +29,10 @@ environ.Env.read_env(BASE_DIR / '.env')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-kd2lel$!t&%5!&pua9qf%!la5g)#jhd!00y^%p+8t2q#-3x(ly')
 
+# Adi-Sanlo Configuration
+ADISANLO_API_URL = env("ADISANLO_API_URL", default="https://api.adisanlo.com")
+ADISANLO_API_KEY = env("ADISANLO_API_KEY", default="")
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=True)
 

@@ -208,11 +208,12 @@ main {
 
 /* --- Profile & Dashboard --- */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 32px;
   padding: 3rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  color: #111111;
 }
 
 /* --- Bottom Navigation (Mobile) --- */
