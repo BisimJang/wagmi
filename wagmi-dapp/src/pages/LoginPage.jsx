@@ -362,6 +362,7 @@ const LoginPage = ({
                 />
               </div>
 
+              {/* Wallet Connect Temporarily Disabled
               <ConnectButton.Custom>
                 {({ account, chain, openConnectModal, authenticationStatus, mounted }) => {
                   const ready = mounted && authenticationStatus !== 'loading';
@@ -377,6 +378,7 @@ const LoginPage = ({
                   );
                 }}
               </ConnectButton.Custom>
+              */}
 
               <p className="lp-footnote">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
             </>
