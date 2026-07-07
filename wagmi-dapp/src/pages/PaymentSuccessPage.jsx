@@ -20,7 +20,7 @@ const PaymentSuccessPage = ({ showPage }) => {
                     }, 4000);
                 } else {
                     setStatus('error');
-                    setErrorMessage("Payment verification is pending or incomplete. It may take a few minutes for the blockchain/network to confirm.");
+                    setErrorMessage("Payment verification is pending or incomplete. It may take a few minutes for the network to confirm.");
                 }
             } catch (err) {
                 console.error("Verification failed", err);

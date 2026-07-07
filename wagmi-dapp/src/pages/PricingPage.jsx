@@ -123,7 +123,7 @@ const PricingPage = ({ showPage, user }) => {
                     display: 'flex', 
                     flexWrap: 'wrap', 
                     justifyContent: 'center', 
-                    gap: '2rem',
+                    gap: '2.5rem',
                     alignItems: 'stretch'
                 }}>
                     {plans.length === 0 && !error ? (
@@ -134,58 +134,78 @@ const PricingPage = ({ showPage, user }) => {
                         plans.map((plan, idx) => (
                             <div key={plan.id} style={{ 
                                 padding: '3rem', 
-                                width: '350px',
+                                width: '360px',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 textAlign: 'left',
                                 position: 'relative',
-                                overflow: 'hidden',
+                                overflow: 'visible',
                                 transform: idx === 1 ? 'scale(1.05)' : 'scale(1)',
-                                borderColor: idx === 1 ? '#000' : '#e5e7eb',
-                                borderWidth: '1px',
-                                borderStyle: 'solid',
-                                borderRadius: '24px',
-                                background: '#fff',
-                                boxShadow: idx === 1 ? '0 20px 40px rgba(0,0,0,0.1)' : '0 4px 6px rgba(0,0,0,0.02)',
-                                zIndex: idx === 1 ? 2 : 1
-                            }}>
+                                background: idx === 1 ? 'linear-gradient(145deg, #ffffff, #fafafa)' : '#ffffff',
+                                borderRadius: '32px',
+                                border: idx === 1 ? '1px solid rgba(0,0,0,0.1)' : '1px solid #f3f4f6',
+                                boxShadow: idx === 1 ? '0 30px 60px -12px rgba(0, 0, 0, 0.15), 0 0 0 4px rgba(0,0,0,0.02)' : '0 10px 30px -10px rgba(0,0,0,0.05)',
+                                zIndex: idx === 1 ? 2 : 1,
+                                transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease'
+                            }}
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.transform = idx === 1 ? 'scale(1.08) translateY(-10px)' : 'scale(1.02) translateY(-10px)';
+                                e.currentTarget.style.boxShadow = idx === 1 ? '0 40px 80px -15px rgba(0, 0, 0, 0.2), 0 0 0 4px rgba(0,0,0,0.02)' : '0 20px 40px -10px rgba(0,0,0,0.1)';
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.transform = idx === 1 ? 'scale(1.05)' : 'scale(1)';
+                                e.currentTarget.style.boxShadow = idx === 1 ? '0 30px 60px -12px rgba(0, 0, 0, 0.15), 0 0 0 4px rgba(0,0,0,0.02)' : '0 10px 30px -10px rgba(0,0,0,0.05)';
+                            }}
+                            >
                                 {idx === 1 && (
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '1.5rem',
-                                        right: '-2rem',
-                                        background: '#000',
-                                        color: '#fff',
-                                        padding: '0.2rem 3rem',
-                                        transform: 'rotate(45deg)',
-                                        fontSize: '0.7rem',
-                                        fontWeight: '800',
-                                        letterSpacing: '1px'
-                                    }}>
-                                        RECOMMENDED
-                                    </div>
+                                    <>
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '-15px',
+                                            left: '50%',
+                                            transform: 'translateX(-50%)',
+                                            background: 'linear-gradient(90deg, #111, #333)',
+                                            color: '#fff',
+                                            padding: '0.4rem 1.5rem',
+                                            borderRadius: '100px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '800',
+                                            letterSpacing: '1.5px',
+                                            boxShadow: '0 10px 20px rgba(0,0,0,0.2)'
+                                        }}>
+                                            RECOMMENDED
+                                        </div>
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '-2px', left: '-2px', right: '-2px', bottom: '-2px',
+                                            background: 'linear-gradient(45deg, transparent, rgba(0,0,0,0.03), transparent)',
+                                            borderRadius: '34px',
+                                            zIndex: -1,
+                                            filter: 'blur(10px)'
+                                        }} />
+                                    </>
                                 )}
                                 
-                                <h3 style={{ fontSize: '1.8rem', color: '#111', marginBottom: '0.5rem', fontWeight: '700' }}>{plan.name}</h3>
-                                <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#111', marginBottom: '1rem' }}>
-                                    ₦{(plan.amount / 100).toLocaleString()} <span style={{ fontSize: '1rem', color: '#666', fontWeight: '500' }}>/ {plan.interval}</span>
+                                <h3 style={{ fontSize: '1.5rem', color: idx === 1 ? '#000' : '#4b5563', marginBottom: '0.5rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>{plan.name}</h3>
+                                <div style={{ fontSize: '3.5rem', fontWeight: '900', color: '#111', marginBottom: '1rem', display: 'flex', alignItems: 'baseline', gap: '4px', letterSpacing: '-2px' }}>
+                                    <span style={{ fontSize: '1.5rem', fontWeight: '600', letterSpacing: '0' }}>₦</span>{(plan.amount / 100).toLocaleString()} <span style={{ fontSize: '1rem', color: '#9ca3af', fontWeight: '600', letterSpacing: '0' }}>/ {plan.interval}</span>
                                 </div>
-                                <p style={{ color: '#666', marginBottom: '2rem', minHeight: '3rem', fontSize: '0.95rem' }}>
+                                <p style={{ color: '#6b7280', marginBottom: '2.5rem', minHeight: '3rem', fontSize: '1.05rem', lineHeight: '1.5' }}>
                                     {plan.description || "Full access to all premium features."}
                                 </p>
                                 <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1rem', color: '#374151', fontSize: '0.95rem' }}>
-                                        <Check size={18} color="#000" /> Unlimited Course Access
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.2rem', color: '#1f2937', fontSize: '1rem', fontWeight: '500' }}>
+                                        <div style={{ background: '#f3f4f6', padding: '4px', borderRadius: '50%' }}><Check size={16} color="#111" strokeWidth={3} /></div> Unlimited Course Access
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1rem', color: '#374151', fontSize: '0.95rem' }}>
-                                        <Check size={18} color="#000" /> Vera AI Mentor
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.2rem', color: '#1f2937', fontSize: '1rem', fontWeight: '500' }}>
+                                        <div style={{ background: '#f3f4f6', padding: '4px', borderRadius: '50%' }}><Check size={16} color="#111" strokeWidth={3} /></div> Vera AI Mentor
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1rem', color: '#374151', fontSize: '0.95rem' }}>
-                                        <Check size={18} color="#000" /> Verified Certificates
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.2rem', color: '#1f2937', fontSize: '1rem', fontWeight: '500' }}>
+                                        <div style={{ background: '#f3f4f6', padding: '4px', borderRadius: '50%' }}><Check size={16} color="#111" strokeWidth={3} /></div> Verified Certificates
                                     </div>
                                     {idx > 0 && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1rem', color: '#374151', fontSize: '0.95rem' }}>
-                                            <Check size={18} color="#000" /> Priority Node Access
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.2rem', color: '#1f2937', fontSize: '1rem', fontWeight: '500' }}>
+                                            <div style={{ background: 'linear-gradient(135deg, #111, #444)', padding: '4px', borderRadius: '50%' }}><Sparkles size={16} color="#fff" strokeWidth={2.5} /></div> Priority Node Access
                                         </div>
                                     )}
                                 </div>
@@ -195,41 +215,44 @@ const PricingPage = ({ showPage, user }) => {
                                     disabled={processingId === plan.id}
                                     style={{
                                         width: '100%',
-                                        marginTop: '2rem',
-                                        background: idx === 1 ? '#000' : '#f9fafb',
+                                        marginTop: '2.5rem',
+                                        background: idx === 1 ? 'linear-gradient(135deg, #000 0%, #333 100%)' : '#f9fafb',
                                         color: idx === 1 ? '#fff' : '#111',
-                                        border: idx === 1 ? 'none' : '1px solid #e5e7eb',
+                                        border: idx === 1 ? 'none' : '2px solid #f3f4f6',
                                         padding: '1.2rem',
                                         fontSize: '1rem',
-                                        fontWeight: '700',
-                                        borderRadius: '100px',
+                                        fontWeight: '800',
+                                        borderRadius: '16px',
                                         display: 'flex',
                                         justifyContent: 'center',
                                         alignItems: 'center',
-                                        gap: '0.5rem',
+                                        gap: '0.8rem',
                                         cursor: processingId === plan.id ? 'not-allowed' : 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        opacity: processingId === plan.id ? 0.7 : 1
+                                        transition: 'all 0.3s ease',
+                                        opacity: processingId === plan.id ? 0.7 : 1,
+                                        boxShadow: idx === 1 ? '0 10px 20px rgba(0,0,0,0.1)' : 'none'
                                     }}
                                     onMouseOver={(e) => {
                                         if (processingId !== plan.id) {
-                                            e.currentTarget.style.transform = 'translateY(-2px)';
-                                            if (idx !== 1) e.currentTarget.style.background = '#f3f4f6';
+                                            e.currentTarget.style.transform = 'translateY(-3px)';
+                                            e.currentTarget.style.boxShadow = idx === 1 ? '0 15px 30px rgba(0,0,0,0.2)' : '0 10px 20px rgba(0,0,0,0.05)';
+                                            if (idx !== 1) e.currentTarget.style.borderColor = '#e5e7eb';
                                         }
                                     }}
                                     onMouseOut={(e) => {
                                         if (processingId !== plan.id) {
                                             e.currentTarget.style.transform = 'translateY(0)';
-                                            if (idx !== 1) e.currentTarget.style.background = '#f9fafb';
+                                            e.currentTarget.style.boxShadow = idx === 1 ? '0 10px 20px rgba(0,0,0,0.1)' : 'none';
+                                            if (idx !== 1) e.currentTarget.style.borderColor = '#f3f4f6';
                                         }
                                     }}
                                 >
                                     {processingId === plan.id ? (
-                                        <div style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                                        <div style={{ width: '20px', height: '20px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: idx === 1 ? '#fff' : '#000', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                                     ) : (
                                         <>
-                                            <Shield size={18} />
-                                            {idx === 1 ? 'UPGRADE NOW' : 'SELECT PLAN'}
+                                            {idx === 1 ? <Zap size={20} fill="#fff" /> : <Shield size={20} />}
+                                            {idx === 1 ? 'UPGRADE NODE' : 'SELECT PLAN'}
                                         </>
                                     )}
                                 </button>
