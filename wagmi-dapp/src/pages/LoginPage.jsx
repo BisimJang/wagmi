@@ -229,7 +229,7 @@ const LoginPage = ({
       <nav className="lp-nav">
         <span className="lp-nav-logo" onClick={() => showPage('home')}>Study Verse</span>
         <button className="lp-nav-back" onClick={() => showPage('home')}>
-          ← <span style={{ textDecoration: 'underline', textUnderlineOffset: 3 }}>ack to home</span>
+          ← <span style={{ textDecoration: 'underline', textUnderlineOffset: 3 }}>Back to home</span>
         </button>
       </nav>
 
